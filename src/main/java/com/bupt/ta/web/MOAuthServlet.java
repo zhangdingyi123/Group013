@@ -16,7 +16,12 @@ public class MOAuthServlet extends HttpServlet {
             HttpSession s = req.getSession(false);
             if (s != null) s.invalidate();
         }
-        req.getRequestDispatcher("/mo/auth.jsp").forward(req, resp);
+        String uri = req.getRequestURI();
+        if (uri != null && uri.endsWith("/register")) {
+            req.getRequestDispatcher("/mo/register.jsp").forward(req, resp);
+        } else {
+            req.getRequestDispatcher("/mo/auth.jsp").forward(req, resp);
+        }
     }
 
     @Override
@@ -29,8 +34,6 @@ public class MOAuthServlet extends HttpServlet {
                     .findFirst().orElse(null);
             if (mo == null) {
                 req.setAttribute("error", "该邮箱未注册过。");
-                req.setAttribute("promptGoRegister", Boolean.TRUE);
-                req.setAttribute("tab", "login");
                 req.getRequestDispatcher("/mo/auth.jsp").forward(req, resp);
                 return;
             }
@@ -39,20 +42,17 @@ public class MOAuthServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/mo/dashboard");
             return;
         }
-        if ("register".equals(action)) {
+        if ("register".equals(action) || req.getRequestURI() != null && req.getRequestURI().endsWith("/register")) {
             String name = req.getParameter("name");
             String email = req.getParameter("email");
             if (name == null || name.trim().isEmpty() || email == null || email.trim().isEmpty()) {
-                req.setAttribute("error", "请填写姓名和邮箱。");
-                req.setAttribute("tab", "register");
-                req.getRequestDispatcher("/mo/auth.jsp").forward(req, resp);
+                req.setAttribute("error", "请填写用户名和邮箱。");
+                req.getRequestDispatcher("/mo/register.jsp").forward(req, resp);
                 return;
             }
             if (WebApp.getMoService().findAll().stream().anyMatch(m -> email.trim().equalsIgnoreCase(m.getEmail()))) {
                 req.setAttribute("error", "该邮箱已注册，请直接登录。");
-                req.setAttribute("promptGoLogin", Boolean.TRUE);
-                req.setAttribute("tab", "register");
-                req.getRequestDispatcher("/mo/auth.jsp").forward(req, resp);
+                req.getRequestDispatcher("/mo/register.jsp").forward(req, resp);
                 return;
             }
             ModuleOrganiser mo = WebApp.getMoService().create(name.trim(), email.trim());
