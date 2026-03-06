@@ -40,12 +40,20 @@
         <url-pattern>/ta/auth</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
+        <servlet-name>TAAuthServlet</servlet-name>
+        <url-pattern>/ta/register</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
         <servlet-name>TADashboardServlet</servlet-name>
         <url-pattern>/ta/dashboard</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>MOAuthServlet</servlet-name>
         <url-pattern>/mo/auth</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>MOAuthServlet</servlet-name>
+        <url-pattern>/mo/register</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>MODashboardServlet</servlet-name>
