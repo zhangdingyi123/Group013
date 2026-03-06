@@ -6,7 +6,7 @@
 
 ## 技术栈与约束
 
-- **运行形态**：同时提供 **Java 桌面应用（Swing）** 与 **轻量级 Servlet/JSP Web 应用**（嵌入式 Tomcat），以及前后端分离（HttpServer + 静态页）、控制台版。
+- **运行形态**：**轻量级 Servlet/JSP Web 应用**（嵌入式 Tomcat）、**控制台版**。
 - **数据存储**：仅使用 **JSON 文本文件**（`data/` 目录），**不使用数据库**。
 - **依赖**：JDK 11 + Gson + 嵌入式 Tomcat 9（无 Spring Boot）。
 
@@ -38,12 +38,10 @@ mvn exec:java -Dexec.mainClass=com.bupt.ta.TomcatMain
 | 方式 | 入口类 | 说明 |
 |------|--------|------|
 | **Web（Servlet/JSP）** | `com.bupt.ta.TomcatMain` | 浏览器访问，登录/注册与工作台 |
-| 桌面应用 | `com.bupt.ta.DesktopMain` | Swing 窗口，无需浏览器 |
-| 前后端分离 | `com.bupt.ta.ServerMain` | HttpServer + 静态前端，API：`/api` |
 | 控制台 | `com.bupt.ta.Main` | 纯命令行交互 |
 
-- 前后端分离默认启动：`mvn exec:java -q`（主类为 `ServerMain`）。
-- 若 8080 端口被占用，请先关闭占用该端口的进程再启动 Web 或 ServerMain。
+- 默认启动 Web 版：`mvn exec:java -q`（主类为 `TomcatMain`）。
+- 若 8080 端口被占用，请先关闭占用该端口的进程再启动。
 
 ---
 
@@ -73,5 +71,5 @@ mvn exec:java -Dexec.mainClass=com.bupt.ta.TomcatMain
 ## Web 架构简述（Servlet/JSP）
 
 - 嵌入式 Tomcat 9，Servlet 处理登录/注册与工作台请求，JSP 负责页面渲染，Session 维持登录状态。
-- 登录/注册为独立页面，Tab 切换，居中卡片式布局。
-- 与桌面版、控制台版共用同一套 `data/` 下 JSON 数据。
+- 登录与注册为两个独立页面，居中卡片式布局。
+- 与控制台版共用同一套 `data/` 下 JSON 数据。
