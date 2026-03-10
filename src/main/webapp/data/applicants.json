@@ -5,7 +5,19 @@
     "email": "heimaobaimaozide@gmail.com",
     "passwordHash": "o2vl4K2RzYkA4lR6x9CWVAKciROObfK/cqWpIY9f4rs\u003d",
     "studentId": "2023213140",
-    "skills": [],
+    "skills": [
+      "java"
+    ],
+    "resumePath": "41c26217-0756-4b4d-b133-ea7501f5c9f1.txt",
     "createdAt": 1773109878280
+  },
+  {
+    "id": "26066a47-75ab-4bbd-8400-d3fa1bedd3ed",
+    "name": "丁",
+    "email": "zdy40@bupt.edu.cn",
+    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI\u003d",
+    "studentId": "20",
+    "skills": [],
+    "createdAt": 1773125243209
   }
 ]

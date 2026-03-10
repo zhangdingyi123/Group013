@@ -2,7 +2,6 @@ package com.bupt.ta.web;
 
 import com.bupt.ta.model.*;
 import com.bupt.ta.service.*;
-import com.bupt.ta.service.MatchHelper.ApplicantMatch;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,7 +19,6 @@ public class MODashboardServlet extends HttpServlet {
     private final ModuleOrganiserService moService = new ModuleOrganiserService();
     private final JobService jobService = new JobService();
     private final ApplicationService applicationService = new ApplicationService();
-    private final MatchHelper matchHelper = new MatchHelper();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -33,14 +31,6 @@ public class MODashboardServlet extends HttpServlet {
         try {
             List<Job> myJobs = jobService.findByModuleOrganiserId(user.getId());
             req.setAttribute("myJobs", myJobs);
-            String jobId = req.getParameter("jobId");
-            if (jobId != null && !jobId.isEmpty()) {
-                List<ApplicantMatch> recommended = matchHelper.recommendApplicantsForJobBalanced(jobId);
-                List<Application> applicationsForJob = applicationService.findByJobId(jobId);
-                req.setAttribute("applicantsForJob", recommended);
-                req.setAttribute("applicationsForJob", applicationsForJob);
-                req.setAttribute("selectedJobId", jobId);
-            }
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
         }

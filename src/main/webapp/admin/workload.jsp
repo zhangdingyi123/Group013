@@ -22,6 +22,8 @@
       .page-header h1{margin:0;font-size:1.4rem;font-weight:600;color:#1e293b}
       .back-link{padding:.45rem .85rem;color:#2563eb;text-decoration:none;font-size:.9rem;border-radius:6px}
       .back-link:hover{background:#dbeafe}
+      .logout{font-size:.9rem;color:#64748b;text-decoration:none;padding:.45rem .85rem;border-radius:6px}
+      .logout:hover{color:#dc2626;background:#fef2f2}
       .summary{background:#dbeafe;color:#2563eb;padding:.75rem 1rem;border-radius:6px;margin-bottom:1.25rem;font-weight:600}
       .error{color:#dc2626;font-size:.9rem;margin-bottom:1rem;padding:.6rem .85rem;background:#fef2f2;border-radius:6px}
       .empty-hint{color:#64748b;font-size:.9rem;padding:1rem 0}
@@ -36,8 +38,9 @@
 <body>
     <div class="dashboard admin-workload">
         <div class="page-header">
-            <a href="${pageContext.request.contextPath}/" class="back-link">← 返回首页</a>
+            <a href="${pageContext.request.contextPath}/" class="back-link">← 首页</a>
             <h1>助教整体工作负荷</h1>
+            <a href="${pageContext.request.contextPath}/admin/auth?logout=1" class="logout">退出登录</a>
         </div>
         <p>下表为已被录用（accepted）的助教及其当前承担的岗位数。</p>
         <p class="summary">总录用岗位数：<%= totalAssignments %></p>

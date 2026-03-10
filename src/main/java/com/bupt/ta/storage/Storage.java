@@ -23,6 +23,7 @@ public class Storage {
     private static final String JOBS_FILE = "jobs.json";
     private static final String APPLICATIONS_FILE = "applications.json";
     private static final String MODULE_ORGANISERS_FILE = "module_organisers.json";
+    private static final String ADMINS_FILE = "admins.json";
     private static final String RESUMES_DIR = "resumes";
 
     private static volatile String dataDir = DEFAULT_DATA_DIR;
@@ -119,6 +120,15 @@ public class Storage {
     }
     public static void saveModuleOrganisers(List<ModuleOrganiser> list) throws IOException {
         writeList(dataPath(MODULE_ORGANISERS_FILE), list);
+    }
+
+    // ---------- Admins ----------
+    private static final Type ADMIN_LIST_TYPE = new TypeToken<ArrayList<Admin>>(){}.getType();
+    public static List<Admin> loadAdmins() throws IOException {
+        return readList(dataPath(ADMINS_FILE), ADMIN_LIST_TYPE);
+    }
+    public static void saveAdmins(List<Admin> list) throws IOException {
+        writeList(dataPath(ADMINS_FILE), list);
     }
 
     /**

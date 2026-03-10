@@ -1,20 +1,10 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.bupt.ta.model.Job" %>
-<%@ page import="com.bupt.ta.model.Application" %>
-<%@ page import="com.bupt.ta.service.MatchHelper" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Optional" %>
 <%
     @SuppressWarnings("unchecked")
     List<Job> myJobs = (List<Job>) request.getAttribute("myJobs");
-    @SuppressWarnings("unchecked")
-    List<MatchHelper.ApplicantMatch> applicantsForJob = (List<MatchHelper.ApplicantMatch>) request.getAttribute("applicantsForJob");
-    @SuppressWarnings("unchecked")
-    List<Application> applicationsForJob = (List<Application>) request.getAttribute("applicationsForJob");
-    String selectedJobId = (String) request.getAttribute("selectedJobId");
     if (myJobs == null) myJobs = java.util.Collections.emptyList();
-    if (applicantsForJob == null) applicantsForJob = java.util.Collections.emptyList();
-    if (applicationsForJob == null) applicationsForJob = java.util.Collections.emptyList();
 %>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -111,7 +101,7 @@
                         <td><%= j.getType() != null ? j.getType() : "-" %></td>
                         <td><span class="badge <%= statusClass %>"><%= j.getStatus() %></span></td>
                         <td>
-                            <a href="${pageContext.request.contextPath}/mo/dashboard?jobId=<%= j.getId() %>" class="btn btn-secondary btn-small">筛选应聘者</a>
+                            <a href="${pageContext.request.contextPath}/mo/job-applicants?jobId=<%= j.getId() %>" class="btn btn-secondary btn-small">筛选应聘者</a>
                             <% if ("open".equals(j.getStatus())) { %>
                             <form method="post" action="${pageContext.request.contextPath}/mo/dashboard" style="display:inline;">
                                 <input type="hidden" name="action" value="closeJob">
@@ -128,57 +118,6 @@
             <% } %>
         </div>
 
-        <% if (selectedJobId != null && !applicantsForJob.isEmpty()) { %>
-        <div class="section">
-            <h2>应聘者列表（按匹配度与负荷均衡排序）</h2>
-            <p class="section-desc"><small>匹配分：岗位技能匹配度；技能短板：岗位需要但应聘者未填写的技能。</small></p>
-            <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr><th>姓名</th><th>邮箱</th><th>匹配分</th><th>技能短板</th><th>操作</th></tr>
-                </thead>
-                <tbody>
-                <% for (MatchHelper.ApplicantMatch m : applicantsForJob) {
-                    String appId = "";
-                    String status = "pending";
-                    for (Application app : applicationsForJob) {
-                        if (app.getApplicantId().equals(m.applicant.getId())) {
-                            appId = app.getId();
-                            status = app.getStatus() != null ? app.getStatus() : "pending";
-                            break;
-                        }
-                    }
-                %>
-                    <tr>
-                        <td><%= m.applicant.getName() %></td>
-                        <td><%= m.applicant.getEmail() %></td>
-                        <td><span class="score"><%= m.score %> 分</span></td>
-                        <td class="gaps"><%= m.gaps != null && !m.gaps.isEmpty() ? String.join(", ", m.gaps) : "无" %></td>
-                        <td>
-                            <% if ("pending".equals(status)) { %>
-                            <form method="post" action="${pageContext.request.contextPath}/mo/dashboard" style="display:inline;">
-                                <input type="hidden" name="action" value="applicationStatus">
-                                <input type="hidden" name="applicationId" value="<%= appId %>">
-                                <input type="hidden" name="status" value="accepted">
-                                <button type="submit" class="btn btn-primary btn-small">录用</button>
-                            </form>
-                            <form method="post" action="${pageContext.request.contextPath}/mo/dashboard" style="display:inline;">
-                                <input type="hidden" name="action" value="applicationStatus">
-                                <input type="hidden" name="applicationId" value="<%= appId %>">
-                                <input type="hidden" name="status" value="rejected">
-                                <button type="submit" class="btn btn-secondary btn-small">拒绝</button>
-                            </form>
-                            <% } else { %>
-                            <span class="badge badge-<%= "accepted".equals(status) ? "accepted" : "rejected" %>"><%= status %></span>
-                            <% } %>
-                        </td>
-                    </tr>
-                <% } %>
-                </tbody>
-            </table>
-            </div>
-        </div>
-        <% } %>
     </div>
 </body>
 </html>

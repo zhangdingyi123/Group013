@@ -56,8 +56,10 @@
       .resume-current{font-size:.9rem;margin-bottom:1rem}.resume-current a{text-decoration:none}
       .form-group input[type="file"]{padding:.4rem 0}
       .section-tip{border-left-color:#d97706}
-      .skill-gaps-list{margin:.5rem 0 0 1.2rem;padding:0;color:#92400e}
-      .skill-gaps-list li{margin:.35rem 0}
+      .section-strengths{border-left-color:#059669}
+      .skill-gaps-list,.strengths-list{margin:.5rem 0 0 1.2rem;padding:0}
+      .skill-gaps-list li{margin:.35rem 0;color:#92400e}
+      .strengths-list li{margin:.35rem 0;color:#065f46}
     </style>
 </head>
 <body>
@@ -67,6 +69,12 @@
             <h1>你好，<%= applicant.getName() %></h1>
             <a href="${pageContext.request.contextPath}/ta/auth?logout=1" class="logout">退出登录</a>
         </div>
+
+        <% if (request.getAttribute("applyMessage") != null) { %>
+        <div class="section section-tip" style="margin-bottom:1rem;">
+            <p class="section-hint" style="margin:0;color:#92400e;"><%= request.getAttribute("applyMessage") %></p>
+        </div>
+        <% } %>
 
         <div class="section">
             <h2>个人档案</h2>
@@ -130,6 +138,21 @@
                 <% } %>
             </ul>
             <p class="section-hint">完善后有助于提高与岗位的匹配度，获得更多录用机会。</p>
+        </div>
+        <% } %>
+
+        <%
+            java.util.List<String> resumeStrengths = (java.util.List<String>) request.getAttribute("resumeStrengths");
+            if (resumeStrengths != null && !resumeStrengths.isEmpty()) {
+        %>
+        <div class="section section-strengths">
+            <h2>根据上传简历得到的优点</h2>
+            <p class="section-hint">根据您上传的简历内容，与当前开放岗位需求对比，以下技能在简历中已有体现且与岗位需求匹配，可作为您的优势。</p>
+            <ul class="strengths-list">
+                <% for (String skill : resumeStrengths) { %>
+                <li><%= skill %></li>
+                <% } %>
+            </ul>
         </div>
         <% } %>
 

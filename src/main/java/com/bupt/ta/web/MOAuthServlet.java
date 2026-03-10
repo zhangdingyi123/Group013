@@ -38,7 +38,12 @@ public class MOAuthServlet extends HttpServlet {
             if (opt.isPresent() && PasswordUtil.check(password, opt.get().getPasswordHash())) {
                 HttpSession session = req.getSession(true);
                 session.setAttribute("moUser", opt.get());
-                resp.sendRedirect(req.getContextPath() + "/mo/dashboard");
+                String returnUrl = req.getParameter("returnUrl");
+                if (returnUrl != null && !returnUrl.isEmpty() && returnUrl.startsWith("/mo/") && !returnUrl.contains("..")) {
+                    resp.sendRedirect(req.getContextPath() + returnUrl);
+                } else {
+                    resp.sendRedirect(req.getContextPath() + "/mo/dashboard");
+                }
                 return;
             }
             req.setAttribute("error", "邮箱或密码错误");
