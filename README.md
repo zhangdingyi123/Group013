@@ -1,75 +1,87 @@
-# TA 招聘系统
+# 助教招聘系统 · 北京邮电大学国际学院
 
-面向北邮国际学院助教（TA）招聘的简易招聘系统原型，供课程模块负责人及学校各类活动招募助教使用。
+轻量级 Java Servlet/JSP Web 应用，用于简化助教申请与招聘流程。**所有数据存储为 JSON 与文本文件，不使用数据库。**
 
----
+## 功能概览
 
-## 技术栈与约束
+### 应聘者（TA）
+- 注册/登录、创建个人申请档案（姓名、学号、技能标签）
+- 上传简历（纯文本，保存为 `.txt`）
+- 查询可申请岗位、提交岗位申请、查询申请状态
 
-- **运行形态**：**轻量级 Servlet/JSP Web 应用**（嵌入式 Tomcat）、**控制台版**。
-- **数据存储**：仅使用 **JSON 文本文件**（`data/` 目录），**不使用数据库**。
-- **依赖**：JDK 11 + Gson + 嵌入式 Tomcat 9（无 Spring Boot）。
+### 课程组织者（MO）
+- 注册/登录
+- 发布招聘岗位（课程助教 / 监考 / 活动支持，可填所需技能）
+- 按岗位筛选应聘者，查看**技能匹配度**与**技能短板**
+- 录用/拒绝申请；关闭岗位
 
-以上设计符合课程要求：聚焦软件工程核心原理、文本文件存储、禁止数据库与 Spring Boot。
+### 管理员
+- 查看助教整体工作负荷（每人已被录用的岗位数）
 
----
+### 辅助逻辑（规则实现，非外部 AI）
+- **岗位与应聘者技能匹配**：按岗位所需技能与应聘者技能计算匹配分
+- **技能短板**：列出岗位需要但应聘者未填写的技能
+- **负荷均衡**：推荐应聘者时在同等匹配度下优先推荐当前录用数较少者
 
-## 快速开始
+## 技术栈
 
-**环境**：JDK 11、Maven
+- Java 11、Maven
+- Servlet 4.0、JSP、JSTL
+- Gson（JSON 读写）
+- 数据目录：`{应用根}/data/`，内含 `applicants.json`、`jobs.json`、`applications.json`、`module_organisers.json`，简历存放在 `data/resumes/*.txt`
+
+## 构建与运行
+
+### 方式一：生成 WAR 并部署到 Tomcat
 
 ```bash
-# 编译
-mvn compile
+mvn clean package
 ```
 
-**推荐：Web 版（Servlet/JSP）**
+在项目目录下会生成 **`target/ta-recruitment.war`**。将其拷贝到 Tomcat 的 `webapps/` 目录，启动 Tomcat 后访问：
+
+- **http://localhost:8080/ta-recruitment/**
+
+（端口以实际 Tomcat 配置为准。）
+
+### 方式二：使用 Maven Tomcat 插件直接运行（无需单独安装 Tomcat）
 
 ```bash
-mvn exec:java -Dexec.mainClass=com.bupt.ta.TomcatMain
+mvn tomcat7:run
 ```
 
-浏览器访问 **http://localhost:8080/**，使用登录/注册页进入工作台。
+启动后浏览器访问：
 
----
+- **http://localhost:8080/ta-recruitment/**
 
-## 运行方式
+（插件默认端口为 8080，上下文路径为 `/ta-recruitment`，可在 `pom.xml` 中修改。）
 
-| 方式 | 入口类 | 说明 |
-|------|--------|------|
-| **Web（Servlet/JSP）** | `com.bupt.ta.TomcatMain` | 浏览器访问，登录/注册与工作台 |
-| 控制台 | `com.bupt.ta.Main` | 纯命令行交互 |
+### 方式三：在 IDE 中运行
 
-- 默认启动 Web 版：`mvn exec:java -q`（主类为 `TomcatMain`）。
-- 若 8080 端口被占用，请先关闭占用该端口的进程再启动。
+- **IDEA**：可配置 Tomcat 运行配置，将部署目标设为 `ta-recruitment:war exploded` 或已打包的 `target/ta-recruitment.war`。
+- **Eclipse**：可安装 Tomcat 插件并将项目以 Dynamic Web Project 方式部署并运行。
 
----
+进入首页后，可选择：应聘者入口、课程组织者入口、管理员工作负荷。
 
-## 数据存储
+## 项目结构
 
-数据存放在项目根目录下的 `data/` 中（首次运行可自动创建）：
+```
+src/main/java/com/bupt/ta/
+  model/          # Applicant, Job, Application, ModuleOrganiser
+  storage/        # Storage（JSON 文件读写）
+  service/        # ApplicantService, JobService, ApplicationService, ModuleOrganiserService, MatchHelper
+  util/           # PasswordUtil（SHA-256）
+  web/            # HomeServlet, TAAuthServlet, TADashboardServlet, MOAuthServlet, MODashboardServlet, AdminServlet, AppListener
+src/main/webapp/
+  index.jsp       # 首页
+  ta/             # 应聘者登录、注册、工作台
+  mo/             # 课程组织者登录、注册、工作台
+  admin/          # 工作负荷页
+  css/style.css
+  WEB-INF/web.xml
+```
 
-| 文件 | 说明 |
-|------|------|
-| `applicants.json` | 助教申请人资料 |
-| `jobs.json` | 课程负责人发布的职位 |
-| `applications.json` | 申请记录及状态（待处理/已录用/已拒绝） |
-| `module_organisers.json` | 课程负责人账号 |
+## 说明
 
----
-
-## 功能说明
-
-- **助教（TA）**：注册/登录 → 维护个人资料、简历路径、技能 → 浏览职位、提交申请、查看申请状态。
-- **课程负责人（MO）**：注册/登录 → 发布职位、管理我的职位、查看申请人并录用。
-- **管理员（Admin）**：查看 TA 工作量（每人已分配职位数量）。
-
-可选扩展：技能匹配、缺失技能提示、工作量均衡等（按课程规格说明）。
-
----
-
-## Web 架构简述（Servlet/JSP）
-
-- 嵌入式 Tomcat 9，Servlet 处理登录/注册与工作台请求，JSP 负责页面渲染，Session 维持登录状态。
-- 登录与注册为两个独立页面，居中卡片式布局。
-- 与控制台版共用同一套 `data/` 下 JSON 数据。
+- 管理员工作负荷页未做登录校验，仅作原型演示；生产环境需增加权限控制。
+- 密码以 SHA-256 哈希后存储，简历与业务数据均为文本/JSON，便于在无数据库环境下运行与演示。

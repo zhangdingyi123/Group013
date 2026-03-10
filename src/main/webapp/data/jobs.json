@@ -1,0 +1,120 @@
+[
+  {
+    "id": "job-001",
+    "title": "数据结构课程助教",
+    "moduleOrganiserId": "mo-004-zhao",
+    "description": "协助批改作业、答疑、上机辅导。每周约 4 学时。",
+    "requiredSkills": [
+      "数据结构",
+      "Java",
+      "C++"
+    ],
+    "type": "course_ta",
+    "status": "open",
+    "createdAt": 1710010000000
+  },
+  {
+    "id": "job-002",
+    "title": "高等数学（上）助教",
+    "moduleOrganiserId": "mo-002-li",
+    "description": "习题课辅导、作业批改、答疑。",
+    "requiredSkills": [
+      "高等数学",
+      "微积分"
+    ],
+    "type": "course_ta",
+    "status": "open",
+    "createdAt": 1710010001000
+  },
+  {
+    "id": "job-003",
+    "title": "大学英语四级辅导助教",
+    "moduleOrganiserId": "mo-003-wang",
+    "description": "协助组织模拟考试、批改作文、听力辅导。",
+    "requiredSkills": [
+      "英语",
+      "四级"
+    ],
+    "type": "course_ta",
+    "status": "open",
+    "createdAt": 1710010002000
+  },
+  {
+    "id": "job-004",
+    "title": "期末监考（高等数学）",
+    "moduleOrganiserId": "mo-002-li",
+    "description": "2024 年 1 月期末监考，需提前 30 分钟到场。",
+    "requiredSkills": [
+      "监考"
+    ],
+    "type": "invigilation",
+    "status": "open",
+    "createdAt": 1710010003000
+  },
+  {
+    "id": "job-005",
+    "title": "程序设计基础实验课助教",
+    "moduleOrganiserId": "mo-001-zhang",
+    "description": "机房实验课辅导、代码答疑、实验报告初评。",
+    "requiredSkills": [
+      "Python",
+      "Java",
+      "编程"
+    ],
+    "type": "course_ta",
+    "status": "open",
+    "createdAt": 1710010004000
+  },
+  {
+    "id": "job-006",
+    "title": "期末监考（大学英语）",
+    "moduleOrganiserId": "mo-003-wang",
+    "description": "英语期末笔试监考，含听力部分。",
+    "requiredSkills": [
+      "监考",
+      "英语"
+    ],
+    "type": "invigilation",
+    "status": "open",
+    "createdAt": 1710010005000
+  },
+  {
+    "id": "job-007",
+    "title": "新生迎新活动支持",
+    "moduleOrganiserId": "mo-005-chen",
+    "description": "迎新现场引导、物资发放、秩序维护。",
+    "requiredSkills": [
+      "沟通",
+      "组织"
+    ],
+    "type": "activity",
+    "status": "open",
+    "createdAt": 1710010006000
+  },
+  {
+    "id": "job-008",
+    "title": "计算机网络课程助教",
+    "moduleOrganiserId": "mo-001-zhang",
+    "description": "实验课辅导、作业批改、网络实验环境维护。",
+    "requiredSkills": [
+      "计算机网络",
+      "Linux",
+      "Wireshark"
+    ],
+    "type": "course_ta",
+    "status": "open",
+    "createdAt": 1710010007000
+  },
+  {
+    "id": "3f0895b1-7dab-40a2-b2df-d470035a138f",
+    "title": "java助教",
+    "moduleOrganiserId": "ee9b2d8d-d847-4c9a-b428-1c9ab3d136e3",
+    "description": "批卷",
+    "requiredSkills": [
+      "java"
+    ],
+    "type": "course_ta",
+    "status": "open",
+    "createdAt": 1773114991438
+  }
+]

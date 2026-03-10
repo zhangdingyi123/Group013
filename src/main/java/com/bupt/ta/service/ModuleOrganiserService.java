@@ -9,35 +9,39 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class ModuleOrganiserService {
-    private static final String FILE = "module_organisers.json";
-    private final Storage storage;
-
-    public ModuleOrganiserService(Storage storage) {
-        this.storage = storage;
+    public List<ModuleOrganiser> findAll() throws IOException {
+        return Storage.loadModuleOrganisers();
     }
 
-    public List<ModuleOrganiser> findAll() {
-        return storage.loadList(FILE, ModuleOrganiser.class);
+    public Optional<ModuleOrganiser> findById(String id) throws IOException {
+        return Storage.loadModuleOrganisers().stream().filter(m -> id.equals(m.getId())).findFirst();
     }
 
-    public Optional<ModuleOrganiser> findById(String id) {
-        return findAll().stream().filter(m -> id.equals(m.getId())).findFirst();
+    public Optional<ModuleOrganiser> findByEmail(String email) throws IOException {
+        return Storage.loadModuleOrganisers().stream()
+                .filter(m -> email.equalsIgnoreCase(m.getEmail())).findFirst();
     }
 
-    public ModuleOrganiser create(String name, String email) {
-        ModuleOrganiser mo = new ModuleOrganiser(UUID.randomUUID().toString(), name, email);
-        save(mo);
+    public ModuleOrganiser create(String name, String email, String passwordHash, String department) throws IOException {
+        List<ModuleOrganiser> list = Storage.loadModuleOrganisers();
+        if (list.stream().anyMatch(m -> email.equalsIgnoreCase(m.getEmail()))) {
+            return null;
+        }
+        ModuleOrganiser mo = new ModuleOrganiser(UUID.randomUUID().toString(), name, email, passwordHash, department);
+        list.add(mo);
+        Storage.saveModuleOrganisers(list);
         return mo;
     }
 
-    public void save(ModuleOrganiser mo) {
-        List<ModuleOrganiser> list = findAll();
-        list.removeIf(m -> m.getId().equals(mo.getId()));
-        list.add(mo);
-        try {
-            storage.saveList(FILE, list);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save module organisers", e);
+    public boolean update(ModuleOrganiser mo) throws IOException {
+        List<ModuleOrganiser> list = Storage.loadModuleOrganisers();
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).getId().equals(mo.getId())) {
+                list.set(i, mo);
+                Storage.saveModuleOrganisers(list);
+                return true;
+            }
         }
+        return false;
     }
 }

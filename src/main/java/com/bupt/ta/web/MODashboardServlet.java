@@ -1,11 +1,11 @@
 package com.bupt.ta.web;
 
-import com.bupt.ta.model.Application;
-import com.bupt.ta.model.Job;
-import com.bupt.ta.model.ModuleOrganiser;
-import com.bupt.ta.service.MatchHelper;
+import com.bupt.ta.model.*;
+import com.bupt.ta.service.*;
+import com.bupt.ta.service.MatchHelper.ApplicantMatch;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,60 +13,95 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
+@WebServlet("/mo/dashboard")
 public class MODashboardServlet extends HttpServlet {
+    private final ModuleOrganiserService moService = new ModuleOrganiserService();
+    private final JobService jobService = new JobService();
+    private final ApplicationService applicationService = new ApplicationService();
+    private final MatchHelper matchHelper = new MatchHelper();
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        HttpSession session = req.getSession(false);
-        ModuleOrganiser mo = session != null ? (ModuleOrganiser) session.getAttribute("mo") : null;
-        if (mo == null) {
+        ModuleOrganiser user = (ModuleOrganiser) req.getSession().getAttribute("moUser");
+        if (user == null) {
             resp.sendRedirect(req.getContextPath() + "/mo/auth");
             return;
         }
-        mo = WebApp.getMoService().findById(mo.getId()).orElse(mo);
-        req.setAttribute("mo", mo);
-        List<Job> myJobs = new ArrayList<>();
-        for (Job j : WebApp.getJobService().findAll())
-            if (mo.getId().equals(j.getMoId())) myJobs.add(j);
-        req.setAttribute("myJobs", myJobs);
-        String jobId = req.getParameter("jobId");
-        if (jobId != null && !jobId.trim().isEmpty()) {
-            List<Map<String, Object>> appsWithStats = MatchHelper.applicationsWithStats(jobId.trim(),
-                    WebApp.getApplicantService(), WebApp.getJobService(), WebApp.getApplicationService());
-            req.setAttribute("applicationsWithStats", appsWithStats);
-            req.setAttribute("selectedJobId", jobId.trim());
+        req.setAttribute("mo", user);
+        try {
+            List<Job> myJobs = jobService.findByModuleOrganiserId(user.getId());
+            req.setAttribute("myJobs", myJobs);
+            String jobId = req.getParameter("jobId");
+            if (jobId != null && !jobId.isEmpty()) {
+                List<ApplicantMatch> recommended = matchHelper.recommendApplicantsForJobBalanced(jobId);
+                List<Application> applicationsForJob = applicationService.findByJobId(jobId);
+                req.setAttribute("applicantsForJob", recommended);
+                req.setAttribute("applicationsForJob", applicationsForJob);
+                req.setAttribute("selectedJobId", jobId);
+            }
+        } catch (Exception e) {
+            req.setAttribute("error", e.getMessage());
         }
         req.getRequestDispatcher("/mo/dashboard.jsp").forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        HttpSession session = req.getSession(false);
-        ModuleOrganiser mo = session != null ? (ModuleOrganiser) session.getAttribute("mo") : null;
-        if (mo == null) {
+        req.setCharacterEncoding("UTF-8");
+        ModuleOrganiser user = (ModuleOrganiser) req.getSession().getAttribute("moUser");
+        if (user == null) {
             resp.sendRedirect(req.getContextPath() + "/mo/auth");
             return;
         }
         String action = req.getParameter("action");
-        if ("postJob".equals(action)) {
+        if ("createJob".equals(action)) {
             String title = req.getParameter("title");
-            String moduleCode = req.getParameter("moduleCode");
+            String description = req.getParameter("description");
+            String type = req.getParameter("type");
             String skillsStr = req.getParameter("requiredSkills");
-            List<String> skills = new ArrayList<>();
-            if (skillsStr != null && !skillsStr.trim().isEmpty())
-                for (String s : skillsStr.split(",")) if (!s.trim().isEmpty()) skills.add(s.trim());
-            if (title != null && !title.trim().isEmpty() && moduleCode != null && !moduleCode.trim().isEmpty())
-                WebApp.getJobService().create(title.trim(), moduleCode.trim(), mo.getId(), skills);
-        } else if ("select".equals(action)) {
-            String appId = req.getParameter("applicationId");
-            if (appId != null && !appId.trim().isEmpty())
-                WebApp.getApplicationService().selectApplicant(appId.trim());
-        }
-        String jobId = req.getParameter("jobId");
-        if (jobId != null && !jobId.isEmpty())
-            resp.sendRedirect(req.getContextPath() + "/mo/dashboard?jobId=" + java.net.URLEncoder.encode(jobId, "UTF-8"));
-        else
+            if (title != null && !title.trim().isEmpty()) {
+                List<String> skills = new ArrayList<>();
+                if (skillsStr != null) {
+                    for (String s : skillsStr.split("[,，\\s]+")) {
+                        if (!s.trim().isEmpty()) skills.add(s.trim());
+                    }
+                }
+                try {
+                    jobService.create(title.trim(), user.getId(), description != null ? description.trim() : "",
+                            type != null ? type : "course_ta", skills);
+                } catch (Exception ignored) {}
+            }
             resp.sendRedirect(req.getContextPath() + "/mo/dashboard");
+            return;
+        }
+        if ("closeJob".equals(action)) {
+            String jobId = req.getParameter("jobId");
+            if (jobId != null) {
+                try {
+                    Optional<Job> j = jobService.findById(jobId);
+                    if (j.isPresent() && user.getId().equals(j.get().getModuleOrganiserId())) {
+                        j.get().setStatus(Job.STATUS_CLOSED);
+                        jobService.update(j.get());
+                    }
+                } catch (Exception ignored) {}
+            }
+            resp.sendRedirect(req.getContextPath() + "/mo/dashboard");
+            return;
+        }
+        if ("applicationStatus".equals(action)) {
+            String appId = req.getParameter("applicationId");
+            String status = req.getParameter("status");
+            if (appId != null && status != null
+                    && (Application.STATUS_ACCEPTED.equals(status) || Application.STATUS_REJECTED.equals(status))) {
+                try {
+                    applicationService.updateStatus(appId, status);
+                } catch (Exception ignored) {}
+            }
+            resp.sendRedirect(req.getContextPath() + "/mo/dashboard");
+            return;
+        }
+        doGet(req, resp);
     }
 }
