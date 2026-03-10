@@ -4,61 +4,52 @@ import com.bupt.ta.model.Job;
 import com.bupt.ta.storage.Storage;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class JobService {
-    private static final String FILE = "jobs.json";
-    private final Storage storage;
-
-    public JobService(Storage storage) {
-        this.storage = storage;
+    public List<Job> findAll() throws IOException {
+        return Storage.loadJobs();
     }
 
-    public List<Job> findAll() {
-        return storage.loadList(FILE, Job.class);
+    public List<Job> findOpen() throws IOException {
+        return Storage.loadJobs().stream()
+                .filter(j -> Job.STATUS_OPEN.equals(j.getStatus()))
+                .collect(Collectors.toList());
     }
 
-    public List<Job> findOpen() {
-        List<Job> list = new ArrayList<>();
-        for (Job j : findAll()) {
-            if ("OPEN".equalsIgnoreCase(j.getStatus())) {
-                list.add(j);
+    public List<Job> findByModuleOrganiserId(String moId) throws IOException {
+        return Storage.loadJobs().stream()
+                .filter(j -> moId.equals(j.getModuleOrganiserId()))
+                .collect(Collectors.toList());
+    }
+
+    public Optional<Job> findById(String id) throws IOException {
+        return Storage.loadJobs().stream().filter(j -> id.equals(j.getId())).findFirst();
+    }
+
+    public Job create(String title, String moId, String description, String type, List<String> requiredSkills) throws IOException {
+        List<Job> list = Storage.loadJobs();
+        Job job = new Job(UUID.randomUUID().toString(), title, moId, description, type);
+        if (requiredSkills != null) {
+            job.setRequiredSkills(requiredSkills);
+        }
+        list.add(job);
+        Storage.saveJobs(list);
+        return job;
+    }
+
+    public boolean update(Job job) throws IOException {
+        List<Job> list = Storage.loadJobs();
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).getId().equals(job.getId())) {
+                list.set(i, job);
+                Storage.saveJobs(list);
+                return true;
             }
         }
-        return list;
-    }
-
-    public Optional<Job> findById(String id) {
-        return findAll().stream().filter(j -> id.equals(j.getId())).findFirst();
-    }
-
-    public Job create(String title, String moduleCode, String moId, List<String> requiredSkills) {
-        Job j = new Job(UUID.randomUUID().toString(), title, moduleCode, moId);
-        if (requiredSkills != null) {
-            j.setRequiredSkills(requiredSkills);
-        }
-        save(j);
-        return j;
-    }
-
-    public void save(Job job) {
-        List<Job> list = findAll();
-        list.removeIf(j -> j.getId().equals(job.getId()));
-        list.add(job);
-        try {
-            storage.saveList(FILE, list);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save jobs", e);
-        }
-    }
-
-    public void closeJob(String jobId) {
-        findById(jobId).ifPresent(j -> {
-            j.setStatus("CLOSED");
-            save(j);
-        });
+        return false;
     }
 }

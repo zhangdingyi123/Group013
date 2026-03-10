@@ -1,30 +1,53 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%
-  String ctx = request.getContextPath();
-%>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>助教注册 - TA 招聘系统</title>
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应聘者注册 - 助教招聘系统</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=3">
+    <style>
+      *{box-sizing:border-box} body{margin:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;padding:2rem 0}
+      .form-page{max-width:400px;margin:0 auto;padding:2.25rem;background:#fff;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.08);border:1px solid #e2e8f0}
+      .form-page h1{font-size:1.4rem;font-weight:600;margin:0 0 1.5rem;text-align:center}
+      .form-group{margin-bottom:1.1rem}.form-group label{display:block;font-size:.9rem;font-weight:500;margin-bottom:.4rem}
+      .form-group input{width:100%;padding:.65rem .85rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.95rem}
+      .form-group input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px #dbeafe}
+      .form-actions{margin-top:1.25rem}
+      .btn{display:inline-block;padding:.65rem 1.35rem;border:none;border-radius:6px;font-size:.95rem;font-weight:500;cursor:pointer;width:100%;text-align:center;background:#2563eb;color:#fff;font-family:inherit}
+      .btn:hover{background:#1d4ed8}.error{color:#dc2626;font-size:.9rem;margin-bottom:1rem;padding:.6rem .85rem;background:#fef2f2;border-radius:6px}
+      .links{text-align:center;margin-top:1.25rem;font-size:.9rem;color:#64748b}.links a{color:#2563eb;text-decoration:none}.links a:hover{text-decoration:underline}
+    </style>
 </head>
-<body class="page-auth">
-  <div class="auth-wrap">
-    <div class="auth-back"><a href="<%= ctx %>/home">← 返回首页</a></div>
-    <div class="auth-card">
-      <h1>助教 · 注册</h1>
-      <% if (request.getAttribute("error") != null) { %>
-      <div class="msg-error"><%= request.getAttribute("error") %></div>
-      <% } %>
-      <form action="<%= ctx %>/ta/register" method="post" class="auth-form">
-        <label>用户名 <input type="text" name="name" required placeholder="张三" autocomplete="name"></label>
-        <label>邮箱 <input type="email" name="email" required placeholder="your@email.com" autocomplete="email"></label>
-        <button type="submit" class="btn">注册并进入工作台</button>
-      </form>
-      <p class="auth-prompt">已有账号？ <a href="<%= ctx %>/ta/auth" class="btn-link">去登录</a></p>
+<body>
+    <div class="form-page">
+        <h1>应聘者注册</h1>
+        <% if (request.getAttribute("error") != null) { %>
+        <p class="error"><%= request.getAttribute("error") %></p>
+        <% } %>
+        <form method="post" action="${pageContext.request.contextPath}/ta/auth">
+            <input type="hidden" name="action" value="confirm">
+            <div class="form-group">
+                <label>姓名 *</label>
+                <input type="text" name="name" required placeholder="张三" value="<%= request.getAttribute("regName") != null ? request.getAttribute("regName") : "" %>">
+            </div>
+            <div class="form-group">
+                <label>学号 *</label>
+                <input type="text" name="studentId" required placeholder="请输入学号" value="<%= request.getAttribute("regStudentId") != null ? request.getAttribute("regStudentId") : "" %>">
+            </div>
+            <div class="form-group">
+                <label>邮箱 *</label>
+                <input type="email" name="email" required placeholder="your@email.com" value="<%= request.getAttribute("regEmail") != null ? request.getAttribute("regEmail") : "" %>">
+            </div>
+            <div class="form-group">
+                <label>密码 *</label>
+                <input type="password" name="password" required placeholder="请设置登录密码">
+            </div>
+            <div class="form-actions">
+            <button type="submit" class="btn btn-primary">下一步：个人信息核准</button>
+        </div>
+        </form>
+        <p class="links"><a href="${pageContext.request.contextPath}/ta/auth">已有账号？登录</a> &nbsp;|&nbsp; <a href="${pageContext.request.contextPath}/">返回首页</a></p>
     </div>
-  </div>
 </body>
 </html>
