@@ -3,8 +3,24 @@
     "id": "3a47a26d-3568-4149-b395-1a7ebc2c9a91",
     "applicantId": "41c26217-0756-4b4d-b133-ea7501f5c9f1",
     "jobId": "3f0895b1-7dab-40a2-b2df-d470035a138f",
-    "status": "pending",
+    "status": "cancelled",
     "note": "",
     "appliedAt": 1773115026843
+  },
+  {
+    "id": "0c1ba55c-3f68-4e31-8824-63e66eef0e79",
+    "applicantId": "26066a47-75ab-4bbd-8400-d3fa1bedd3ed",
+    "jobId": "3f0895b1-7dab-40a2-b2df-d470035a138f",
+    "status": "pending",
+    "note": "",
+    "appliedAt": 1773125247771
+  },
+  {
+    "id": "f62fb510-6b1b-43e3-8c3d-d1fe061e060d",
+    "applicantId": "41c26217-0756-4b4d-b133-ea7501f5c9f1",
+    "jobId": "job-007",
+    "status": "pending",
+    "note": "",
+    "appliedAt": 1773134775493
   }
 ]

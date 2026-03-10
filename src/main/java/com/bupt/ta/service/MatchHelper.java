@@ -162,4 +162,22 @@ public class MatchHelper {
         }
         return new ArrayList<>(gaps);
     }
+
+    /**
+     * 根据上传的简历文本，识别与当前开放岗位需求匹配的技能，作为「从简历得到的优点」。
+     * 仅当简历为 .txt 且能解析文本时返回；否则返回空列表。
+     */
+    public List<String> getResumeBasedStrengths(Applicant applicant, String resumeText, List<Job> openJobs) throws IOException {
+        Set<String> knownSkills = new HashSet<>();
+        for (Job j : openJobs) {
+            if (j.getRequiredSkills() != null) {
+                knownSkills.addAll(j.getRequiredSkills());
+            }
+        }
+        if (knownSkills.isEmpty() || resumeText == null || resumeText.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<String> fromResume = extractSkillsFromResume(resumeText, knownSkills);
+        return new ArrayList<>(fromResume);
+    }
 }

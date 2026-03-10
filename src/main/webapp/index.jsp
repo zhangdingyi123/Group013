@@ -7,7 +7,6 @@
     <title>助教招聘系统 - 北京邮电大学国际学院</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=3">
     <style>
-      /* 内联关键样式，确保外部 CSS 未加载时首页仍有优化效果 */
       * { box-sizing: border-box; }
       body.home { margin: 0; font-family: "PingFang SC","Microsoft YaHei",sans-serif; min-height: 100vh;
         background: linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%); color: #1e293b; }
@@ -44,10 +43,10 @@
                 <h2>课程组织者入口</h2>
                 <p>发布岗位、筛选应聘者、录用管理</p>
             </a>
-            <a href="${pageContext.request.contextPath}/admin/workload" class="card">
+            <a href="<%= request.getContextPath() %>/admin/auth" class="card">
                 <div class="card-icon">📊</div>
                 <h2>管理员 · 工作负荷</h2>
-                <p>查看助教整体工作负荷</p>
+                <p>登录后查看助教整体工作负荷</p>
             </a>
         </main>
         <footer>

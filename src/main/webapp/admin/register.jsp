@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>课程组织者登录 - 助教招聘系统</title>
+    <title>管理员注册 - 助教招聘系统</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=3">
     <style>
       *{box-sizing:border-box} body{margin:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;padding:2rem 0}
@@ -21,28 +21,29 @@
 </head>
 <body>
     <div class="form-page">
-        <h1>课程组织者登录</h1>
+        <h1>管理员注册</h1>
         <% if (request.getAttribute("error") != null) { %>
         <p class="error"><%= request.getAttribute("error") %></p>
         <% } %>
-        <form method="post" action="${pageContext.request.contextPath}/mo/auth">
-            <input type="hidden" name="action" value="login">
-            <% if (request.getParameter("returnUrl") != null && !request.getParameter("returnUrl").isEmpty()) { %>
-            <input type="hidden" name="returnUrl" value="<%= request.getParameter("returnUrl") %>">
-            <% } %>
+        <form method="post" action="${pageContext.request.contextPath}/admin/auth">
+            <input type="hidden" name="action" value="register">
             <div class="form-group">
-                <label>邮箱</label>
-                <input type="email" name="email" required placeholder="mo@bupt.edu.cn">
+                <label>姓名</label>
+                <input type="text" name="name" placeholder="可选">
             </div>
             <div class="form-group">
-                <label>密码</label>
+                <label>邮箱 *</label>
+                <input type="email" name="email" required placeholder="admin@bupt.edu.cn">
+            </div>
+            <div class="form-group">
+                <label>密码 *</label>
                 <input type="password" name="password" required>
             </div>
             <div class="form-actions">
-            <button type="submit" class="btn btn-primary">登录</button>
-        </div>
+                <button type="submit" class="btn">注册</button>
+            </div>
         </form>
-        <p class="links"><a href="${pageContext.request.contextPath}/mo/register.jsp">没有账号？注册</a> &nbsp;|&nbsp; <a href="${pageContext.request.contextPath}/">返回首页</a></p>
+        <p class="links"><a href="${pageContext.request.contextPath}/admin/auth">已有账号？登录</a> &nbsp;|&nbsp; <a href="${pageContext.request.contextPath}/">返回首页</a></p>
     </div>
 </body>
 </html>

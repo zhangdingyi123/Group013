@@ -1,5 +1,6 @@
 package com.bupt.ta.web;
 
+import com.bupt.ta.model.Admin;
 import com.bupt.ta.model.Applicant;
 import com.bupt.ta.model.Application;
 import com.bupt.ta.service.ApplicantService;
@@ -15,8 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 管理员：查看助教整体工作负荷（每人被录用的岗位数）。
- * 简易管理员：无登录，仅展示负荷视图；生产环境应加权限控制。
+ * 管理员：查看助教整体工作负荷（每人被录用的岗位数）。需登录后访问。
  */
 @WebServlet("/admin/workload")
 public class AdminServlet extends HttpServlet {
@@ -25,6 +25,12 @@ public class AdminServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Admin admin = (Admin) req.getSession().getAttribute("adminUser");
+        if (admin == null) {
+            resp.sendRedirect(req.getContextPath() + "/admin/auth");
+            return;
+        }
+        req.setAttribute("admin", admin);
         try {
             List<Application> all = applicationService.findAll();
             Map<String, Integer> workload = new HashMap<>();

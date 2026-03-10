@@ -44,7 +44,7 @@ public class ApplicationService {
     public Application apply(String applicantId, String jobId, String note) throws IOException {
         List<Application> list = Storage.loadApplications();
         if (list.stream().anyMatch(a -> applicantId.equals(a.getApplicantId()) && jobId.equals(a.getJobId()))) {
-            return null; // already applied
+            return null; // 只要存在该应聘者+岗位的申请记录（不论状态），视为已申请
         }
         Optional<Job> job = jobService.findById(jobId);
         if (job.isEmpty() || !Job.STATUS_OPEN.equals(job.get().getStatus())) {

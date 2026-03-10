@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 5 * 1024 * 1024)
 @WebServlet("/ta/dashboard")
@@ -67,8 +69,15 @@ public class TADashboardServlet extends HttpServlet {
             }
             List<String> resumeSkillGaps = matchHelper.getResumeBasedSkillGaps(user, resumeText, openJobs);
             req.setAttribute("resumeSkillGaps", resumeSkillGaps);
+            List<String> resumeStrengths = matchHelper.getResumeBasedStrengths(user, resumeText, openJobs);
+            req.setAttribute("resumeStrengths", resumeStrengths);
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
+        }
+        String applyMessage = (String) req.getSession().getAttribute("applyMessage");
+        if (applyMessage != null) {
+            req.getSession().removeAttribute("applyMessage");
+            req.setAttribute("applyMessage", applyMessage);
         }
         req.getRequestDispatcher("/ta/dashboard.jsp").forward(req, resp);
     }
@@ -105,7 +114,7 @@ public class TADashboardServlet extends HttpServlet {
             try {
                 Part filePart = req.getPart("resumeFile");
                 if (filePart != null && filePart.getSize() > 0) {
-                    String fn = filePart.getSubmittedFileName();
+                    String fn = getSubmittedFileName(filePart);
                     if (fn != null && !fn.trim().isEmpty()) {
                         String ext = fn.contains(".") ? fn.substring(fn.lastIndexOf('.')).toLowerCase() : "";
                         if (ext.equals(".txt") || ext.equals(".pdf") || ext.equals(".doc") || ext.equals(".docx")) {
@@ -134,7 +143,10 @@ public class TADashboardServlet extends HttpServlet {
             String note = req.getParameter("note");
             if (jobId != null && !jobId.isEmpty()) {
                 try {
-                    applicationService.apply(user.getId(), jobId, note);
+                    Application applied = applicationService.apply(user.getId(), jobId, note);
+                    if (applied == null && applicationService.findByApplicantAndJob(user.getId(), jobId).isPresent()) {
+                        req.getSession().setAttribute("applyMessage", "您已经申请过该职位");
+                    }
                 } catch (Exception ignored) {}
             }
             resp.sendRedirect(req.getContextPath() + "/ta/dashboard");
@@ -155,6 +167,22 @@ public class TADashboardServlet extends HttpServlet {
             return;
         }
         doGet(req, resp);
+    }
+
+    /**
+     * 从 Part 的 Content-Disposition 头解析文件名，兼容 Servlet 3.0（Tomcat 7 无 getSubmittedFileName）。
+     */
+    private static String getSubmittedFileName(Part part) {
+        if (part == null) return null;
+        String cd = part.getHeader("Content-Disposition");
+        if (cd == null) return null;
+        // 匹配 filename="xxx" 或 filename=xxx 或 filename*=UTF-8''xxx
+        Matcher m = Pattern.compile("filename\\*?=(?:UTF-8'')?[\"']?([^\"';\\r\\n]+)[\"']?").matcher(cd);
+        if (m.find()) {
+            String name = m.group(1).trim();
+            if (!name.isEmpty()) return name;
+        }
+        return null;
     }
 
     public static class ApplicationWithJob {

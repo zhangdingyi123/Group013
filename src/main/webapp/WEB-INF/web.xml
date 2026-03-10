@@ -11,4 +11,14 @@
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
+
+    <!-- 管理员登录/注册，显式映射避免点击入口无反应 -->
+    <servlet>
+        <servlet-name>AdminAuthServlet</servlet-name>
+        <servlet-class>com.bupt.ta.web.AdminAuthServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminAuthServlet</servlet-name>
+        <url-pattern>/admin/auth</url-pattern>
+    </servlet-mapping>
 </web-app>
