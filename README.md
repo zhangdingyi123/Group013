@@ -40,7 +40,7 @@ mvn clean package
 
 在项目目录下会生成 **`target/ta-recruitment.war`**。将其拷贝到 Tomcat 的 `webapps/` 目录，启动 Tomcat 后访问：
 
-- **http://localhost:8080/ta-recruitment/**
+- **http://localhost:8081/ta-recruitment/**
 
 （端口以实际 Tomcat 配置为准。）
 
@@ -52,9 +52,9 @@ mvn tomcat7:run
 
 启动后浏览器访问：
 
-- **http://localhost:8080/ta-recruitment/**
+- **http://localhost:8081/ta-recruitment/**
 
-（插件默认端口为 8080，上下文路径为 `/ta-recruitment`，可在 `pom.xml` 中修改。）
+（插件默认端口为 8081，上下文路径为 `/ta-recruitment`，可在 `pom.xml` 中修改。）
 
 ### 方式三：在 IDE 中运行
 
