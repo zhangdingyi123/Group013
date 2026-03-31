@@ -42,7 +42,6 @@ mvn clean package
 
 在项目目录下会生成 **`target/ta-recruitment.war`**。将其拷贝到 Tomcat 的 `webapps/` 目录，启动 Tomcat 后访问：
 
-- **http://localhost:8082/ta-recruitment/**
 
 （端口以实际 Tomcat 配置为准。）
 
@@ -133,12 +132,6 @@ mvn tomcat7:run
 
 启动后浏览器访问：
 
-- **http://localhost:8082/ta-recruitment/**（若改了端口，请把 URL 里的端口一并改掉）
-
-**若启动失败：**
-
-- **`Address already in use … 8082`**：本机已有进程占用 8082（例如上一次 `tomcat7:run` 未退出）。结束该进程，或换端口：`mvn tomcat7:run -Dmaven.tomcat.port=8083`。
-- **`Exception starting filter … NoStoreSensitivePagesFilter` / `AbstractMethodError` … `init(FilterConfig)`**：请拉取最新代码；过滤器需实现 `init` / `destroy` 空方法以兼容内嵌 Tomcat 7。
 
 ### 方式三：在 IDE 中运行
 
