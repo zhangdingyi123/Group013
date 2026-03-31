@@ -13,6 +13,13 @@
     if (applicantsForJob == null) applicantsForJob = java.util.Collections.emptyList();
     if (applicationsForJob == null) applicationsForJob = java.util.Collections.emptyList();
     String pageTitle = job != null ? ("筛选应聘者 - " + job.getTitle()) : "筛选应聘者";
+    String filterAttr = (String) request.getAttribute("filter");
+    if (filterAttr == null) filterAttr = "all";
+    String qAttr = (String) request.getAttribute("q");
+    if (qAttr == null) qAttr = "";
+    String qAttrEsc = qAttr.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;");
+    Integer totalApplicantsForJob = (Integer) request.getAttribute("totalApplicantsForJob");
+    if (totalApplicantsForJob == null) totalApplicantsForJob = 0;
 %>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -34,6 +41,7 @@
       .btn{display:inline-block;padding:.4rem .85rem;border:none;border-radius:6px;font-size:.875rem;font-weight:500;cursor:pointer;font-family:inherit;text-decoration:none}
       .btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
       .btn-secondary{background:#e2e8f0;color:#475569}.btn-secondary:hover{background:#cbd5e1}
+      .btn-small{font-size:.8rem;padding:.35rem .65rem}
       .table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #e2e8f0;margin-top:.5rem}
       table{width:100%;border-collapse:collapse;font-size:.9rem}
       th,td{padding:.7rem .9rem;text-align:left;border-bottom:1px solid #e2e8f0}
@@ -44,26 +52,48 @@
       .badge-pending{background:#fef3c7;color:#92400e}.badge-accepted{background:#d1fae5;color:#065f46}.badge-rejected{background:#fee2e2;color:#991b1b}
       .score{font-weight:600;color:#2563eb}.gaps{font-size:.85rem;color:#64748b}
       .empty-hint{color:#64748b;font-size:.9rem;padding:1rem 0}
+      .filter-bar{display:flex;flex-wrap:wrap;gap:.65rem;align-items:flex-end;margin-bottom:1rem;padding:.85rem 1rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
+      .filter-bar label{font-size:.8rem;font-weight:500;color:#475569;display:block;margin-bottom:.25rem}
+      .filter-bar select,.filter-bar input[type=text]{padding:.45rem .65rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.875rem;font-family:inherit;min-width:140px}
+      .filter-bar input[type=text]{min-width:180px}
+      .filter-bar .btn{margin-bottom:0}
     </style>
 </head>
 <body>
     <div class="page">
         <div class="page-header">
-            <a href="${pageContext.request.contextPath}/mo/dashboard" class="back-link">← 返回我的岗位</a>
+            <a href="${pageContext.request.contextPath}/mo/dashboard?tab=positions" class="back-link">← 返回我的岗位</a>
             <h1><%= job != null ? ("筛选应聘者：" + job.getTitle()) : "筛选应聘者" %></h1>
         </div>
 
         <% if (job == null) { %>
         <div class="section">
             <p class="empty-hint" style="margin:0;"><%= pageError != null ? pageError : "岗位不存在或无权访问。" %></p>
-            <p style="margin-top:1rem;"><a href="${pageContext.request.contextPath}/mo/dashboard" class="back-link">返回我的岗位</a></p>
+            <p style="margin-top:1rem;"><a href="${pageContext.request.contextPath}/mo/dashboard?tab=positions" class="back-link">返回我的岗位</a></p>
         </div>
         <% } else { %>
         <div class="section">
             <h2>系统推荐（按匹配度与负荷均衡排序）</h2>
-            <p class="section-desc">匹配分：岗位技能匹配度；技能短板：岗位需要但应聘者未体现的技能。可根据此列表进行录用或拒绝。</p>
+            <p class="section-desc">匹配分：岗位技能匹配度；技能短板：岗位需要但应聘者未体现的技能。可根据此列表进行录用或拒绝。<strong>录用任意一名待处理应聘者后，该岗位将自动关闭</strong>，且关闭后不可再进入本筛选页。</p>
+            <form class="filter-bar" method="get" action="${pageContext.request.contextPath}/mo/job-applicants">
+                <input type="hidden" name="jobId" value="<%= job.getId() %>">
+                <div>
+                    <label for="filter-status">申请状态</label>
+                    <select id="filter-status" name="filter">
+                        <option value="all" <%= "all".equals(filterAttr) ? "selected" : "" %>>全部</option>
+                        <option value="pending" <%= "pending".equals(filterAttr) ? "selected" : "" %>>待处理</option>
+                        <option value="accepted" <%= "accepted".equals(filterAttr) ? "selected" : "" %>>已录用</option>
+                        <option value="rejected" <%= "rejected".equals(filterAttr) ? "selected" : "" %>>已拒绝</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-q">姓名或邮箱</label>
+                    <input type="text" id="filter-q" name="q" value="<%= qAttrEsc %>" placeholder="关键词（可选）" autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-secondary btn-small">筛选</button>
+            </form>
             <% if (applicantsForJob.isEmpty()) { %>
-            <p class="empty-hint">该岗位暂无申请人。</p>
+            <p class="empty-hint"><%= totalApplicantsForJob > 0 ? "无符合当前筛选条件的应聘者，请调整筛选条件。" : "该岗位暂无申请人。" %></p>
             <% } else { %>
             <div class="table-wrap">
             <table>
@@ -81,6 +111,8 @@
                             break;
                         }
                     }
+                    String dispName = m.applicant.getName() != null ? m.applicant.getName() : "";
+                    String jsName = dispName.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
                 %>
                     <tr>
                         <td><%= m.applicant.getName() %></td>
@@ -88,21 +120,27 @@
                         <td><span class="score"><%= m.score %> 分</span></td>
                         <td class="gaps"><%= m.gaps != null && !m.gaps.isEmpty() ? String.join(", ", m.gaps) : "无" %></td>
                         <td>
-                            <% if ("pending".equals(status)) { %>
-                            <form method="post" action="${pageContext.request.contextPath}/mo/job-applicants" style="display:inline;">
+                            <% if ("pending".equals(status) && appId != null && !appId.isEmpty()) { %>
+                            <form method="post" action="${pageContext.request.contextPath}/mo/job-applicants" style="display:inline;" onsubmit="return confirm('确定录用「<%= jsName %>」吗？\n录用后该岗位将自动关闭，且无法再筛选其他应聘者。');">
                                 <input type="hidden" name="action" value="applicationStatus">
                                 <input type="hidden" name="jobId" value="<%= job.getId() %>">
                                 <input type="hidden" name="applicationId" value="<%= appId %>">
                                 <input type="hidden" name="status" value="accepted">
+                                <input type="hidden" name="filter" value="<%= filterAttr %>">
+                                <input type="hidden" name="q" value="<%= qAttrEsc %>">
                                 <button type="submit" class="btn btn-primary btn-small">录用</button>
                             </form>
-                            <form method="post" action="${pageContext.request.contextPath}/mo/job-applicants" style="display:inline;">
+                            <form method="post" action="${pageContext.request.contextPath}/mo/job-applicants" style="display:inline;" onsubmit="return confirm('确定拒绝录用「<%= jsName %>」吗？');">
                                 <input type="hidden" name="action" value="applicationStatus">
                                 <input type="hidden" name="jobId" value="<%= job.getId() %>">
                                 <input type="hidden" name="applicationId" value="<%= appId %>">
                                 <input type="hidden" name="status" value="rejected">
+                                <input type="hidden" name="filter" value="<%= filterAttr %>">
+                                <input type="hidden" name="q" value="<%= qAttrEsc %>">
                                 <button type="submit" class="btn btn-secondary btn-small">拒绝</button>
                             </form>
+                            <% } else if ("pending".equals(status)) { %>
+                            <span class="empty-hint" style="padding:0;font-size:.85rem;">无有效申请记录</span>
                             <% } else { %>
                             <span class="badge badge-<%= "accepted".equals(status) ? "accepted" : "rejected" %>"><%= "accepted".equals(status) ? "已录用" : "已拒绝" %></span>
                             <% } %>

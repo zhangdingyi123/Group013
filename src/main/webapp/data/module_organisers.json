@@ -3,7 +3,7 @@
     "id": "ee9b2d8d-d847-4c9a-b428-1c9ab3d136e3",
     "name": "丁",
     "email": "1111@111.com",
-    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI=",
+    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI\u003d",
     "department": "高等数学",
     "createdAt": 1773113832219
   },
@@ -11,7 +11,7 @@
     "id": "mo-001-zhang",
     "name": "张老师",
     "email": "zhang@bupt.edu.cn",
-    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI=",
+    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI\u003d",
     "department": "计算机科学与技术",
     "createdAt": 1710000000000
   },
@@ -19,7 +19,7 @@
     "id": "mo-002-li",
     "name": "李老师",
     "email": "li@bupt.edu.cn",
-    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI=",
+    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI\u003d",
     "department": "高等数学",
     "createdAt": 1710000001000
   },
@@ -27,7 +27,7 @@
     "id": "mo-003-wang",
     "name": "王老师",
     "email": "wang@bupt.edu.cn",
-    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI=",
+    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI\u003d",
     "department": "大学英语",
     "createdAt": 1710000002000
   },
@@ -35,7 +35,7 @@
     "id": "mo-004-zhao",
     "name": "赵老师",
     "email": "zhao@bupt.edu.cn",
-    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI=",
+    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI\u003d",
     "department": "数据结构与算法",
     "createdAt": 1710000003000
   },
@@ -43,8 +43,16 @@
     "id": "mo-005-chen",
     "name": "陈老师",
     "email": "chen@bupt.edu.cn",
-    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI=",
+    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI\u003d",
     "department": "教务办",
     "createdAt": 1710000004000
+  },
+  {
+    "id": "c7ea2438-938c-481e-ad5a-5a7b0195666f",
+    "name": "Dingyi Zhang",
+    "email": "333@333",
+    "passwordHash": "jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI\u003d",
+    "department": "",
+    "createdAt": 1774952038660
   }
 ]

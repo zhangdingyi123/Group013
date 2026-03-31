@@ -43,8 +43,9 @@ public class ApplicationService {
 
     public Application apply(String applicantId, String jobId, String note) throws IOException {
         List<Application> list = Storage.loadApplications();
-        if (list.stream().anyMatch(a -> applicantId.equals(a.getApplicantId()) && jobId.equals(a.getJobId()))) {
-            return null; // 只要存在该应聘者+岗位的申请记录（不论状态），视为已申请
+        if (list.stream().anyMatch(a -> applicantId.equals(a.getApplicantId()) && jobId.equals(a.getJobId())
+                && !Application.STATUS_CANCELLED.equals(a.getStatus()))) {
+            return null; // 已存在未取消的申请；管理员强行取消后可再次申请
         }
         Optional<Job> job = jobService.findById(jobId);
         if (job.isEmpty() || !Job.STATUS_OPEN.equals(job.get().getStatus())) {
