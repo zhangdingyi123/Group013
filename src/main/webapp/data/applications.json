@@ -11,7 +11,7 @@
     "id": "0c1ba55c-3f68-4e31-8824-63e66eef0e79",
     "applicantId": "26066a47-75ab-4bbd-8400-d3fa1bedd3ed",
     "jobId": "3f0895b1-7dab-40a2-b2df-d470035a138f",
-    "status": "pending",
+    "status": "accepted",
     "note": "",
     "appliedAt": 1773125247771
   },
@@ -22,5 +22,85 @@
     "status": "pending",
     "note": "",
     "appliedAt": 1773134775493
+  },
+  {
+    "id": "8f3a1b2c-4d5e-4f6a-9b0c-1d2e3f4a5b6c",
+    "applicantId": "41c26217-0756-4b4d-b133-ea7501f5c9f1",
+    "jobId": "job-001",
+    "status": "pending",
+    "note": "数据结构成绩优秀，希望承担作业批改与上机答疑。",
+    "appliedAt": 1710100000000
+  },
+  {
+    "id": "7e2d9c8b-1a0f-4e3d-8c7b-6a5f4e3d2c1b",
+    "applicantId": "41c26217-0756-4b4d-b133-ea7501f5c9f1",
+    "jobId": "job-002",
+    "status": "pending",
+    "note": "高数基础扎实，可配合习题课与答疑。",
+    "appliedAt": 1710200000000
+  },
+  {
+    "id": "6c1b8a7f-0e9d-4c2b-8a7f-5e4d3c2b1a0f",
+    "applicantId": "41c26217-0756-4b4d-b133-ea7501f5c9f1",
+    "jobId": "job-005",
+    "status": "accepted",
+    "note": "有 Java/Python 课程项目经验，可辅导实验课。",
+    "appliedAt": 1710300000000
+  },
+  {
+    "id": "5a0f7e6d-8c9b-4a3f-7e6d-5c4b3a2f1e0d",
+    "applicantId": "41c26217-0756-4b4d-b133-ea7501f5c9f1",
+    "jobId": "job-008",
+    "status": "rejected",
+    "note": "希望参与计算机网络实验辅导。",
+    "appliedAt": 1710400000000
+  },
+  {
+    "id": "d1e2f3a4-b5c6-4789-d0e1-f2a3b4c5d6e7",
+    "applicantId": "26066a47-75ab-4bbd-8400-d3fa1bedd3ed",
+    "jobId": "job-003",
+    "status": "pending",
+    "note": "四级 580+，可批改作文与听力辅导。",
+    "appliedAt": 1710510000000
+  },
+  {
+    "id": "c0d1e2f3-a4b5-4678-c9d0-e1f2a3b4c5d6",
+    "applicantId": "26066a47-75ab-4bbd-8400-d3fa1bedd3ed",
+    "jobId": "job-004",
+    "status": "pending",
+    "note": "时间充裕，可参加高数期末监考。",
+    "appliedAt": 1710520000000
+  },
+  {
+    "id": "b9c0d1e2-f3a4-4567-b8c9-d0e1f2a3b4c5d",
+    "applicantId": "26066a47-75ab-4bbd-8400-d3fa1bedd3ed",
+    "jobId": "job-006",
+    "status": "accepted",
+    "note": "可配合英语期末监考（含听力）。",
+    "appliedAt": 1710530000000
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4456-a7b8-c9d0e1f2a3b4c",
+    "applicantId": "e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8",
+    "jobId": "job-001",
+    "status": "pending",
+    "note": "mock：一人多岗示例——数据结构助教。",
+    "appliedAt": 1710540000000
+  },
+  {
+    "id": "97a8b9c0-d1e2-4345-96a7-b8c9d0e1f2a3b",
+    "applicantId": "e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8",
+    "jobId": "job-002",
+    "status": "pending",
+    "note": "mock：一人多岗示例——高数助教。",
+    "appliedAt": 1710550000000
+  },
+  {
+    "id": "8697a8b9-c0d1-4234-85a6-b7c8d9e0f1a2b",
+    "applicantId": "e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8",
+    "jobId": "job-003",
+    "status": "pending",
+    "note": "mock：一人多岗示例——英语四级辅导。",
+    "appliedAt": 1710560000000
   }
 ]

@@ -3,6 +3,7 @@ package com.bupt.ta.web;
 import com.bupt.ta.model.Admin;
 import com.bupt.ta.service.AdminService;
 import com.bupt.ta.util.PasswordUtil;
+import com.bupt.ta.util.SessionLogoutUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -19,7 +20,7 @@ public class AdminAuthServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if ("1".equals(req.getParameter("logout"))) {
-            req.getSession().invalidate();
+            SessionLogoutUtil.invalidateSessionAndClearCookie(req, resp);
             resp.sendRedirect(req.getContextPath() + "/admin/auth");
             return;
         }

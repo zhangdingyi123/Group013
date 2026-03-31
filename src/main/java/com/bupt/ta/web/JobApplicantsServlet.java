@@ -13,8 +13,14 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -36,7 +42,7 @@ public class JobApplicantsServlet extends HttpServlet {
         }
         String jobId = req.getParameter("jobId");
         if (jobId == null || jobId.trim().isEmpty()) {
-            resp.sendRedirect(req.getContextPath() + "/mo/dashboard");
+            resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
             return;
         }
         try {
@@ -46,11 +52,50 @@ public class JobApplicantsServlet extends HttpServlet {
                 req.setAttribute("job", null);
             } else {
                 Job job = jobOpt.get();
+                if (!Job.STATUS_OPEN.equals(job.getStatus())) {
+                    HttpSession session = req.getSession();
+                    session.setAttribute("moNotice", "该岗位已关闭，无法继续筛选应聘者。");
+                    resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
+                    return;
+                }
                 req.setAttribute("job", job);
                 List<ApplicantMatch> recommended = matchHelper.recommendApplicantsForJobBalanced(jobId.trim());
                 List<Application> applicationsForJob = applicationService.findByJobId(jobId.trim());
-                req.setAttribute("applicantsForJob", recommended);
+                Map<String, Application> appByApplicantId = new HashMap<>();
+                for (Application app : applicationsForJob) {
+                    appByApplicantId.put(app.getApplicantId(), app);
+                }
+                String filter = req.getParameter("filter");
+                if (filter == null || filter.isEmpty()) {
+                    filter = "all";
+                } else if (!"all".equals(filter) && !Application.STATUS_PENDING.equals(filter)
+                        && !Application.STATUS_ACCEPTED.equals(filter) && !Application.STATUS_REJECTED.equals(filter)) {
+                    filter = "all";
+                }
+                String q = req.getParameter("q");
+                String qTrim = q != null ? q.trim() : "";
+                String qLower = qTrim.toLowerCase();
+                List<ApplicantMatch> shown = new ArrayList<>();
+                for (ApplicantMatch m : recommended) {
+                    Application app = appByApplicantId.get(m.applicant.getId());
+                    String rowStatus = app != null && app.getStatus() != null ? app.getStatus() : Application.STATUS_PENDING;
+                    if (!"all".equals(filter) && !filter.equals(rowStatus)) {
+                        continue;
+                    }
+                    if (!qLower.isEmpty()) {
+                        String name = m.applicant.getName() != null ? m.applicant.getName().toLowerCase() : "";
+                        String email = m.applicant.getEmail() != null ? m.applicant.getEmail().toLowerCase() : "";
+                        if (!name.contains(qLower) && !email.contains(qLower)) {
+                            continue;
+                        }
+                    }
+                    shown.add(m);
+                }
+                req.setAttribute("applicantsForJob", shown);
+                req.setAttribute("totalApplicantsForJob", recommended.size());
                 req.setAttribute("applicationsForJob", applicationsForJob);
+                req.setAttribute("filter", filter);
+                req.setAttribute("q", qTrim);
             }
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
@@ -68,27 +113,75 @@ public class JobApplicantsServlet extends HttpServlet {
             return;
         }
         String action = req.getParameter("action");
-        if ("applicationStatus".equals(action)) {
-            String appId = req.getParameter("applicationId");
-            String status = req.getParameter("status");
-            if (appId != null && (Application.STATUS_ACCEPTED.equals(status) || Application.STATUS_REJECTED.equals(status))) {
-                try {
-                    Optional<Application> appOpt = applicationService.findById(appId);
-                    if (appOpt.isPresent()) {
-                        String jobId = appOpt.get().getJobId();
-                        Optional<Job> jobOpt = jobService.findById(jobId);
-                        if (jobOpt.isPresent() && user.getId().equals(jobOpt.get().getModuleOrganiserId())) {
-                            applicationService.updateStatus(appId, status);
-                        }
-                    }
-                } catch (Exception ignored) {}
-            }
-            String jobId = req.getParameter("jobId");
-            if (jobId != null && !jobId.trim().isEmpty()) {
-                resp.sendRedirect(req.getContextPath() + "/mo/job-applicants?jobId=" + java.net.URLEncoder.encode(jobId.trim(), "UTF-8"));
+        if (!"applicationStatus".equals(action)) {
+            resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
+            return;
+        }
+        String appId = req.getParameter("applicationId");
+        String status = req.getParameter("status");
+        String jobIdParam = req.getParameter("jobId");
+        HttpSession session = req.getSession();
+        if (appId == null || appId.trim().isEmpty()
+                || (!Application.STATUS_ACCEPTED.equals(status) && !Application.STATUS_REJECTED.equals(status))) {
+            redirectAfterPost(req, resp, jobIdParam);
+            return;
+        }
+        try {
+            Optional<Application> appOpt = applicationService.findById(appId.trim());
+            if (appOpt.isEmpty()) {
+                session.setAttribute("moNotice", "申请记录不存在。");
+                resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
                 return;
             }
+            String jobId = appOpt.get().getJobId();
+            Optional<Job> jobOpt = jobService.findById(jobId);
+            if (jobOpt.isEmpty() || !user.getId().equals(jobOpt.get().getModuleOrganiserId())) {
+                session.setAttribute("moNotice", "无权处理该申请。");
+                resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
+                return;
+            }
+            Job job = jobOpt.get();
+            if (!Job.STATUS_OPEN.equals(job.getStatus())) {
+                session.setAttribute("moNotice", "该岗位已关闭，无法变更申请状态。");
+                resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
+                return;
+            }
+            applicationService.updateStatus(appId.trim(), status);
+            if (Application.STATUS_ACCEPTED.equals(status)) {
+                job.setStatus(Job.STATUS_CLOSED);
+                jobService.update(job);
+                session.setAttribute("moNotice", "已录用该应聘者，岗位已自动关闭。");
+                resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
+                return;
+            }
+            String backJobId = (jobIdParam != null && !jobIdParam.trim().isEmpty()) ? jobIdParam.trim() : jobId;
+            resp.sendRedirect(applicantsListUrl(req.getContextPath(), backJobId,
+                    req.getParameter("filter"), req.getParameter("q")));
+        } catch (Exception e) {
+            session.setAttribute("moNotice", "操作失败，请重试。");
+            resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
         }
-        resp.sendRedirect(req.getContextPath() + "/mo/dashboard");
+    }
+
+    private static void redirectAfterPost(HttpServletRequest req, HttpServletResponse resp, String jobIdParam) throws IOException {
+        String ctx = req.getContextPath();
+        if (jobIdParam != null && !jobIdParam.trim().isEmpty()) {
+            resp.sendRedirect(applicantsListUrl(ctx, jobIdParam.trim(), req.getParameter("filter"), req.getParameter("q")));
+        } else {
+            resp.sendRedirect(ctx + "/mo/dashboard?tab=positions");
+        }
+    }
+
+    /** 返回筛选页 URL，保留状态与关键词（与列表 GET 一致）。 */
+    private static String applicantsListUrl(String ctx, String jobId, String filter, String q) {
+        StringBuilder sb = new StringBuilder(ctx).append("/mo/job-applicants?jobId=")
+                .append(URLEncoder.encode(jobId, StandardCharsets.UTF_8));
+        if (filter != null && !filter.isEmpty() && !"all".equals(filter)) {
+            sb.append("&filter=").append(URLEncoder.encode(filter, StandardCharsets.UTF_8));
+        }
+        if (q != null && !q.trim().isEmpty()) {
+            sb.append("&q=").append(URLEncoder.encode(q.trim(), StandardCharsets.UTF_8));
+        }
+        return sb.toString();
     }
 }

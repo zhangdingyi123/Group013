@@ -5,8 +5,13 @@
     @SuppressWarnings("unchecked")
     List<AdminServlet.WorkloadEntry> workload = (List<AdminServlet.WorkloadEntry>) request.getAttribute("workload");
     Integer totalAssignments = (Integer) request.getAttribute("totalAssignments");
+    Integer taCount = (Integer) request.getAttribute("taCount");
     if (workload == null) workload = java.util.Collections.emptyList();
     if (totalAssignments == null) totalAssignments = 0;
+    if (taCount == null) taCount = 0;
+    @SuppressWarnings("unchecked")
+    java.util.List<AdminServlet.AcceptedAssignment> acceptedDetails = (java.util.List<AdminServlet.AcceptedAssignment>) request.getAttribute("acceptedDetails");
+    if (acceptedDetails == null) acceptedDetails = java.util.Collections.emptyList();
 %>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -16,57 +21,236 @@
     <title>助教工作负荷 - 管理员</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=3">
     <style>
-      *{box-sizing:border-box} body{margin:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;line-height:1.6}
-      .dashboard{max-width:720px;margin:0 auto;padding:1.5rem}
-      .page-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0}
-      .page-header h1{margin:0;font-size:1.4rem;font-weight:600;color:#1e293b}
-      .back-link{padding:.45rem .85rem;color:#2563eb;text-decoration:none;font-size:.9rem;border-radius:6px}
-      .back-link:hover{background:#dbeafe}
-      .logout{font-size:.9rem;color:#64748b;text-decoration:none;padding:.45rem .85rem;border-radius:6px}
-      .logout:hover{color:#dc2626;background:#fef2f2}
-      .summary{background:#dbeafe;color:#2563eb;padding:.75rem 1rem;border-radius:6px;margin-bottom:1.25rem;font-weight:600}
-      .error{color:#dc2626;font-size:.9rem;margin-bottom:1rem;padding:.6rem .85rem;background:#fef2f2;border-radius:6px}
-      .empty-hint{color:#64748b;font-size:.9rem;padding:1rem 0}
-      .table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #e2e8f0;margin-top:.5rem}
+      *{box-sizing:border-box}
+      body.admin-workload-page{
+        margin:0;
+        font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+        color:#1e293b;
+        min-height:100vh;
+        line-height:1.6;
+        background:linear-gradient(165deg,#eef2ff 0%,#e0f2fe 38%,#f1f5f9 72%,#f8fafc 100%);
+        position:relative;
+      }
+      body.admin-workload-page::before{
+        content:"";
+        position:fixed;
+        inset:0;
+        background:
+          radial-gradient(ellipse 90% 55% at 50% -15%,rgba(99,102,241,.14),transparent 55%),
+          radial-gradient(ellipse 70% 45% at 100% 0,rgba(59,130,246,.10),transparent 50%),
+          radial-gradient(ellipse 50% 35% at 0 100%,rgba(14,165,233,.08),transparent 45%);
+        pointer-events:none;
+        z-index:0;
+      }
+      .dashboard.admin-workload{
+        position:relative;
+        z-index:1;
+        max-width:920px;
+        margin:0 auto;
+        padding:clamp(1.25rem,4vw,2.25rem) 1.25rem 2.5rem;
+      }
+      .panel{
+        background:rgba(255,255,255,.78);
+        backdrop-filter:saturate(140%) blur(14px);
+        -webkit-backdrop-filter:saturate(140%) blur(14px);
+        border-radius:16px;
+        border:1px solid rgba(255,255,255,.9);
+        box-shadow:0 4px 24px rgba(15,23,42,.07),0 1px 3px rgba(15,23,42,.04);
+        padding:1.5rem 1.35rem 1.65rem;
+      }
+      @supports not (backdrop-filter:blur(1px)){
+        .panel{background:#fff}
+      }
+      .page-header{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+        align-items:center;
+        gap:.75rem;
+        margin-bottom:1.15rem;
+        padding-bottom:1.1rem;
+        border-bottom:1px solid rgba(226,232,240,.95);
+      }
+      .page-header .back-link{justify-self:start}
+      .page-header .logout{justify-self:end}
+      .page-header h1{
+        margin:0;
+        text-align:center;
+        font-size:clamp(1.2rem,2.8vw,1.45rem);
+        font-weight:700;
+        letter-spacing:-.02em;
+        color:#0f172a;
+        background:linear-gradient(120deg,#1e3a8a,#2563eb,#0d9488);
+        -webkit-background-clip:text;
+        background-clip:text;
+        -webkit-text-fill-color:transparent;
+      }
+      @media (max-width:520px){
+        .page-header{grid-template-columns:1fr 1fr}
+        .page-header h1{grid-column:1/-1;grid-row:1;margin-bottom:.25rem}
+        .page-header .back-link{grid-column:1;grid-row:2}
+        .page-header .logout{grid-column:2;grid-row:2}
+      }
+      .back-link,.logout{
+        font-size:.9rem;
+        text-decoration:none;
+        padding:.5rem .95rem;
+        border-radius:10px;
+        transition:background .2s,color .2s,box-shadow .2s;
+      }
+      .back-link{color:#2563eb;background:rgba(219,234,254,.65);border:1px solid rgba(191,219,254,.8)}
+      .back-link:hover{background:#dbeafe;box-shadow:0 2px 8px rgba(37,99,235,.12)}
+      .logout{color:#64748b;background:rgba(248,250,252,.8);border:1px solid #e2e8f0}
+      .logout:hover{color:#dc2626;background:#fef2f2;border-color:#fecaca}
+      .intro{color:#475569;font-size:.92rem;margin:0 0 1rem}
+      .summary{
+        position:relative;
+        padding:.85rem 1.1rem .85rem 1.25rem;
+        background:linear-gradient(135deg,rgba(219,234,254,.95),rgba(224,242,254,.9));
+        color:#1d4ed8;
+        border-radius:12px;
+        margin-bottom:1.25rem;
+        font-weight:600;
+        border:1px solid rgba(191,219,254,.85);
+        box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
+      }
+      .summary::before{
+        content:"";
+        position:absolute;
+        left:0;top:50%;
+        transform:translateY(-50%);
+        width:4px;height:60%;
+        border-radius:4px;
+        background:linear-gradient(180deg,#2563eb,#0d9488);
+      }
+      .error{color:#dc2626;font-size:.9rem;margin-bottom:1rem;padding:.65rem .95rem;background:#fef2f2;border-radius:10px;border:1px solid #fecaca}
+      .notice{color:#0f766e;font-size:.9rem;margin-bottom:1rem;padding:.65rem .95rem;background:#ecfdf5;border-radius:10px;border:1px solid #99f6e4}
+      .workload-tabs{margin-top:.25rem}
+      .wtab-input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+      .tab-bar{display:flex;gap:.35rem;margin:0 0 0;border-bottom:2px solid #e2e8f0;padding:0}
+      .tab-bar label{
+        flex:1;min-width:0;text-align:center;padding:.65rem 1rem;font-size:.9rem;font-weight:500;color:#64748b;
+        cursor:pointer;border-radius:10px 10px 0 0;border:1px solid transparent;border-bottom:none;margin-bottom:-2px;
+        transition:background .15s,color .15s,border-color .15s;
+      }
+      .tab-bar label:hover{color:#334155;background:rgba(241,245,249,.6)}
+      #wtab-summary:checked ~ .tab-bar label[for="wtab-summary"],
+      #wtab-detail:checked ~ .tab-bar label[for="wtab-detail"]{
+        color:#1d4ed8;font-weight:600;background:rgba(255,255,255,.95);
+        border-color:#e2e8f0;border-bottom-color:#fff;box-shadow:0 -2px 12px rgba(37,99,235,.08);
+      }
+      .tab-panel{display:none;padding-top:1rem}
+      #wtab-summary:checked ~ .tab-panel.panel-summary{display:block}
+      #wtab-detail:checked ~ .tab-panel.panel-detail{display:block}
+      .tab-panel .panel-intro{color:#64748b;font-size:.88rem;margin:0 0 .85rem;line-height:1.55}
+      .btn-danger{display:inline-block;padding:.4rem .75rem;border:none;border-radius:8px;font-size:.82rem;font-weight:500;cursor:pointer;font-family:inherit;background:#fee2e2;color:#991b1b}
+      .btn-danger:hover{background:#fecaca}
+      .empty-hint{color:#64748b;font-size:.9rem;padding:1.25rem 0;text-align:center}
+      .table-wrap{
+        overflow-x:auto;
+        border-radius:12px;
+        border:1px solid #e2e8f0;
+        margin-top:.35rem;
+        background:#fff;
+        box-shadow:0 1px 2px rgba(15,23,42,.04);
+      }
       table{width:100%;border-collapse:collapse;font-size:.9rem}
-      th,td{padding:.7rem .9rem;text-align:left;border-bottom:1px solid #e2e8f0}
+      th,td{padding:.75rem 1rem;text-align:left;border-bottom:1px solid #f1f5f9}
       tr:last-child td{border-bottom:none}
-      th{background:#f1f5f9;color:#1e293b;font-weight:600;font-size:.85rem}
-      tbody tr:hover{background:#f8fafc}
+      th{
+        background:linear-gradient(180deg,#f8fafc,#f1f5f9);
+        color:#334155;
+        font-weight:600;
+        font-size:.82rem;
+        letter-spacing:.02em;
+      }
+      tbody tr{transition:background .15s ease}
+      tbody tr:hover{background:linear-gradient(90deg,rgba(239,246,255,.9),rgba(248,250,252,.95))}
     </style>
 </head>
-<body>
+<body class="admin-workload-page">
     <div class="dashboard admin-workload">
+      <div class="panel">
         <div class="page-header">
             <a href="${pageContext.request.contextPath}/" class="back-link">← 首页</a>
             <h1>助教整体工作负荷</h1>
             <a href="${pageContext.request.contextPath}/admin/auth?logout=1" class="logout">退出登录</a>
         </div>
-        <p>下表为已被录用（accepted）的助教及其当前承担的岗位数。</p>
-        <p class="summary">总录用岗位数：<%= totalAssignments %></p>
+        <p class="intro">下表汇总系统中已被录用（accepted）的助教及其当前承担的岗位数，便于掌握整体人力分配。</p>
+        <p class="summary">承担岗位的助教共 <strong><%= taCount %></strong> 人；录用岗位合计 <strong><%= totalAssignments %></strong> 个</p>
         <% if (request.getAttribute("error") != null) { %>
         <p class="error"><%= request.getAttribute("error") %></p>
+        <% } %>
+        <% if (request.getAttribute("notice") != null) { %>
+        <p class="notice"><%= request.getAttribute("notice") %></p>
         <% } %>
         <% if (workload.isEmpty()) { %>
         <p class="empty-hint">暂无录用记录。</p>
         <% } else { %>
-        <div class="table-wrap">
-        <table>
-            <thead>
-                <tr><th>姓名</th><th>邮箱</th><th>录用岗位数</th></tr>
-            </thead>
-            <tbody>
-            <% for (AdminServlet.WorkloadEntry e : workload) { %>
-                <tr>
-                    <td><%= e.name %></td>
-                    <td><%= e.email %></td>
-                    <td><strong><%= e.count %></strong></td>
-                </tr>
-            <% } %>
-            </tbody>
-        </table>
+        <div class="workload-tabs">
+            <input type="radio" name="wtab" id="wtab-summary" class="wtab-input" checked>
+            <input type="radio" name="wtab" id="wtab-detail" class="wtab-input">
+            <div class="tab-bar" role="tablist" aria-label="工作负荷视图">
+                <label for="wtab-summary" role="tab">按助教汇总</label>
+                <label for="wtab-detail" role="tab">录用明细</label>
+            </div>
+            <div class="tab-panel panel-summary" id="panel-summary" role="tabpanel">
+                <p class="panel-intro">按助教聚合展示每人当前承担的录用岗位数。</p>
+                <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>姓名</th><th>邮箱</th><th>录用岗位数</th></tr>
+                    </thead>
+                    <tbody>
+                    <% for (AdminServlet.WorkloadEntry e : workload) { %>
+                        <tr>
+                            <td><%= e.name %></td>
+                            <td><%= e.email %></td>
+                            <td><strong><%= e.count %></strong></td>
+                        </tr>
+                    <% } %>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+            <div class="tab-panel panel-detail" id="panel-detail" role="tabpanel">
+                <p class="panel-intro">逐条列出录用关系；工作负荷过高时可<strong>强行取消录用</strong>。取消后申请状态为「已取消」；若该岗位已无其他已录用者，岗位将自动重新开放。</p>
+                <% if (acceptedDetails.isEmpty()) { %>
+                <p class="empty-hint">暂无录用明细。</p>
+                <% } else { %>
+                <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>助教</th><th>邮箱</th><th>岗位</th><th>操作</th></tr>
+                    </thead>
+                    <tbody>
+                    <% for (AdminServlet.AcceptedAssignment row : acceptedDetails) {
+                        String dispName = row.applicantName != null ? row.applicantName : "";
+                        String jsName = dispName.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
+                        String jobDisp = row.jobTitle != null ? row.jobTitle : "";
+                        String jsJob = jobDisp.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
+                    %>
+                        <tr>
+                            <td><%= row.applicantName %></td>
+                            <td><%= row.applicantEmail %></td>
+                            <td><%= row.jobTitle %></td>
+                            <td>
+                                <form method="post" action="${pageContext.request.contextPath}/admin/workload" style="display:inline;margin:0"
+                                      onsubmit="return confirm('确定强行取消「<%= jsName %>」在「<%= jsJob %>」的录用吗？\n此操作不可撤销。');">
+                                    <input type="hidden" name="action" value="cancelApplication">
+                                    <input type="hidden" name="applicationId" value="<%= row.applicationId %>">
+                                    <button type="submit" class="btn-danger">强行取消录用</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% } %>
+                    </tbody>
+                </table>
+                </div>
+                <% } %>
+            </div>
         </div>
         <% } %>
+      </div>
     </div>
 </body>
 </html>

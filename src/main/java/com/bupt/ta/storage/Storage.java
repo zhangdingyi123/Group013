@@ -24,6 +24,9 @@ public class Storage {
     private static final String APPLICATIONS_FILE = "applications.json";
     private static final String MODULE_ORGANISERS_FILE = "module_organisers.json";
     private static final String ADMINS_FILE = "admins.json";
+    private static final String MESSAGES_FILE = "messages.json";
+    private static final String FORUM_THREADS_FILE = "forum_threads.json";
+    private static final String FORUM_REPLIES_FILE = "forum_replies.json";
     private static final String RESUMES_DIR = "resumes";
 
     private static volatile String dataDir = DEFAULT_DATA_DIR;
@@ -129,6 +132,31 @@ public class Storage {
     }
     public static void saveAdmins(List<Admin> list) throws IOException {
         writeList(dataPath(ADMINS_FILE), list);
+    }
+
+    // ---------- Direct messages ----------
+    private static final Type MESSAGE_LIST_TYPE = new TypeToken<ArrayList<DirectMessage>>(){}.getType();
+    public static List<DirectMessage> loadMessages() throws IOException {
+        return readList(dataPath(MESSAGES_FILE), MESSAGE_LIST_TYPE);
+    }
+    public static void saveMessages(List<DirectMessage> list) throws IOException {
+        writeList(dataPath(MESSAGES_FILE), list);
+    }
+
+    // ---------- Forum ----------
+    private static final Type FORUM_THREAD_LIST_TYPE = new TypeToken<ArrayList<ForumThread>>(){}.getType();
+    public static List<ForumThread> loadForumThreads() throws IOException {
+        return readList(dataPath(FORUM_THREADS_FILE), FORUM_THREAD_LIST_TYPE);
+    }
+    public static void saveForumThreads(List<ForumThread> list) throws IOException {
+        writeList(dataPath(FORUM_THREADS_FILE), list);
+    }
+    private static final Type FORUM_REPLY_LIST_TYPE = new TypeToken<ArrayList<ForumReply>>(){}.getType();
+    public static List<ForumReply> loadForumReplies() throws IOException {
+        return readList(dataPath(FORUM_REPLIES_FILE), FORUM_REPLY_LIST_TYPE);
+    }
+    public static void saveForumReplies(List<ForumReply> list) throws IOException {
+        writeList(dataPath(FORUM_REPLIES_FILE), list);
     }
 
     /**
