@@ -2,8 +2,10 @@ package com.bupt.ta.web;
 
 import com.bupt.ta.model.*;
 import com.bupt.ta.service.ApplicantService;
+import com.bupt.ta.service.FriendService;
 import com.bupt.ta.service.JobService;
 import com.bupt.ta.service.MessageService;
+import com.bupt.ta.model.FriendRequest;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -31,6 +33,7 @@ public class MODashboardServlet extends HttpServlet {
     private final JobService jobService = new JobService();
     private final MessageService messageService = new MessageService();
     private final ApplicantService applicantService = new ApplicantService();
+    private final FriendService friendService = new FriendService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -104,10 +107,37 @@ public class MODashboardServlet extends HttpServlet {
             req.setAttribute("moDmConversation", messageService.findConversation(first, mo.getId()));
             applicantService.findById(first).ifPresent(a -> req.setAttribute("moDmApplicant", a));
         }
+        String activeApplicant = (String) req.getAttribute("moDmWithApplicant");
+        if (activeApplicant != null && !activeApplicant.isEmpty()) {
+            req.setAttribute("moDmIsFriend", friendService.isFriend(activeApplicant, mo.getId()));
+            req.setAttribute("moDmHasApplicationToMo", messageService.hasNonCancelledApplicationToMo(activeApplicant, mo.getId()));
+            req.setAttribute("moDmCanRequestFriendApplicant",
+                    !friendService.isFriend(activeApplicant, mo.getId())
+                            && !messageService.hasNonCancelledApplicationToMo(activeApplicant, mo.getId())
+                            && friendService.hadAnyApplicationToMoJobs(activeApplicant, mo.getId()));
+        }
+        List<FriendRequest> pendingFromTa = friendService.listPendingFromTaToMo(mo.getId());
+        List<MoFriendRequestRow> moFriendRows = new ArrayList<>();
+        for (FriendRequest fr : pendingFromTa) {
+            String name = applicantService.findById(fr.getApplicantId()).map(Applicant::getName).orElse("应聘者");
+            moFriendRows.add(new MoFriendRequestRow(fr.getId(), fr.getApplicantId(), name));
+        }
+        req.setAttribute("moFriendRequestsPending", moFriendRows);
         String dmNotice = (String) req.getSession().getAttribute("moDmNotice");
         if (dmNotice != null) {
             req.getSession().removeAttribute("moDmNotice");
             req.setAttribute("moDmNotice", dmNotice);
+        }
+    }
+
+    public static class MoFriendRequestRow {
+        public final String requestId;
+        public final String applicantId;
+        public final String applicantName;
+        public MoFriendRequestRow(String requestId, String applicantId, String applicantName) {
+            this.requestId = requestId;
+            this.applicantId = applicantId;
+            this.applicantName = applicantName;
         }
     }
 
@@ -264,6 +294,28 @@ public class MODashboardServlet extends HttpServlet {
             resp.sendRedirect(moDashboardUrl(req, "positions"));
             return;
         }
+        if ("acceptFriendRequest".equals(action)) {
+            String requestId = req.getParameter("requestId");
+            try {
+                boolean ok = friendService.acceptRequestAsMo(requestId, user.getId());
+                session.setAttribute("moDmNotice", ok ? "已接受好友请求，可与对方私信。" : "无法接受该请求。");
+            } catch (Exception e) {
+                session.setAttribute("moDmNotice", "操作失败，请稍后重试。");
+            }
+            resp.sendRedirect(moDashboardUrl(req, "messages"));
+            return;
+        }
+        if ("requestFriendApplicant".equals(action)) {
+            String applicantId = req.getParameter("applicantId");
+            try {
+                boolean ok = friendService.requestFromMo(user.getId(), applicantId != null ? applicantId.trim() : null);
+                session.setAttribute("moDmNotice", ok ? "好友请求已发送，对方同意后即可私信。" : "无法发送好友请求（对方需曾申请过您的岗位，且当前不能已通过投递建立联系）。");
+            } catch (Exception e) {
+                session.setAttribute("moDmNotice", "操作失败，请稍后重试。");
+            }
+            resp.sendRedirect(moDashboardUrl(req, "messages"));
+            return;
+        }
         if ("sendDm".equals(action)) {
             String applicantId = req.getParameter("applicantId");
             String body = req.getParameter("body");
@@ -271,7 +323,7 @@ public class MODashboardServlet extends HttpServlet {
                 try {
                     DirectMessage sent = messageService.sendFromMo(user.getId(), applicantId.trim(), body);
                     if (sent == null) {
-                        session.setAttribute("moDmNotice", "发送失败：无权回复该会话或内容为空。");
+                        session.setAttribute("moDmNotice", "发送失败：仅可与已投递您岗位的应聘者或好友私信，且内容不能为空。");
                     } else {
                         session.setAttribute("moDmNotice", "已发送。");
                     }

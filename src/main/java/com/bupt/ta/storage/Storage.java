@@ -27,6 +27,8 @@ public class Storage {
     private static final String MESSAGES_FILE = "messages.json";
     private static final String FORUM_THREADS_FILE = "forum_threads.json";
     private static final String FORUM_REPLIES_FILE = "forum_replies.json";
+    private static final String FRIEND_LINKS_FILE = "friend_links.json";
+    private static final String FRIEND_REQUESTS_FILE = "friend_requests.json";
     private static final String RESUMES_DIR = "resumes";
 
     private static volatile String dataDir = DEFAULT_DATA_DIR;
@@ -157,6 +159,23 @@ public class Storage {
     }
     public static void saveForumReplies(List<ForumReply> list) throws IOException {
         writeList(dataPath(FORUM_REPLIES_FILE), list);
+    }
+
+    // ---------- Friend links & requests ----------
+    private static final Type FRIEND_LINK_LIST_TYPE = new TypeToken<ArrayList<FriendLink>>(){}.getType();
+    private static final Type FRIEND_REQUEST_LIST_TYPE = new TypeToken<ArrayList<FriendRequest>>(){}.getType();
+
+    public static List<FriendLink> loadFriendLinks() throws IOException {
+        return readList(dataPath(FRIEND_LINKS_FILE), FRIEND_LINK_LIST_TYPE);
+    }
+    public static void saveFriendLinks(List<FriendLink> list) throws IOException {
+        writeList(dataPath(FRIEND_LINKS_FILE), list);
+    }
+    public static List<FriendRequest> loadFriendRequests() throws IOException {
+        return readList(dataPath(FRIEND_REQUESTS_FILE), FRIEND_REQUEST_LIST_TYPE);
+    }
+    public static void saveFriendRequests(List<FriendRequest> list) throws IOException {
+        writeList(dataPath(FRIEND_REQUESTS_FILE), list);
     }
 
     /**

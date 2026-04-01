@@ -1,5 +1,7 @@
 package com.bupt.ta.web;
 
+import com.bupt.ta.model.Applicant;
+import com.bupt.ta.service.ApplicantService;
 import com.bupt.ta.service.assistant.AssistantConfig;
 import com.bupt.ta.service.assistant.OpenAiCompatibleChatClient;
 import com.google.gson.JsonArray;
@@ -12,6 +14,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -20,19 +23,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * JSON API：小助手对话（Kimi K2.5 / 通义千问），OpenAI 兼容接口。
+ * JSON API：小助手对话（Kimi / 通义千问 / OpenAI），OpenAI 兼容接口。
  */
 @WebServlet("/api/assistant/chat")
 public class AssistantChatServlet extends HttpServlet {
 
     private static final int MAX_INPUT_CHARS = 12000;
+    private static final int MAX_RESUME_CHARS = 10000;
     private static final double TEMPERATURE = 0.6;
 
     private static final String SYSTEM_PROMPT = "你是北京邮电大学国际学院「助教招聘系统」的站内智能小助手。"
             + "请用简洁、清晰的中文回答；若问题与系统无关，也可友好作答。"
             + "说明：本系统数据存于 JSON 文件，无数据库；涉及账号与隐私时请提醒用户通过官方渠道核实。";
 
+    private static final String RESUME_MODE_SUFFIX = "\n\n【简历辅助】用户提供了简历正文（见文末）。请根据用户的问题协助润色表述、调整结构、提炼要点或指出可改进之处；"
+            + "不要编造经历或学历；信息不足时请直接说明。";
+
     private final OpenAiCompatibleChatClient client = new OpenAiCompatibleChatClient();
+    private final ApplicantService applicantService = new ApplicantService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -60,7 +68,8 @@ public class AssistantChatServlet extends HttpServlet {
         String provider = AssistantConfig.defaultProvider();
         if (root.has("provider") && root.get("provider").isJsonPrimitive()) {
             String p = root.get("provider").getAsString().trim().toLowerCase();
-            if (AssistantConfig.PROVIDER_KIMI.equals(p) || AssistantConfig.PROVIDER_QWEN.equals(p)) {
+            if (AssistantConfig.PROVIDER_KIMI.equals(p) || AssistantConfig.PROVIDER_QWEN.equals(p)
+                    || AssistantConfig.PROVIDER_OPENAI.equals(p)) {
                 provider = p;
             }
         }
@@ -95,8 +104,63 @@ public class AssistantChatServlet extends HttpServlet {
             return;
         }
 
+        String resumeBlock = null;
+        if (root.has("resumeText") && root.get("resumeText").isJsonPrimitive()) {
+            String rt = root.get("resumeText").getAsString();
+            if (rt.length() > MAX_RESUME_CHARS) {
+                writeError(resp, HttpServletResponse.SC_BAD_REQUEST, "resume text too long");
+                return;
+            }
+            String trimmed = rt.trim();
+            if (!trimmed.isEmpty()) {
+                resumeBlock = trimmed;
+            }
+        }
+        boolean useSavedResume = root.has("useSavedResume") && root.get("useSavedResume").isJsonPrimitive()
+                && root.get("useSavedResume").getAsBoolean();
+        if (useSavedResume && resumeBlock == null) {
+            HttpSession session = req.getSession(false);
+            Applicant user = session != null ? (Applicant) session.getAttribute("taUser") : null;
+            if (user == null) {
+                writeError(resp, HttpServletResponse.SC_UNAUTHORIZED, "login required for saved resume");
+                return;
+            }
+            String path = user.getResumePath();
+            if (path == null || path.trim().isEmpty()) {
+                writeError(resp, HttpServletResponse.SC_BAD_REQUEST, "no saved resume");
+                return;
+            }
+            try {
+                String content = applicantService.extractResumePlainText(path);
+                if (content == null) {
+                    writeError(resp, HttpServletResponse.SC_BAD_REQUEST, "saved resume format not supported");
+                    return;
+                }
+                String trimmed = content.trim();
+                if (trimmed.isEmpty()) {
+                    writeError(resp, HttpServletResponse.SC_BAD_REQUEST, "saved resume is empty or unreadable");
+                    return;
+                }
+                resumeBlock = trimmed;
+                if (resumeBlock.length() > MAX_RESUME_CHARS) {
+                    resumeBlock = resumeBlock.substring(0, MAX_RESUME_CHARS);
+                }
+            } catch (IOException e) {
+                writeError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "cannot read resume");
+                return;
+            } catch (Exception e) {
+                writeError(resp, HttpServletResponse.SC_BAD_REQUEST, "cannot extract resume text");
+                return;
+            }
+        }
+
+        String systemPrompt = SYSTEM_PROMPT;
+        if (resumeBlock != null && !resumeBlock.isEmpty()) {
+            systemPrompt = SYSTEM_PROMPT + RESUME_MODE_SUFFIX + "\n\n--- 简历正文 ---\n" + resumeBlock + "\n--- 结束 ---";
+        }
+
         List<OpenAiCompatibleChatClient.ChatMessage> withSystem =
-                OpenAiCompatibleChatClient.withSystemPrompt(list, SYSTEM_PROMPT);
+                OpenAiCompatibleChatClient.withSystemPrompt(list, systemPrompt);
 
         String url;
         String apiKey;
@@ -109,6 +173,14 @@ public class AssistantChatServlet extends HttpServlet {
             }
             url = AssistantConfig.qwenBaseUrl();
             model = AssistantConfig.qwenModel();
+        } else if (AssistantConfig.PROVIDER_OPENAI.equals(provider)) {
+            apiKey = AssistantConfig.openaiApiKey();
+            if (apiKey.isEmpty()) {
+                writeError(resp, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "OPENAI_API_KEY not configured");
+                return;
+            }
+            url = AssistantConfig.openaiBaseUrl();
+            model = AssistantConfig.openaiModel();
         } else {
             apiKey = AssistantConfig.kimiApiKey();
             if (apiKey.isEmpty()) {

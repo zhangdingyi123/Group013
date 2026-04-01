@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,12 +70,34 @@ public class JobApplicantsServlet extends HttpServlet {
                 if (filter == null || filter.isEmpty()) {
                     filter = "all";
                 } else if (!"all".equals(filter) && !Application.STATUS_PENDING.equals(filter)
-                        && !Application.STATUS_ACCEPTED.equals(filter) && !Application.STATUS_REJECTED.equals(filter)) {
+                        && !Application.STATUS_ACCEPTED.equals(filter) && !Application.STATUS_REJECTED.equals(filter)
+                        && !Application.STATUS_CANCELLED.equals(filter)) {
                     filter = "all";
                 }
                 String q = req.getParameter("q");
                 String qTrim = q != null ? q.trim() : "";
                 String qLower = qTrim.toLowerCase();
+                String sort = req.getParameter("sort");
+                if (sort == null || sort.isEmpty()) {
+                    sort = "match_desc";
+                } else if (!"match_desc".equals(sort) && !"match_asc".equals(sort)
+                        && !"time_desc".equals(sort) && !"time_asc".equals(sort)
+                        && !"name_asc".equals(sort)) {
+                    sort = "match_desc";
+                }
+                int minScore = 0;
+                try {
+                    String ms = req.getParameter("minScore");
+                    if (ms != null && !ms.trim().isEmpty()) {
+                        minScore = Math.max(0, Math.min(100, Integer.parseInt(ms.trim())));
+                    }
+                } catch (NumberFormatException ignored) {
+                    minScore = 0;
+                }
+                Map<String, Long> appliedAtByApplicant = new HashMap<>();
+                for (Application app : applicationsForJob) {
+                    appliedAtByApplicant.put(app.getApplicantId(), app.getAppliedAt());
+                }
                 List<ApplicantMatch> shown = new ArrayList<>();
                 for (ApplicantMatch m : recommended) {
                     Application app = appByApplicantId.get(m.applicant.getId());
@@ -82,20 +105,27 @@ public class JobApplicantsServlet extends HttpServlet {
                     if (!"all".equals(filter) && !filter.equals(rowStatus)) {
                         continue;
                     }
+                    if (m.score < minScore) {
+                        continue;
+                    }
                     if (!qLower.isEmpty()) {
                         String name = m.applicant.getName() != null ? m.applicant.getName().toLowerCase() : "";
                         String email = m.applicant.getEmail() != null ? m.applicant.getEmail().toLowerCase() : "";
-                        if (!name.contains(qLower) && !email.contains(qLower)) {
+                        String sid = m.applicant.getStudentId() != null ? m.applicant.getStudentId().toLowerCase() : "";
+                        if (!name.contains(qLower) && !email.contains(qLower) && !sid.contains(qLower)) {
                             continue;
                         }
                     }
                     shown.add(m);
                 }
+                sortApplicants(shown, sort, appliedAtByApplicant);
                 req.setAttribute("applicantsForJob", shown);
                 req.setAttribute("totalApplicantsForJob", recommended.size());
                 req.setAttribute("applicationsForJob", applicationsForJob);
                 req.setAttribute("filter", filter);
                 req.setAttribute("q", qTrim);
+                req.setAttribute("sort", sort);
+                req.setAttribute("minScore", minScore);
             }
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
@@ -156,7 +186,8 @@ public class JobApplicantsServlet extends HttpServlet {
             }
             String backJobId = (jobIdParam != null && !jobIdParam.trim().isEmpty()) ? jobIdParam.trim() : jobId;
             resp.sendRedirect(applicantsListUrl(req.getContextPath(), backJobId,
-                    req.getParameter("filter"), req.getParameter("q")));
+                    req.getParameter("filter"), req.getParameter("q"),
+                    req.getParameter("sort"), req.getParameter("minScore")));
         } catch (Exception e) {
             session.setAttribute("moNotice", "操作失败，请重试。");
             resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
@@ -166,14 +197,42 @@ public class JobApplicantsServlet extends HttpServlet {
     private static void redirectAfterPost(HttpServletRequest req, HttpServletResponse resp, String jobIdParam) throws IOException {
         String ctx = req.getContextPath();
         if (jobIdParam != null && !jobIdParam.trim().isEmpty()) {
-            resp.sendRedirect(applicantsListUrl(ctx, jobIdParam.trim(), req.getParameter("filter"), req.getParameter("q")));
+            resp.sendRedirect(applicantsListUrl(ctx, jobIdParam.trim(), req.getParameter("filter"), req.getParameter("q"),
+                    req.getParameter("sort"), req.getParameter("minScore")));
         } else {
             resp.sendRedirect(ctx + "/mo/dashboard?tab=positions");
         }
     }
 
-    /** 返回筛选页 URL，保留状态与关键词（与列表 GET 一致）。 */
-    private static String applicantsListUrl(String ctx, String jobId, String filter, String q) {
+    private static void sortApplicants(List<ApplicantMatch> list, String sort, Map<String, Long> appliedAtByApplicant) {
+        Comparator<ApplicantMatch> primary;
+        switch (sort) {
+            case "match_asc":
+                primary = Comparator.comparingInt(m -> m.score);
+                break;
+            case "time_desc":
+                primary = Comparator.comparingLong((ApplicantMatch m) ->
+                        appliedAtByApplicant.getOrDefault(m.applicant.getId(), 0L)).reversed();
+                break;
+            case "time_asc":
+                primary = Comparator.comparingLong(m ->
+                        appliedAtByApplicant.getOrDefault(m.applicant.getId(), 0L));
+                break;
+            case "name_asc":
+                primary = Comparator.comparing(m -> m.applicant.getName() != null ? m.applicant.getName() : "",
+                        String.CASE_INSENSITIVE_ORDER);
+                break;
+            default:
+                primary = Comparator.comparingInt((ApplicantMatch m) -> m.score).reversed();
+                break;
+        }
+        Comparator<ApplicantMatch> tie = Comparator.comparing(m -> m.applicant.getName() != null ? m.applicant.getName() : "",
+                String.CASE_INSENSITIVE_ORDER);
+        list.sort(primary.thenComparing(tie));
+    }
+
+    /** 返回筛选页 URL，保留筛选条件（与列表 GET 一致）。 */
+    private static String applicantsListUrl(String ctx, String jobId, String filter, String q, String sort, String minScore) {
         StringBuilder sb = new StringBuilder(ctx).append("/mo/job-applicants?jobId=")
                 .append(URLEncoder.encode(jobId, StandardCharsets.UTF_8));
         if (filter != null && !filter.isEmpty() && !"all".equals(filter)) {
@@ -181,6 +240,17 @@ public class JobApplicantsServlet extends HttpServlet {
         }
         if (q != null && !q.trim().isEmpty()) {
             sb.append("&q=").append(URLEncoder.encode(q.trim(), StandardCharsets.UTF_8));
+        }
+        if (sort != null && !sort.isEmpty() && !"match_desc".equals(sort)) {
+            sb.append("&sort=").append(URLEncoder.encode(sort, StandardCharsets.UTF_8));
+        }
+        if (minScore != null && !minScore.trim().isEmpty()) {
+            try {
+                int ms = Integer.parseInt(minScore.trim());
+                if (ms > 0) {
+                    sb.append("&minScore=").append(ms);
+                }
+            } catch (NumberFormatException ignored) { /* skip */ }
         }
         return sb.toString();
     }

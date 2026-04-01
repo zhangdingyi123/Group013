@@ -21,6 +21,7 @@ public class MessageService {
 
     private final JobService jobService = new JobService();
     private final ApplicationService applicationService = new ApplicationService();
+    private final FriendService friendService = new FriendService();
 
     public List<DirectMessage> findConversation(String applicantId, String moduleOrganiserId) throws IOException {
         return Storage.loadMessages().stream()
@@ -30,7 +31,7 @@ public class MessageService {
     }
 
     /**
-     * 应聘者可联系的招聘者 ID：对开放岗位发布者，或对其岗位有过未取消申请的招聘者。
+     * 应聘者可私信的招聘者：对其岗位有过未撤销申请的招聘者，或互为好友。
      */
     public Set<String> contactableMoIdsForApplicant(String applicantId) throws IOException {
         Set<String> ids = new LinkedHashSet<>();
@@ -41,43 +42,14 @@ public class MessageService {
             Optional<Job> j = jobService.findById(a.getJobId());
             j.ifPresent(job -> ids.add(job.getModuleOrganiserId()));
         }
-        for (Job j : jobService.findOpen()) {
-            ids.add(j.getModuleOrganiserId());
+        for (String moId : friendService.friendMoIdsForApplicant(applicantId)) {
+            ids.add(moId);
         }
         return ids;
     }
 
-    public boolean canApplicantContactMo(String applicantId, String moId, String jobId) throws IOException {
-        if (applicantId == null || moId == null) {
-            return false;
-        }
-        if (contactableMoIdsForApplicant(applicantId).contains(moId)) {
-            if (jobId == null || jobId.isEmpty()) {
-                return true;
-            }
-            Optional<Job> j = jobService.findById(jobId);
-            return j.isPresent() && moId.equals(j.get().getModuleOrganiserId())
-                    && (Job.STATUS_OPEN.equals(j.get().getStatus()) || hasNonCancelledApplicationForJob(applicantId, jobId));
-        }
-        return false;
-    }
-
-    private boolean hasNonCancelledApplicationForJob(String applicantId, String jobId) throws IOException {
-        return applicationService.findByApplicantAndJob(applicantId, jobId)
-                .filter(a -> !Application.STATUS_CANCELLED.equals(a.getStatus()))
-                .isPresent();
-    }
-
-    /**
-     * 招聘者是否可与该应聘者在本线程内通信：已有消息，或该应聘者申请过该 MO 名下岗位。
-     */
-    public boolean canMoContactApplicant(String moId, String applicantId) throws IOException {
-        if (moId == null || applicantId == null) {
-            return false;
-        }
-        if (hasAnyMessageInThread(applicantId, moId)) {
-            return true;
-        }
+    /** 是否与该招聘者存在未撤销的申请关系（任一名下岗位）。 */
+    public boolean hasNonCancelledApplicationToMo(String applicantId, String moId) throws IOException {
         for (Application a : applicationService.findByApplicantId(applicantId)) {
             if (Application.STATUS_CANCELLED.equals(a.getStatus())) {
                 continue;
@@ -90,9 +62,45 @@ public class MessageService {
         return false;
     }
 
-    private boolean hasAnyMessageInThread(String applicantId, String moId) throws IOException {
-        return Storage.loadMessages().stream()
-                .anyMatch(m -> applicantId.equals(m.getApplicantId()) && moId.equals(m.getModuleOrganiserId()));
+    public boolean canApplicantContactMo(String applicantId, String moId, String jobId) throws IOException {
+        if (applicantId == null || moId == null) {
+            return false;
+        }
+        if (friendService.isFriend(applicantId, moId)) {
+            if (jobId == null || jobId.isEmpty()) {
+                return true;
+            }
+            Optional<Job> j = jobService.findById(jobId);
+            return j.isPresent() && moId.equals(j.get().getModuleOrganiserId());
+        }
+        if (!hasNonCancelledApplicationToMo(applicantId, moId)) {
+            return false;
+        }
+        if (jobId == null || jobId.isEmpty()) {
+            return true;
+        }
+        Optional<Job> j = jobService.findById(jobId);
+        return j.isPresent() && moId.equals(j.get().getModuleOrganiserId())
+                && (Job.STATUS_OPEN.equals(j.get().getStatus()) || hasNonCancelledApplicationForJob(applicantId, jobId));
+    }
+
+    private boolean hasNonCancelledApplicationForJob(String applicantId, String jobId) throws IOException {
+        return applicationService.findByApplicantAndJob(applicantId, jobId)
+                .filter(a -> !Application.STATUS_CANCELLED.equals(a.getStatus()))
+                .isPresent();
+    }
+
+    /**
+     * 招聘者是否可与该应聘者私信：互为好友，或对方曾投递过该 MO 名下岗位且申请未撤销。
+     */
+    public boolean canMoContactApplicant(String moId, String applicantId) throws IOException {
+        if (moId == null || applicantId == null) {
+            return false;
+        }
+        if (friendService.isFriend(applicantId, moId)) {
+            return true;
+        }
+        return hasNonCancelledApplicationToMo(applicantId, moId);
     }
 
     public OptionalLong lastMessageTime(String applicantId, String moId) throws IOException {
@@ -112,11 +120,6 @@ public class MessageService {
 
     public List<ApplicantMoPair> listThreadsForMo(String moId) throws IOException {
         Set<String> applicantIds = new LinkedHashSet<>();
-        for (DirectMessage m : Storage.loadMessages()) {
-            if (moId.equals(m.getModuleOrganiserId())) {
-                applicantIds.add(m.getApplicantId());
-            }
-        }
         for (Application a : applicationService.findAll()) {
             if (Application.STATUS_CANCELLED.equals(a.getStatus())) {
                 continue;
@@ -125,6 +128,9 @@ public class MessageService {
             if (j.isPresent() && moId.equals(j.get().getModuleOrganiserId())) {
                 applicantIds.add(a.getApplicantId());
             }
+        }
+        for (String aid : friendService.friendApplicantIdsForMo(moId)) {
+            applicantIds.add(aid);
         }
         List<ApplicantMoPair> list = new ArrayList<>();
         for (String aid : applicantIds) {

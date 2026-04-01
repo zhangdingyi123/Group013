@@ -17,7 +17,7 @@
         dmPostAction = ctx + "/ta/dashboard";
     }
 %>
-<div class="section dm-section">
+<div id="pc-messages" class="section dm-section">
     <h2>私信招聘者</h2>
     <p class="section-desc">在开放岗位中可联系发布者，或向已申请岗位的招聘者发送消息；对方可在工作台「私信」中回复。</p>
     <c:if test="${not empty dmNotice}">

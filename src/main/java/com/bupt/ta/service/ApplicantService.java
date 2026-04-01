@@ -4,6 +4,8 @@ import com.bupt.ta.model.Applicant;
 import com.bupt.ta.storage.Storage;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,5 +67,25 @@ public class ApplicantService {
 
     public boolean isResumeText(String resumePath) {
         return resumePath != null && resumePath.toLowerCase().endsWith(".txt");
+    }
+
+    /** 小助手是否可读站内简历（文本或可抽取的正文）。 */
+    public boolean canAssistantReadResume(String resumePath) {
+        return ResumeTextExtractor.isSupportedFilename(resumePath);
+    }
+
+    /**
+     * 抽取简历纯文本（.txt 直接读；.pdf / .doc / .docx 解析）。
+     */
+    public String extractResumePlainText(String resumePath) throws IOException {
+        if (!ResumeTextExtractor.isSupportedFilename(resumePath)) {
+            return null;
+        }
+        Path p = Storage.getResumeFilePath(resumePath);
+        if (p == null || !Files.exists(p)) {
+            return null;
+        }
+        byte[] data = Files.readAllBytes(p);
+        return ResumeTextExtractor.extractFromBytes(data, resumePath);
     }
 }
