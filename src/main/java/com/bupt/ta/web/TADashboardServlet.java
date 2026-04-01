@@ -8,9 +8,12 @@ import com.bupt.ta.model.ModuleOrganiser;
 import com.bupt.ta.service.ApplicantService;
 import com.bupt.ta.service.ApplicationService;
 import com.bupt.ta.service.JobService;
+import com.bupt.ta.service.FriendService;
 import com.bupt.ta.service.MatchHelper;
 import com.bupt.ta.service.MessageService;
 import com.bupt.ta.service.ModuleOrganiserService;
+import com.bupt.ta.service.assistant.AssistantConfig;
+import com.bupt.ta.model.FriendRequest;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -26,13 +29,18 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.TreeSet;
 @WebServlet("/ta/dashboard")
 public class TADashboardServlet extends HttpServlet {
     private static final Set<String> TA_DASHBOARD_TABS = new HashSet<>(Arrays.asList(
@@ -56,6 +64,7 @@ public class TADashboardServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/ta/profile");
             return;
         }
+        String tab = readDashboardTab(req);
         req.setAttribute("applicant", user);
         if (user.getResumePath() != null && !user.getResumePath().isEmpty()) {
             try {
@@ -69,8 +78,16 @@ public class TADashboardServlet extends HttpServlet {
             } catch (Exception ignored) {}
         }
         try {
-            List<Job> openJobs = jobService.findOpen();
-            req.setAttribute("openJobs", openJobs);
+            List<Job> allOpenJobs = jobService.findOpen();
+            req.setAttribute("openJobsTotal", allOpenJobs.size());
+            Set<String> dmAllowedJobIds = new HashSet<>();
+            for (Job j : allOpenJobs) {
+                if (j != null && j.getModuleOrganiserId() != null
+                        && messageService.canApplicantContactMo(user.getId(), j.getModuleOrganiserId(), j.getId())) {
+                    dmAllowedJobIds.add(j.getId());
+                }
+            }
+            req.setAttribute("dmAllowedJobIds", dmAllowedJobIds);
             List<Application> myApplications = applicationService.findByApplicantId(user.getId());
             List<ApplicationWithJob> withJobs = new ArrayList<>();
             for (Application app : myApplications) {
@@ -85,6 +102,11 @@ public class TADashboardServlet extends HttpServlet {
                 }
             }
             req.setAttribute("appliedJobIds", appliedJobIds);
+            if ("jobs".equals(tab)) {
+                req.setAttribute("openJobs", filterTaJobsForDisplay(req, allOpenJobs, appliedJobIds, user));
+            } else {
+                req.setAttribute("openJobs", allOpenJobs);
+            }
             List<String> sk = user.getSkills();
             String skillsJoined = "";
             if (sk != null && !sk.isEmpty()) {
@@ -103,9 +125,9 @@ public class TADashboardServlet extends HttpServlet {
                     resumeText = applicantService.getResumeContent(user.getResumePath());
                 } catch (Exception ignored) {}
             }
-            List<String> resumeSkillGaps = matchHelper.getResumeBasedSkillGaps(user, resumeText, openJobs);
+            List<String> resumeSkillGaps = matchHelper.getResumeBasedSkillGaps(user, resumeText, allOpenJobs);
             req.setAttribute("resumeSkillGaps", resumeSkillGaps);
-            List<String> resumeStrengths = matchHelper.getResumeBasedStrengths(user, resumeText, openJobs);
+            List<String> resumeStrengths = matchHelper.getResumeBasedStrengths(user, resumeText, allOpenJobs);
             req.setAttribute("resumeStrengths", resumeStrengths);
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
@@ -115,13 +137,22 @@ public class TADashboardServlet extends HttpServlet {
             req.getSession().removeAttribute("applyMessage");
             req.setAttribute("applyMessage", applyMessage);
         }
-        String tab = readDashboardTab(req);
         if ("messages".equals(tab)) {
             try {
                 loadApplicantMessagesTab(req, user);
             } catch (Exception e) {
                 req.setAttribute("error", e.getMessage());
             }
+        }
+        if ("resume".equals(tab)) {
+            req.setAttribute("assistantKimiConfigured", !AssistantConfig.kimiApiKey().isEmpty());
+            req.setAttribute("assistantQwenConfigured", !AssistantConfig.qwenApiKey().isEmpty());
+            req.setAttribute("assistantOpenaiConfigured", !AssistantConfig.openaiApiKey().isEmpty());
+            req.setAttribute("assistantDefaultProvider", AssistantConfig.defaultProvider());
+            String rp = user.getResumePath();
+            boolean okResume = rp != null && !rp.trim().isEmpty()
+                    && applicantService.canAssistantReadResume(rp);
+            req.setAttribute("assistantSavedResumeTxt", okResume);
         }
         req.setAttribute("taDashboardTab", tab);
         req.getRequestDispatcher("/ta/dashboard.jsp").forward(req, resp);
@@ -218,6 +249,174 @@ public class TADashboardServlet extends HttpServlet {
         return req.getContextPath() + "/ta/dashboard?tab=" + tab;
     }
 
+    /** 从开放岗位聚合所需技能标签，供下拉与联想列表使用（去重、不区分大小写排序）。 */
+    private static List<String> collectOpenJobSkillKeywords(List<Job> jobs) {
+        Set<String> seen = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (Job j : jobs) {
+            if (j == null || !Job.STATUS_OPEN.equals(j.getStatus()) || j.getRequiredSkills() == null) {
+                continue;
+            }
+            for (String s : j.getRequiredSkills()) {
+                if (s != null && !s.trim().isEmpty()) {
+                    seen.add(s.trim());
+                }
+            }
+        }
+        return new ArrayList<>(seen);
+    }
+
+    /** 技能筛选：按逗号、分号或空白拆成多词，任一词在岗位所需技能中子串匹配即视为命中（OR）。 */
+    private static List<String> parseSkillFilterTokens(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        String[] parts = raw.split("[,，;；\\s]+");
+        List<String> out = new ArrayList<>();
+        for (String p : parts) {
+            if (p != null && !p.trim().isEmpty()) {
+                out.add(p.trim());
+            }
+        }
+        return out;
+    }
+
+    private static boolean jobMatchesSkillFilterTokens(Job j, List<String> tokens) {
+        if (tokens.isEmpty()) {
+            return true;
+        }
+        List<String> req = j.getRequiredSkills();
+        if (req == null || req.isEmpty()) {
+            return false;
+        }
+        for (String token : tokens) {
+            String tl = token.toLowerCase(Locale.ROOT);
+            for (String s : req) {
+                if (s != null && s.toLowerCase(Locale.ROOT).contains(tl)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** 开放岗位列表：关键词、类型、技能、隐藏已投、排序；并写入 JSP 用的筛选条件属性。 */
+    private List<Job> filterTaJobsForDisplay(HttpServletRequest req, List<Job> all, Set<String> appliedIds, Applicant user) {
+        String jobQ = req.getParameter("jobQ");
+        jobQ = jobQ != null ? jobQ.trim() : "";
+        String jobType = req.getParameter("jobType");
+        if (jobType == null || jobType.isEmpty()) {
+            jobType = "all";
+        } else if (!"all".equals(jobType) && !"course_ta".equals(jobType)
+                && !"invigilation".equals(jobType) && !"activity".equals(jobType)) {
+            jobType = "all";
+        }
+        String jobSort = req.getParameter("jobSort");
+        if (jobSort == null || jobSort.isEmpty()) {
+            jobSort = "newest";
+        } else if (!"newest".equals(jobSort) && !"oldest".equals(jobSort) && !"title_asc".equals(jobSort)
+                && !"match_desc".equals(jobSort)) {
+            jobSort = "newest";
+        }
+        String jobSkill = req.getParameter("jobSkill");
+        jobSkill = jobSkill != null ? jobSkill.trim() : "";
+        boolean hideApplied = "1".equals(req.getParameter("hideApplied"));
+
+        req.setAttribute("jobFilterQ", jobQ);
+        req.setAttribute("jobFilterType", jobType);
+        req.setAttribute("jobFilterSort", jobSort);
+        req.setAttribute("jobFilterSkill", jobSkill);
+        req.setAttribute("jobFilterHideApplied", hideApplied);
+        req.setAttribute("jobSkillOptions", collectOpenJobSkillKeywords(all));
+
+        String qLower = jobQ.toLowerCase(Locale.ROOT);
+        List<String> skillTokens = parseSkillFilterTokens(jobSkill);
+        List<Job> out = new ArrayList<>();
+        for (Job j : all) {
+            if (!Job.STATUS_OPEN.equals(j.getStatus())) {
+                continue;
+            }
+            if (!"all".equals(jobType) && !jobType.equals(j.getType())) {
+                continue;
+            }
+            if (hideApplied && appliedIds.contains(j.getId())) {
+                continue;
+            }
+            if (!skillTokens.isEmpty()) {
+                if (!jobMatchesSkillFilterTokens(j, skillTokens)) {
+                    continue;
+                }
+            }
+            if (!qLower.isEmpty()) {
+                boolean qOk = false;
+                if (j.getTitle() != null && j.getTitle().toLowerCase(Locale.ROOT).contains(qLower)) {
+                    qOk = true;
+                } else if (j.getDescription() != null && j.getDescription().toLowerCase(Locale.ROOT).contains(qLower)) {
+                    qOk = true;
+                } else if (j.getRequiredSkills() != null) {
+                    for (String s : j.getRequiredSkills()) {
+                        if (s != null && s.toLowerCase(Locale.ROOT).contains(qLower)) {
+                            qOk = true;
+                            break;
+                        }
+                    }
+                }
+                if (!qOk) {
+                    continue;
+                }
+            }
+            out.add(j);
+        }
+        sortTaJobs(out, jobSort, user);
+        Map<String, Integer> matchScores = new LinkedHashMap<>();
+        for (Job j : out) {
+            matchScores.put(j.getId(), matchHelper.matchScore(user, j));
+        }
+        req.setAttribute("jobMatchScores", matchScores);
+        return out;
+    }
+
+    private void sortTaJobs(List<Job> jobs, String sort, Applicant user) {
+        switch (sort) {
+            case "oldest":
+                jobs.sort(Comparator.comparingLong(Job::getCreatedAt));
+                break;
+            case "title_asc":
+                jobs.sort(Comparator.comparing(j -> j.getTitle() != null ? j.getTitle() : "", String.CASE_INSENSITIVE_ORDER));
+                break;
+            case "match_desc":
+                jobs.sort((a, b) -> Integer.compare(matchHelper.matchScore(user, b), matchHelper.matchScore(user, a)));
+                break;
+            default:
+                jobs.sort(Comparator.comparingLong(Job::getCreatedAt).reversed());
+                break;
+        }
+    }
+
+    /** 投递后回到「开放岗位」并保留筛选条件。 */
+    private static String jobsTabUrlWithFilters(HttpServletRequest req) {
+        StringBuilder sb = new StringBuilder(req.getContextPath()).append("/ta/dashboard?tab=jobs");
+        String jobQ = req.getParameter("jobQ");
+        if (jobQ != null && !jobQ.trim().isEmpty()) {
+            sb.append("&jobQ=").append(URLEncoder.encode(jobQ.trim(), StandardCharsets.UTF_8));
+        }
+        String jobType = req.getParameter("jobType");
+        if (jobType != null && !jobType.isEmpty() && !"all".equals(jobType)) {
+            sb.append("&jobType=").append(URLEncoder.encode(jobType.trim(), StandardCharsets.UTF_8));
+        }
+        String jobSort = req.getParameter("jobSort");
+        if (jobSort != null && !jobSort.isEmpty() && !"newest".equals(jobSort)) {
+            sb.append("&jobSort=").append(URLEncoder.encode(jobSort.trim(), StandardCharsets.UTF_8));
+        }
+        String jobSkill = req.getParameter("jobSkill");
+        if (jobSkill != null && !jobSkill.trim().isEmpty()) {
+            sb.append("&jobSkill=").append(URLEncoder.encode(jobSkill.trim(), StandardCharsets.UTF_8));
+        }
+        if ("1".equals(req.getParameter("hideApplied"))) {
+            sb.append("&hideApplied=1");
+        }
+        return sb.toString();
+    }
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
@@ -250,7 +449,7 @@ public class TADashboardServlet extends HttpServlet {
                     }
                 } catch (Exception ignored) {}
             }
-            resp.sendRedirect(dashboardUrl(req, "jobs"));
+            resp.sendRedirect(jobsTabUrlWithFilters(req));
             return;
         }
         if ("cancelApplication".equals(action)) {
@@ -267,6 +466,30 @@ public class TADashboardServlet extends HttpServlet {
             resp.sendRedirect(dashboardUrl(req, "applications"));
             return;
         }
+        if ("requestFriendMo".equals(action)) {
+            String moId = req.getParameter("moId");
+            try {
+                FriendService fs = new FriendService();
+                boolean ok = fs.requestFromTa(user.getId(), moId != null ? moId.trim() : null);
+                req.getSession().setAttribute("dmNotice", ok ? "好友请求已发送，对方同意后即可私信。" : "无法发送好友请求（可能已是好友、已投递该方岗位或已有待处理请求）。");
+            } catch (Exception e) {
+                req.getSession().setAttribute("dmNotice", "操作失败，请稍后重试。");
+            }
+            resp.sendRedirect(dashboardUrl(req, "messages"));
+            return;
+        }
+        if ("acceptFriendRequest".equals(action)) {
+            String requestId = req.getParameter("requestId");
+            try {
+                FriendService fs = new FriendService();
+                boolean ok = fs.acceptRequestAsTa(requestId, user.getId());
+                req.getSession().setAttribute("dmNotice", ok ? "已接受好友请求，可以私信对方。" : "无法接受该请求。");
+            } catch (Exception e) {
+                req.getSession().setAttribute("dmNotice", "操作失败，请稍后重试。");
+            }
+            resp.sendRedirect(dashboardUrl(req, "messages"));
+            return;
+        }
         if ("sendDm".equals(action)) {
             String moId = req.getParameter("moId");
             String body = req.getParameter("body");
@@ -276,7 +499,7 @@ public class TADashboardServlet extends HttpServlet {
                     DirectMessage sent = messageService.sendFromApplicant(user.getId(), moId.trim(), body,
                             jobId != null ? jobId.trim() : null);
                     if (sent == null) {
-                        req.getSession().setAttribute("dmNotice", "发送失败：无权向对方发私信或内容为空。");
+                        req.getSession().setAttribute("dmNotice", "发送失败：仅可与已投递岗位的招聘者或好友私信，且内容不能为空。");
                     } else {
                         req.getSession().setAttribute("dmNotice", "已发送。");
                     }
@@ -301,8 +524,8 @@ public class TADashboardServlet extends HttpServlet {
         MessageService messageService = new MessageService();
         ModuleOrganiserService moduleOrganiserService = new ModuleOrganiserService();
         JobService jobService = new JobService();
+        FriendService friendService = new FriendService();
         Set<String> moIds = new LinkedHashSet<>(messageService.contactableMoIdsForApplicant(user.getId()));
-        moIds.addAll(messageService.moIdsWithAnyMessage(user.getId()));
         List<String> sorted = new ArrayList<>(moIds);
         sorted.sort(Comparator.comparingLong((String moId) -> {
             try {
@@ -355,10 +578,37 @@ public class TADashboardServlet extends HttpServlet {
             req.setAttribute("taDmConversation", messageService.findConversation(user.getId(), first));
             moduleOrganiserService.findById(first).ifPresent(m -> req.setAttribute("taDmMo", m));
         }
+        String activeMo = (String) req.getAttribute("taDmWithMo");
+        if (activeMo != null && !activeMo.isEmpty()) {
+            req.setAttribute("taDmIsFriend", friendService.isFriend(user.getId(), activeMo));
+            req.setAttribute("taDmHasApplicationToMo", messageService.hasNonCancelledApplicationToMo(user.getId(), activeMo));
+            req.setAttribute("taDmCanRequestFriendMo",
+                    !friendService.isFriend(user.getId(), activeMo)
+                            && !messageService.hasNonCancelledApplicationToMo(user.getId(), activeMo));
+        }
+        List<FriendRequest> pendingFromMo = friendService.listPendingFromMoToApplicant(user.getId());
+        List<TaFriendRequestRow> taFriendRows = new ArrayList<>();
+        for (FriendRequest fr : pendingFromMo) {
+            String name = moduleOrganiserService.findById(fr.getModuleOrganiserId())
+                    .map(ModuleOrganiser::getName).orElse("招聘者");
+            taFriendRows.add(new TaFriendRequestRow(fr.getId(), fr.getModuleOrganiserId(), name));
+        }
+        req.setAttribute("taFriendRequestsFromMo", taFriendRows);
         String dmNotice = (String) req.getSession().getAttribute("dmNotice");
         if (dmNotice != null) {
             req.getSession().removeAttribute("dmNotice");
             req.setAttribute("dmNotice", dmNotice);
+        }
+    }
+
+    public static class TaFriendRequestRow {
+        public final String requestId;
+        public final String moId;
+        public final String moName;
+        public TaFriendRequestRow(String requestId, String moId, String moName) {
+            this.requestId = requestId;
+            this.moId = moId;
+            this.moName = moName;
         }
     }
 

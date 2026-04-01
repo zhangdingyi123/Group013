@@ -72,6 +72,33 @@
       .job-card{border:1px solid #e2e8f0;border-radius:8px;padding:1rem;margin-bottom:1rem;background:#fafafa}
       .job-card h3{margin:0 0 .5rem;font-size:1rem;color:#1e293b}
       .applied-tag{font-size:.8rem;color:#64748b;margin-bottom:.5rem}
+      .job-filter-bar{display:flex;flex-wrap:wrap;gap:.65rem;align-items:flex-end;margin-bottom:.75rem;padding:.85rem 1rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
+      .job-filter-bar label{font-size:.8rem;font-weight:500;color:#475569;display:block;margin-bottom:.25rem}
+      .job-filter-bar input[type=text],.job-filter-bar select{padding:.45rem .65rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.875rem;font-family:inherit;min-width:110px}
+      .job-filter-bar input[type=text]{min-width:160px}
+      .job-filter-bar .chk{display:flex;align-items:center;gap:.35rem;padding-bottom:.2rem}
+      .job-filter-bar .chk input{width:auto;margin:0}
+      .job-filter-bar .chk label{margin:0;font-weight:500}
+      .job-filter-bar .job-skill-wrap{display:flex;flex-direction:column;gap:.3rem;min-width:min(200px,100%)}
+      .job-filter-bar .job-skill-wrap .job-skill-label{font-size:.8rem;font-weight:500;color:#475569}
+      .job-filter-bar .job-skill-wrap .job-skill-preset{max-width:100%;min-width:160px}
+      .job-filter-bar .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+      .job-filter-meta{margin:0 0 1rem;font-size:.85rem;color:#64748b}
+      .job-filter-meta strong{color:#334155}
+      .job-match-pill{display:inline-block;margin-left:.35rem;padding:.12rem .45rem;border-radius:6px;font-size:.75rem;font-weight:600;background:#dbeafe;color:#1e40af;vertical-align:middle}
+      .job-type-label{font-size:.85rem;color:#64748b}
+      .resume-ai-section{border-left-color:#7c3aed}
+      .resume-ai-toolbar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;margin:.75rem 0}
+      .resume-ai-toolbar label{font-size:.85rem;font-weight:500;color:#475569;display:block;margin-bottom:.25rem}
+      .resume-ai-toolbar select{padding:.45rem .65rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.875rem;font-family:inherit}
+      .resume-ai-chat{min-height:100px;max-height:260px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:.75rem;margin:.5rem 0 1rem;background:#fafafa;font-size:.875rem;line-height:1.5}
+      .resume-ai-msg{margin-bottom:.65rem}
+      .resume-ai-msg--user{border-left:3px solid #2563eb;padding-left:.5rem}
+      .resume-ai-msg--asst{border-left:3px solid #7c3aed;padding-left:.5rem}
+      .resume-ai-msg--err{color:#b91c1c;font-size:.875rem;padding:.35rem 0}
+      .resume-ai-msg-label{font-size:.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:.2rem}
+      .resume-ai-warn{font-size:.85rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:.65rem .85rem;margin:.5rem 0}
+      .resume-ai-hint{font-size:.85rem;color:#64748b;margin:.35rem 0 0}
     </style>
 </head>
 <body>

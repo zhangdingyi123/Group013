@@ -25,7 +25,7 @@
         applicationsPostUrl = ctx + "/ta/dashboard";
     }
 %>
-<div class="section">
+<section id="pc-applications" class="section">
     <h2>我的申请</h2>
     <p class="section-desc">查看申请状态；待审核时可撤销申请。</p>
     <% if (myApplications.isEmpty()) { %>
@@ -46,10 +46,15 @@
             if (Application.STATUS_ACCEPTED.equals(st)) badgeClass = "badge-accepted";
             else if (Application.STATUS_REJECTED.equals(st)) badgeClass = "badge-rejected";
             else if (Application.STATUS_CANCELLED.equals(st)) badgeClass = "badge-cancelled";
+            String stLabel = st;
+            if (Application.STATUS_PENDING.equals(st)) stLabel = "待审核";
+            else if (Application.STATUS_ACCEPTED.equals(st)) stLabel = "已录用";
+            else if (Application.STATUS_REJECTED.equals(st)) stLabel = "已拒绝";
+            else if (Application.STATUS_CANCELLED.equals(st)) stLabel = "已撤销";
         %>
             <tr>
                 <td><%= title %></td>
-                <td><span class="badge <%= badgeClass %>"><%= st %></span></td>
+                <td><span class="badge <%= badgeClass %>"><%= stLabel %></span></td>
                 <td><%= sdf.format(new Date(app.getAppliedAt())) %></td>
                 <td>
                     <% if (Application.STATUS_PENDING.equals(st)) { %>
@@ -66,4 +71,4 @@
     </table>
     </div>
     <% } %>
-</div>
+</section>
