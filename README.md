@@ -1,164 +1,164 @@
 # 助教招聘系统 · 北京邮电大学国际学院
 
-轻量级 Java Servlet/JSP Web 应用，用于简化助教申请与招聘流程。**所有数据存储为 JSON 与文本文件，不使用数据库。**
+基于 **Java Servlet / JSP** 的轻量级 Web 应用，用于助教申请、岗位发布与录用管理。数据以 **JSON 与文本文件** 持久化在应用目录下的 `data/`，**不依赖数据库**，便于课程演示与本地部署。
+
+---
 
 ## 功能概览
 
 ### 应聘者（TA）
-- 注册/登录、创建个人申请档案（姓名、学号、技能标签）
-- 上传简历（纯文本，保存为 `.txt`）
-- 查询可申请岗位、提交岗位申请、查询申请状态
+
+- 注册、登录与个人资料（姓名、学号、技能标签等）
+- 简历：上传纯文本，或借助小助手从 PDF / Word 抽取正文后保存
+- 浏览岗位、提交申请、查看申请状态
+- 工作台：资料、申请、站内信等分栏入口
+- **交流论坛**：浏览、发帖、回复（需登录）
+- **站内信** 与 **好友**：与其他用户建立好友关系并私信（含已读状态）
 
 ### 课程组织者（MO）
-- 注册/登录
-- 发布招聘岗位（课程助教 / 监考 / 活动支持，可填所需技能）
-- 按岗位筛选应聘者，查看**技能匹配度**与**技能短板**
-- 录用/拒绝申请；关闭岗位
+
+- 注册、登录
+- 发布与管理岗位（课程助教 / 监考 / 活动支持等，可填写所需技能）
+- 按岗位查看应聘者列表：**技能匹配度**、**技能短板**、录用 / 拒绝、关闭岗位
+- 论坛与站内信、好友（与 TA 侧一致的数据模型）
 
 ### 管理员
-- 查看助教整体工作负荷：**录用岗位数、人均/极值、相对人均偏高/偏低提示**
-- 展开查看每位助教的**具体录用岗位**（名称、类型、课程组织者）
-- **转移录用**：将某条已录用申请改挂到其他已注册助教（用于均衡分工，需业务上已沟通）
 
-### 辅助逻辑（规则实现，非外部 AI）
-- **岗位与应聘者技能匹配**：按岗位所需技能与应聘者技能计算匹配分
-- **技能短板**：列出岗位需要但应聘者未填写的技能
-- **负荷均衡**：推荐应聘者时在同等匹配度下优先推荐当前录用数较少者
+- 通过 **`/admin/auth`** 登录（会话校验）
+- **`/admin/workload`**：查看助教整体工作负荷（录用数、人均与极值、相对偏高 / 偏低提示），展开每位助教的具体录用岗位，**转移录用**以均衡分工（业务上需事先沟通）
+- 未登录访问工作负荷页会重定向到管理员登录页
+
+### 跨角色与首页
+
+- **`/personal-center`**：个人中心入口；已登录则按角色跳转到 TA / MO / 管理员对应页面，否则进入身份选择页
+- **智能小助手**（`/assistant`）：可选接入大模型 API（见下文），支持对话与简历相关能力；REST：`/api/assistant/chat`、`/api/assistant/extract-resume`
+
+### 业务规则（内置逻辑，非外部 AI）
+
+
+---
 
 ## 技术栈
 
-- Java 11、Maven
-- Servlet 4.0、JSP、JSTL
-- Gson（JSON 读写）
-- 数据目录：`{应用根}/data/`，内含 `applicants.json`、`jobs.json`、`applications.json`、`module_organisers.json`，简历存放在 `data/resumes/*.txt`
+| 类别 | 说明 |
+|------|------|
+| 运行环境 | Java 11、Maven |
+| Web | Servlet 4.0、JSP、JSTL |
+| JSON | Gson |
+| 简历正文 | Apache PDFBox、Apache POI（PDF / Word 文本抽取） |
+| 打包 | `war`，默认产物名 `ta-recruitment.war` |
+
+---
+
+## 数据存储
+
+应用启动时通过 `AppListener` 将数据目录设为 **`{Web 应用根目录}/data`**（与部署上下文一致）。
+
+| 文件 / 目录 | 用途 |
+|-------------|------|
+| `applicants.json` | 应聘者 |
+| `module_organisers.json` | 课程组织者 |
+| `admins.json` | 管理员账号 |
+| `jobs.json` | 岗位 |
+| `applications.json` | 申请与录用状态 |
+| `messages.json` | 站内信 |
+| `dm_read_states.json` | 私信已读状态 |
+| `forum_threads.json` / `forum_replies.json` | 论坛帖子与回复 |
+| `friend_links.json` / `friend_requests.json` | 好友关系与好友请求 |
+| `data/resumes/` | 简历文本文件 |
+
+密码经 **SHA-256** 哈希后存入 JSON；请勿将含真实密钥或生产数据的 `data/` 提交到公开仓库。
+
+---
+
+## 智能小助手（可选）
+
+小助手相关配置由 `AssistantConfig` 读取，支持 **classpath 内的 `assistant.properties`**，或通过环境变量 **`ASSISTANT_PROPERTIES_PATH`** / JVM 参数 **`-Dassistant.properties.path=`** 指向外部配置文件；**环境变量可覆盖** 文件中的密钥类配置。
+
+可对接 **Moonshot Kimi**、**阿里云通义（OpenAI 兼容）**、**OpenAI** 等（具体模型与 Base URL 以配置为准）。未配置任何 API Key 时，页面会提示未就绪，不影响其余招聘功能。
+
+---
 
 ## 构建与运行
 
-### 方式一：生成 WAR 并部署到 Tomcat
+### 1. 打包 WAR
 
 ```bash
 mvn clean package
 ```
 
-在项目目录下会生成 **`target/ta-recruitment.war`**。将其拷贝到 Tomcat 的 `webapps/` 目录，启动 Tomcat 后访问：
+产物：`target/ta-recruitment.war`。将 WAR 放入 Tomcat 的 `webapps/`，默认访问路径为：
 
+- **`http://{主机}:{端口}/ta-recruitment/`**（端口以 Tomcat `server.xml` 为准，常见为 `8080`）
 
-（端口以实际 Tomcat 配置为准。）
-
-#### Tomcat 全量部署流程（避免 JSP 与 class 版本不一致）
-
-以下流程适用于**任意一次**需要可靠更新的场景（例如改过 `AdminServlet`、新增 `com.bupt.ta.web.view` 下的类、或修改 `admin/workload.jsp`）。原则是：**整包替换 + 清 JSP 编译缓存**，不要只拷单个 `.class` 或单个 `.jsp`。
-
-**环境约定**
-
-- `CATALINA_HOME`：Tomcat 安装目录（例如 macOS 上 `/usr/local/apache-tomcat-7.0.47` 或你解压的路径）。
-- 应用上下文名：默认与 WAR 文件名一致，即 **`ta-recruitment`**（访问路径 `/ta-recruitment/`）。
-
-**步骤 1：本地完整构建**
-
-在项目根目录执行（需已安装 **JDK 11** 与 **Maven**）：
-
-```bash
-cd /path/to/软工   # 换成你的项目根目录
-mvn clean package -DskipTests
-```
-
-- `clean` 会删掉 `target/`，避免旧 class 混进新包。
-- 成功后得到 **`target/ta-recruitment.war`**。
-
-**步骤 2：确认 WAR 内关键内容（可选但推荐）**
-
-解压或 `jar tf target/ta-recruitment.war | grep` 检查是否存在例如：
-
-- `WEB-INF/classes/com/bupt/ta/web/AdminServlet.class`
-- `WEB-INF/classes/com/bupt/ta/web/view/WorkloadEntryView.class`
-- `WEB-INF/classes/com/bupt/ta/web/view/WorkloadAssignmentView.class`
-- `WEB-INF/classes/com/bupt/ta/web/view/ApplicantOptionView.class`
-- `admin/workload.jsp`
-
-快速列出 view 包：
-
-```bash
-jar tf target/ta-recruitment.war | grep 'web/view/'
-```
-
-**步骤 3：停止 Tomcat**
-
-```bash
-$CATALINA_HOME/bin/shutdown.sh
-```
-
-（Windows 使用 `shutdown.bat`。）确认进程已退出后再继续。
-
-**步骤 4：删除旧应用与 JSP 编译缓存**
-
-仍假设应用名为 `ta-recruitment`：
-
-1. 删除已部署应用（二选一或都做，保证没有旧文件残留）  
-   - 删除 **`$CATALINA_HOME/webapps/ta-recruitment/`** 整个目录（exploded 部署时）。  
-   - 删除 **`$CATALINA_HOME/webapps/ta-recruitment.war`**（若使用 WAR 部署；Tomcat 启动时会再解压，删 WAR 可避免旧包被再次展开）。
-
-2. **清空本应用在 Tomcat 的 work 缓存**（让 JSP 重新编译，避免沿用旧的 `workload_jsp.class`）：  
-   - 删除目录 **`$CATALINA_HOME/work/Catalina/localhost/ta-recruitment/`**  
-   - 若 `localhost` 下没有该名，可在 **`$CATALINA_HOME/work/`** 下搜索 `ta-recruitment` 相关子目录并整目录删除。
-
-**步骤 5：部署新 WAR**
-
-将 **`target/ta-recruitment.war`** 拷贝到 **`$CATALINA_HOME/webapps/`**。
-
-（若你使用 **exploded** 部署：将 `mvn clean package` 生成的 **`target/ta-recruitment/`** 整个目录拷到 `webapps/ta-recruitment/`，并同样保证步骤 4 已删掉旧目录与 work 缓存。）
-
-**步骤 6：启动 Tomcat**
-
-```bash
-$CATALINA_HOME/bin/startup.sh
-```
-
-**步骤 7：验证**
-
-浏览器访问（端口以 `server.xml` 中 `Connector` 为准，默认常为 **8080**）：
-
-- `http://localhost:8080/ta-recruitment/admin/workload`（需先以管理员登录）
-
-若仍出现与 JSP 相关的 500，再次确认：**work 目录下是否已无旧的 `ta-recruitment` 缓存**，并已使用 **`mvn clean package`** 生成的 WAR。
-
-**IDEA / Eclipse 提示**：若用「Exploded」热部署，请在重大类结构变更后执行一次 **Rebuild + 重新部署整个 artifact**，或改用手动 **WAR 全量替换** 流程 above，避免只同步了部分 class。
-
-### 方式二：使用 Maven Tomcat 插件直接运行（无需单独安装 Tomcat）
+### 2. Maven 内嵌 Tomcat（开发常用）
 
 ```bash
 mvn tomcat7:run
 ```
 
-启动后浏览器访问：
+当前 `pom.xml` 将插件上下文设为 **`/`**、默认端口 **`8082`**，因此本地根地址为：
+
+- **`http://localhost:8082/`**
+
+若端口被占用，可指定例如：
+
+```bash
+mvn tomcat7:run -Dmaven.tomcat.port=8083
+```
+
+**注意**：内嵌运行与独立 Tomcat 部署的 **上下文路径不同**（`/` 与 `/ta-recruitment/`），书签与说明中的链接需按实际环境替换。
 
 
-### 方式三：在 IDE 中运行
 
-- **IDEA**：可配置 Tomcat 运行配置，将部署目标设为 `ta-recruitment:war exploded` 或已打包的 `target/ta-recruitment.war`。
-- **Eclipse**：可安装 Tomcat 插件并将项目以 Dynamic Web Project 方式部署并运行。
+## 主要 URL 速查
 
-进入首页后，可选择：应聘者入口、课程组织者入口、管理员工作负荷。
+| 路径 | 说明 |
+|------|------|
+| `/` | 首页 |
+| `/personal-center` | 个人中心入口 |
+| `/ta/auth`、`/ta/dashboard`、`/ta/profile` | 应聘者认证与工作台 |
+| `/mo/auth`、`/mo/dashboard`、`/mo/profile` | 课程组织者认证与工作台 |
+| `/mo/job-applicants` | 岗位应聘者管理 |
+| `/admin/auth`、`/admin/workload` | 管理员登录与工作负荷 |
+| `/forum` | 交流论坛 |
+| `/assistant` | 智能小助手页面 |
 
-## 项目结构
+其余静态页面与分栏 JSP 由对应 Servlet 转发，以项目 `src/main/webapp` 为准。
+
+---
+
+## 源码结构（摘要）
 
 ```
 src/main/java/com/bupt/ta/
-  model/          # Applicant, Job, Application, ModuleOrganiser
-  storage/        # Storage（JSON 文件读写）
-  service/        # ApplicantService, JobService, ApplicationService, ModuleOrganiserService, MatchHelper
-  util/           # PasswordUtil（SHA-256）
-  web/            # HomeServlet, TAAuthServlet, TADashboardServlet, MOAuthServlet, MODashboardServlet, AdminServlet, AppListener
+  model/          # 领域模型
+  storage/        # Storage：JSON 读写与路径
+  service/        # 业务服务（含 assistant 子包）
+  util/           # 密码、会话等工具
+  web/            # Servlet、Listener、Filter
 src/main/webapp/
-  index.jsp       # 首页
-  ta/             # 应聘者登录、注册；工作台分 profile / applications / my-resume 三页（均由 TADashboardServlet 按 tab 转发）
-  mo/             # 课程组织者登录、注册、工作台
-  admin/          # 工作负荷页
-  css/style.css
+  index.jsp, personal_center_gate.jsp, assistant.jsp, …
+  ta/, mo/, admin/, forum/, css/
+  data/           # 运行时数据（部署后位于应用根下）
   WEB-INF/web.xml
 ```
 
-## 说明
+---
 
-- 管理员工作负荷页未做登录校验，仅作原型演示；生产环境需增加权限控制。
-- 密码以 SHA-256 哈希后存储，简历与业务数据均为文本/JSON，便于在无数据库环境下运行与演示。
+## 独立 Tomcat 全量更新建议
+
+升级或排查 JSP 500 时，建议 **整包替换** 并 **清理本应用在 `work/` 下的 JSP 编译缓存**，避免只拷贝单个 class 或单个 JSP 导致版本混用。步骤概要：
+
+1. `mvn clean package -DskipTests`
+2. 停止 Tomcat
+3. 删除 `webapps/ta-recruitment/`、`webapps/ta-recruitment.war`（按你实际部署方式）
+4. 删除 `work/Catalina/localhost/ta-recruitment/`（或实际上下文名对应目录）
+5. 拷贝新 WAR 到 `webapps/`，启动 Tomcat
+
+---
+
+## 说明与限制
+
+- 本系统面向教学与原型演示；生产环境需补充审计、HTTPS、备份与更细粒度权限等。
+- 管理员与各角色权限以会话与页面逻辑为准；数据文件为明文 JSON，请妥善保管部署目录。

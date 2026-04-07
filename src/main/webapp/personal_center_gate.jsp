@@ -47,6 +47,11 @@
             <a href="<%= ctx %>/mo/auth">课程组织者登录<span>岗位与筛选管理</span></a>
             <a href="<%= ctx %>/admin/auth">管理员登录<span>工作负荷与录用管理</span></a>
         </nav>
+        <p style="margin:1.5rem 0 0;font-size:0.88rem;color:#64748b;text-align:center">
+            <a href="<%= ctx %>/forum" style="color:#2563eb;text-decoration:none">交流论坛</a>
+            <span style="margin:0 0.5rem;color:#cbd5e1">·</span>
+            <a href="<%= ctx %>/assistant" style="color:#2563eb;text-decoration:none">智能小助手</a>
+        </p>
     </div>
 </body>
 </html>

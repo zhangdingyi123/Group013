@@ -63,6 +63,79 @@ public class ApplicationService {
         for (Application a : list) {
             if (a.getId().equals(applicationId)) {
                 a.setStatus(status);
+                if (!Application.STATUS_INTERVIEW.equals(status)) {
+                    a.clearInterviewFields();
+                }
+                Storage.saveApplications(list);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** MO 将待审核申请设为待面试，或对「拒绝/更换时间」的申请重新填写时间地点 */
+    public boolean scheduleInterview(String applicationId, long interviewAtMs, String interviewDetail) throws IOException {
+        if (interviewAtMs <= 0) {
+            return false;
+        }
+        String detail = interviewDetail != null ? interviewDetail.trim() : "";
+        if (detail.isEmpty()) {
+            return false;
+        }
+        List<Application> list = Storage.loadApplications();
+        for (Application a : list) {
+            if (!a.getId().equals(applicationId)) {
+                continue;
+            }
+            if (Application.STATUS_PENDING.equals(a.getStatus())) {
+                a.setStatus(Application.STATUS_INTERVIEW);
+                a.setInterviewAt(interviewAtMs);
+                a.setInterviewDetail(detail);
+                a.setInterviewTaStatus(Application.TA_IV_PENDING);
+                a.setInterviewConfirmed(false);
+                Storage.saveApplications(list);
+                return true;
+            }
+            if (Application.STATUS_INTERVIEW.equals(a.getStatus())) {
+                String ts = a.getInterviewTaStatus();
+                if (Application.TA_IV_DECLINED.equals(ts) || Application.TA_IV_RESCHEDULE.equals(ts)) {
+                    a.setInterviewAt(interviewAtMs);
+                    a.setInterviewDetail(detail);
+                    a.setInterviewTaStatus(Application.TA_IV_PENDING);
+                    a.setInterviewConfirmed(false);
+                    Storage.saveApplications(list);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** TA 确认参加 */
+    public boolean confirmInterviewByApplicant(String applicationId, String applicantId) throws IOException {
+        return setInterviewTaResponse(applicationId, applicantId, Application.TA_IV_CONFIRMED);
+    }
+
+    /** TA 拒绝参加面试 */
+    public boolean declineInterviewByApplicant(String applicationId, String applicantId) throws IOException {
+        return setInterviewTaResponse(applicationId, applicantId, Application.TA_IV_DECLINED);
+    }
+
+    /** TA 希望更换时间 */
+    public boolean requestRescheduleByApplicant(String applicationId, String applicantId) throws IOException {
+        return setInterviewTaResponse(applicationId, applicantId, Application.TA_IV_RESCHEDULE);
+    }
+
+    private boolean setInterviewTaResponse(String applicationId, String applicantId, String newStatus) throws IOException {
+        List<Application> list = Storage.loadApplications();
+        for (Application a : list) {
+            if (a.getId().equals(applicationId) && applicantId.equals(a.getApplicantId())
+                    && Application.STATUS_INTERVIEW.equals(a.getStatus())) {
+                if (!Application.TA_IV_PENDING.equals(a.getInterviewTaStatus())) {
+                    return false;
+                }
+                a.setInterviewTaStatus(newStatus);
+                a.setInterviewConfirmed(Application.TA_IV_CONFIRMED.equals(newStatus));
                 Storage.saveApplications(list);
                 return true;
             }

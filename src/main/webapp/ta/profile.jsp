@@ -80,6 +80,8 @@
             <h1>个人中心</h1>
             <div class="pc-top-actions">
                 <a href="<%= ctx %>/" class="pc-link">首页</a>
+                <a href="<%= ctx %>/forum" class="pc-link">论坛</a>
+                <a href="<%= ctx %>/assistant" class="pc-link">小助手</a>
                 <a href="<%= ctx %>/ta/dashboard" class="pc-link pc-link-primary">工作台</a>
                 <a href="<%= ctx %>/ta/auth?logout=1" class="pc-link">退出</a>
             </div>

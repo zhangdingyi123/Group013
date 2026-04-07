@@ -17,6 +17,10 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,11 +39,17 @@ public class JobApplicantsServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        ModuleOrganiser user = (ModuleOrganiser) req.getSession().getAttribute("moUser");
+        HttpSession session = req.getSession();
+        ModuleOrganiser user = (ModuleOrganiser) session.getAttribute("moUser");
         if (user == null) {
             String returnUrl = "/mo/job-applicants?jobId=" + java.net.URLEncoder.encode(req.getParameter("jobId") != null ? req.getParameter("jobId") : "", "UTF-8");
             resp.sendRedirect(req.getContextPath() + "/mo/auth?returnUrl=" + java.net.URLEncoder.encode(returnUrl, "UTF-8"));
             return;
+        }
+        String moNotice = (String) session.getAttribute("moNotice");
+        if (moNotice != null) {
+            session.removeAttribute("moNotice");
+            req.setAttribute("moNotice", moNotice);
         }
         String jobId = req.getParameter("jobId");
         if (jobId == null || jobId.trim().isEmpty()) {
@@ -54,7 +64,6 @@ public class JobApplicantsServlet extends HttpServlet {
             } else {
                 Job job = jobOpt.get();
                 if (!Job.STATUS_OPEN.equals(job.getStatus())) {
-                    HttpSession session = req.getSession();
                     session.setAttribute("moNotice", "该岗位已关闭，无法继续筛选应聘者。");
                     resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
                     return;
@@ -70,6 +79,7 @@ public class JobApplicantsServlet extends HttpServlet {
                 if (filter == null || filter.isEmpty()) {
                     filter = "all";
                 } else if (!"all".equals(filter) && !Application.STATUS_PENDING.equals(filter)
+                        && !Application.STATUS_INTERVIEW.equals(filter)
                         && !Application.STATUS_ACCEPTED.equals(filter) && !Application.STATUS_REJECTED.equals(filter)
                         && !Application.STATUS_CANCELLED.equals(filter)) {
                     filter = "all";
@@ -143,14 +153,71 @@ public class JobApplicantsServlet extends HttpServlet {
             return;
         }
         String action = req.getParameter("action");
+        String jobIdParam = req.getParameter("jobId");
+        HttpSession session = req.getSession();
+        if ("scheduleInterview".equals(action)) {
+            String appId = req.getParameter("applicationId");
+            String interviewAtRaw = req.getParameter("interviewAt");
+            String interviewDetail = req.getParameter("interviewDetail");
+            if (appId == null || appId.trim().isEmpty()) {
+                redirectAfterPost(req, resp, jobIdParam);
+                return;
+            }
+            long atMs = parseInterviewAtMillis(interviewAtRaw);
+            try {
+                Optional<Application> appOpt = applicationService.findById(appId.trim());
+                if (appOpt.isEmpty()) {
+                    session.setAttribute("moNotice", "申请记录不存在。");
+                    redirectAfterPost(req, resp, jobIdParam);
+                    return;
+                }
+                String jobId = appOpt.get().getJobId();
+                Optional<Job> jobOpt = jobService.findById(jobId);
+                if (jobOpt.isEmpty() || !user.getId().equals(jobOpt.get().getModuleOrganiserId())) {
+                    session.setAttribute("moNotice", "无权处理该申请。");
+                    redirectAfterPost(req, resp, jobIdParam);
+                    return;
+                }
+                Job job = jobOpt.get();
+                if (!Job.STATUS_OPEN.equals(job.getStatus())) {
+                    session.setAttribute("moNotice", "该岗位已关闭，无法安排面试。");
+                    redirectAfterPost(req, resp, jobIdParam);
+                    return;
+                }
+                if (atMs <= 0) {
+                    session.setAttribute("moNotice", "请选择有效的面试/试讲时间。");
+                } else if (!applicationService.scheduleInterview(appId.trim(), atMs, interviewDetail)) {
+                    session.setAttribute("moNotice", "仅待审核的申请可设为待面试。");
+                } else {
+                    session.setAttribute("moNotice", "已标记为待面试，并通知应聘者查看时间与地点。");
+                }
+            } catch (Exception e) {
+                session.setAttribute("moNotice", "操作失败，请重试。");
+            }
+            String backJobId = jobIdParam != null && !jobIdParam.trim().isEmpty() ? jobIdParam.trim() : null;
+            if (backJobId == null || backJobId.isEmpty()) {
+                try {
+                    Optional<Application> ao = applicationService.findById(appId.trim());
+                    if (ao.isPresent()) {
+                        backJobId = ao.get().getJobId();
+                    }
+                } catch (IOException ignored) {}
+            }
+            if (backJobId != null && !backJobId.isEmpty()) {
+                resp.sendRedirect(applicantsListUrl(req.getContextPath(), backJobId,
+                        req.getParameter("filter"), req.getParameter("q"),
+                        req.getParameter("sort"), req.getParameter("minScore")));
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
+            }
+            return;
+        }
         if (!"applicationStatus".equals(action)) {
             resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
             return;
         }
         String appId = req.getParameter("applicationId");
         String status = req.getParameter("status");
-        String jobIdParam = req.getParameter("jobId");
-        HttpSession session = req.getSession();
         if (appId == null || appId.trim().isEmpty()
                 || (!Application.STATUS_ACCEPTED.equals(status) && !Application.STATUS_REJECTED.equals(status))) {
             redirectAfterPost(req, resp, jobIdParam);
@@ -163,7 +230,17 @@ public class JobApplicantsServlet extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
                 return;
             }
-            String jobId = appOpt.get().getJobId();
+            Application currentApp = appOpt.get();
+            String curSt = currentApp.getStatus();
+            if (!Application.STATUS_PENDING.equals(curSt) && !Application.STATUS_INTERVIEW.equals(curSt)) {
+                session.setAttribute("moNotice", "当前状态不可录用或拒绝。");
+                String backJobId = (jobIdParam != null && !jobIdParam.trim().isEmpty()) ? jobIdParam.trim() : currentApp.getJobId();
+                resp.sendRedirect(applicantsListUrl(req.getContextPath(), backJobId,
+                        req.getParameter("filter"), req.getParameter("q"),
+                        req.getParameter("sort"), req.getParameter("minScore")));
+                return;
+            }
+            String jobId = currentApp.getJobId();
             Optional<Job> jobOpt = jobService.findById(jobId);
             if (jobOpt.isEmpty() || !user.getId().equals(jobOpt.get().getModuleOrganiserId())) {
                 session.setAttribute("moNotice", "无权处理该申请。");
@@ -253,5 +330,18 @@ public class JobApplicantsServlet extends HttpServlet {
             } catch (NumberFormatException ignored) { /* skip */ }
         }
         return sb.toString();
+    }
+
+    /** 解析 {@code datetime-local} 提交值（本地时区） */
+    private static long parseInterviewAtMillis(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return -1;
+        }
+        try {
+            LocalDateTime ldt = LocalDateTime.parse(raw.trim(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            return ldt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        } catch (DateTimeParseException e) {
+            return -1;
+        }
     }
 }

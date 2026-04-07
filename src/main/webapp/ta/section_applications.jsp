@@ -27,14 +27,14 @@
 %>
 <section id="pc-applications" class="section">
     <h2>我的申请</h2>
-    <p class="section-desc">查看申请状态；待审核时可撤销申请。</p>
+    <p class="section-desc">查看申请状态；待审核时可撤销申请。面试/试讲安排需选择：确认参加、拒绝或希望更换时间。</p>
     <% if (myApplications.isEmpty()) { %>
     <p class="empty-hint">暂无申请记录。</p>
     <% } else { %>
     <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>岗位</th><th>状态</th><th>申请时间</th><th>操作</th></tr>
+            <tr><th>岗位</th><th>状态</th><th>面试/试讲</th><th>申请时间</th><th>操作</th></tr>
         </thead>
         <tbody>
         <% for (ApplicationWithJob aw : myApplications) {
@@ -48,13 +48,40 @@
             else if (Application.STATUS_CANCELLED.equals(st)) badgeClass = "badge-cancelled";
             String stLabel = st;
             if (Application.STATUS_PENDING.equals(st)) stLabel = "待审核";
+            else if (Application.STATUS_INTERVIEW.equals(st)) stLabel = "待面试";
             else if (Application.STATUS_ACCEPTED.equals(st)) stLabel = "已录用";
             else if (Application.STATUS_REJECTED.equals(st)) stLabel = "已拒绝";
             else if (Application.STATUS_CANCELLED.equals(st)) stLabel = "已撤销";
+            if (Application.STATUS_INTERVIEW.equals(st)) badgeClass = "badge-interview";
+            String ivTa = Application.STATUS_INTERVIEW.equals(st) ? app.getInterviewTaStatus() : "";
+            boolean ivAwaitTa = Application.STATUS_INTERVIEW.equals(st)
+                    && Application.TA_IV_PENDING.equals(ivTa);
+            String ivTaLabel = "";
+            if (Application.STATUS_INTERVIEW.equals(st)) {
+                if (Application.TA_IV_PENDING.equals(ivTa)) ivTaLabel = "待确认";
+                else if (Application.TA_IV_CONFIRMED.equals(ivTa)) ivTaLabel = "已确认";
+                else if (Application.TA_IV_DECLINED.equals(ivTa)) ivTaLabel = "拒绝";
+                else if (Application.TA_IV_RESCHEDULE.equals(ivTa)) ivTaLabel = "更换时间";
+            }
+            String det = app.getInterviewDetail();
+            String detEsc = det == null ? "" : det.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
         %>
             <tr>
                 <td><%= title %></td>
-                <td><span class="badge <%= badgeClass %>"><%= stLabel %></span></td>
+                <td>
+                    <span class="badge <%= badgeClass %>"><%= stLabel %></span>
+                    <% if (Application.STATUS_INTERVIEW.equals(st) && !ivTaLabel.isEmpty()) { %>
+                    <div style="font-size:.78rem;margin-top:.2rem;color:#64748b;"><%= ivTaLabel %></div>
+                    <% } %>
+                </td>
+                <td>
+                    <% if (Application.STATUS_INTERVIEW.equals(st)) { %>
+                    <% if (app.getInterviewAt() > 0) { %>
+                    <div class="app-iv-note"><strong>时间：</strong><%= sdf.format(new Date(app.getInterviewAt())) %></div>
+                    <% } %>
+                    <div class="app-iv-note"><strong>地点/链接：</strong><%= detEsc.isEmpty() ? "—" : detEsc %></div>
+                    <% } else { %>—<% } %>
+                </td>
                 <td><%= sdf.format(new Date(app.getAppliedAt())) %></td>
                 <td>
                     <% if (Application.STATUS_PENDING.equals(st)) { %>
@@ -63,6 +90,24 @@
                         <input type="hidden" name="applicationId" value="<%= app.getId() %>">
                         <button type="submit" class="btn btn-secondary btn-small">撤销申请</button>
                     </form>
+                    <% } else if (ivAwaitTa) { %>
+                    <div style="display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;">
+                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;">
+                        <input type="hidden" name="action" value="confirmInterview">
+                        <input type="hidden" name="applicationId" value="<%= app.getId() %>">
+                        <button type="submit" class="btn btn-primary btn-small">确认参加</button>
+                    </form>
+                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;" onsubmit="return confirm('确定拒绝本次面试/试讲安排吗？');">
+                        <input type="hidden" name="action" value="declineInterview">
+                        <input type="hidden" name="applicationId" value="<%= app.getId() %>">
+                        <button type="submit" class="btn btn-secondary btn-small">拒绝</button>
+                    </form>
+                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;" onsubmit="return confirm('将通知招聘方您希望更换时间，确定吗？');">
+                        <input type="hidden" name="action" value="requestRescheduleInterview">
+                        <input type="hidden" name="applicationId" value="<%= app.getId() %>">
+                        <button type="submit" class="btn btn-secondary btn-small">更换时间</button>
+                    </form>
+                    </div>
                     <% } else { %>—<% } %>
                 </td>
             </tr>

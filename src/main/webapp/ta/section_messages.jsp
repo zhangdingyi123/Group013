@@ -47,7 +47,7 @@
                         </c:choose>
                         <c:set var="isActive" value="${taDmWithMo eq row.moId}"/>
                         <a href="${threadUrl}" class="dm-thread-item ${isActive ? 'active' : ''}">
-                            <span class="dm-thread-name"><c:out value="${row.moName}"/></span>
+                            <span class="dm-thread-name"><c:out value="${row.moName}"/><c:if test="${row.unreadCount > 0}"><span class="dm-unread-badge" title="未读">${row.unreadCount > 99 ? '99+' : row.unreadCount}</span></c:if></span>
                             <span class="dm-thread-preview">
                                 <c:choose>
                                     <c:when test="${not empty row.lastPreview}"><c:out value="${row.lastPreview}"/></c:when>
@@ -113,6 +113,7 @@
               .dm-bubble.mine .dm-body{background:#2563eb;color:#fff}
               .dm-bubble.theirs .dm-body{background:#f1f5f9;color:#1e293b}
               .dm-compose .form-group{margin-bottom:.75rem}
+              .dm-unread-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.1rem;margin-left:.4rem;padding:0 .3rem;font-size:.65rem;font-weight:800;line-height:1.2;border-radius:999px;background:#dc2626;color:#fff;vertical-align:middle}
             </style>
         </c:otherwise>
     </c:choose>

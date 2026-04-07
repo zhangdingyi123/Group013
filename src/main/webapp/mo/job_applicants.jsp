@@ -67,6 +67,12 @@
       .filter-meta{margin:0 0 1rem;font-size:.85rem;color:#64748b}
       .filter-meta strong{color:#334155}
       .badge-cancelled{background:#f1f5f9;color:#475569}
+      .badge-interview{background:#e0e7ff;color:#3730a3}
+      .interview-box{font-size:.78rem;color:#475569;margin-top:.35rem;padding:.45rem .55rem;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;max-width:22rem}
+      .interview-box summary{cursor:pointer;color:#2563eb;font-weight:500}
+      .schedule-form{margin-top:.45rem;display:flex;flex-direction:column;gap:.4rem;align-items:stretch}
+      .schedule-form input[type=datetime-local],.schedule-form textarea{padding:.4rem .5rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.82rem;font-family:inherit}
+      .msg-ok{background:#ecfdf5;color:#065f46;padding:.55rem .85rem;border-radius:8px;font-size:.88rem;margin:0 0 1rem;border:1px solid #a7f3d0}
     </style>
 </head>
 <body>
@@ -75,6 +81,9 @@
             <a href="${pageContext.request.contextPath}/mo/dashboard?tab=positions" class="back-link">← 返回我的岗位</a>
             <h1><%= job != null ? ("筛选应聘者：" + job.getTitle()) : "筛选应聘者" %></h1>
         </div>
+        <% if (request.getAttribute("moNotice") != null) { %>
+        <p class="msg-ok"><%= request.getAttribute("moNotice") %></p>
+        <% } %>
 
         <% if (job == null) { %>
         <div class="section">
@@ -84,7 +93,7 @@
         <% } else { %>
         <div class="section">
             <h2>系统推荐（按匹配度与负荷均衡排序）</h2>
-            <p class="section-desc">匹配分：岗位技能匹配度；技能短板：岗位需要但应聘者未体现的技能。可根据此列表进行录用或拒绝。<strong>录用任意一名待处理应聘者后，该岗位将自动关闭</strong>，且关闭后不可再进入本筛选页。</p>
+            <p class="section-desc">匹配分：岗位技能匹配度；技能短板：岗位需要但应聘者未体现的技能。可将<strong>待处理</strong>申请标记为<strong>待面试</strong>并填写时间与地点或线上链接；应聘者确认后您仍可录用或拒绝。<strong>录用任意一名应聘者后，该岗位将自动关闭</strong>，且关闭后不可再进入本筛选页。</p>
             <form class="filter-bar" method="get" action="${pageContext.request.contextPath}/mo/job-applicants">
                 <input type="hidden" name="jobId" value="<%= job.getId() %>">
                 <div>
@@ -92,6 +101,7 @@
                     <select id="filter-status" name="filter">
                         <option value="all" <%= "all".equals(filterAttr) ? "selected" : "" %>>全部</option>
                         <option value="pending" <%= "pending".equals(filterAttr) ? "selected" : "" %>>待处理</option>
+                        <option value="interview" <%= "interview".equals(filterAttr) ? "selected" : "" %>>待面试</option>
                         <option value="accepted" <%= "accepted".equals(filterAttr) ? "selected" : "" %>>已录用</option>
                         <option value="rejected" <%= "rejected".equals(filterAttr) ? "selected" : "" %>>已拒绝</option>
                         <option value="cancelled" <%= "cancelled".equals(filterAttr) ? "selected" : "" %>>已撤销</option>
@@ -130,16 +140,18 @@
             <div class="table-wrap">
             <table>
                 <thead>
-                    <tr><th>姓名</th><th>学号</th><th>邮箱</th><th>匹配分</th><th>技能短板</th><th>申请时间</th><th>操作</th></tr>
+                    <tr><th>姓名</th><th>学号</th><th>邮箱</th><th>电话</th><th>匹配分</th><th>技能短板</th><th>申请时间</th><th>操作</th></tr>
                 </thead>
                 <tbody>
                 <% for (MatchHelper.ApplicantMatch m : applicantsForJob) {
                     String appId = "";
                     String status = "pending";
                     long appliedAt = 0L;
+                    Application appRow = null;
                     for (Application app : applicationsForJob) {
                         if (app.getApplicantId().equals(m.applicant.getId())) {
                             appId = app.getId();
+                            appRow = app;
                             status = app.getStatus() != null ? app.getStatus() : "pending";
                             appliedAt = app.getAppliedAt();
                             break;
@@ -149,11 +161,14 @@
                     String jsName = dispName.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
                     String sidDisp = m.applicant.getStudentId() != null && !m.applicant.getStudentId().isEmpty()
                             ? m.applicant.getStudentId() : "—";
+                    String phoneDisp = m.applicant.getPhone() != null && !m.applicant.getPhone().trim().isEmpty()
+                            ? m.applicant.getPhone().trim() : "—";
                 %>
                     <tr>
                         <td><%= m.applicant.getName() %></td>
                         <td><%= sidDisp %></td>
                         <td><%= m.applicant.getEmail() %></td>
+                        <td><%= phoneDisp %></td>
                         <td><span class="score"><%= m.score %> 分</span></td>
                         <td class="gaps"><%= m.gaps != null && !m.gaps.isEmpty() ? String.join(", ", m.gaps) : "无" %></td>
                         <td><%= appliedAt > 0 ? sdf.format(new Date(appliedAt)) : "—" %></td>
@@ -181,8 +196,84 @@
                                 <input type="hidden" name="minScore" value="<%= minScoreAttr %>">
                                 <button type="submit" class="btn btn-secondary btn-small">拒绝</button>
                             </form>
+                            <details class="interview-box">
+                                <summary>安排面试/试讲</summary>
+                                <form class="schedule-form" method="post" action="${pageContext.request.contextPath}/mo/job-applicants">
+                                    <input type="hidden" name="action" value="scheduleInterview">
+                                    <input type="hidden" name="jobId" value="<%= job.getId() %>">
+                                    <input type="hidden" name="applicationId" value="<%= appId %>">
+                                    <input type="hidden" name="filter" value="<%= filterAttr %>">
+                                    <input type="hidden" name="q" value="<%= qAttrEsc %>">
+                                    <input type="hidden" name="sort" value="<%= sortAttr %>">
+                                    <input type="hidden" name="minScore" value="<%= minScoreAttr %>">
+                                    <label for="iv-at-<%= appId %>">时间</label>
+                                    <input id="iv-at-<%= appId %>" type="datetime-local" name="interviewAt" required>
+                                    <label for="iv-d-<%= appId %>">地点或线上链接</label>
+                                    <textarea id="iv-d-<%= appId %>" name="interviewDetail" rows="2" placeholder="例如：教三 201，或腾讯会议链接" required></textarea>
+                                    <button type="submit" class="btn btn-primary btn-small">标记为待面试</button>
+                                </form>
+                            </details>
                             <% } else if ("pending".equals(status)) { %>
                             <span class="empty-hint" style="padding:0;font-size:.85rem;">无有效申请记录</span>
+                            <% } else if ("interview".equals(status) && appId != null && !appId.isEmpty()) {
+                                String det = appRow != null && appRow.getInterviewDetail() != null ? appRow.getInterviewDetail() : "";
+                                String detEsc = det.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+                                long ivAt = appRow != null ? appRow.getInterviewAt() : 0L;
+                                String ivTa = appRow != null ? appRow.getInterviewTaStatus() : Application.TA_IV_PENDING;
+                                String taBadge;
+                                String taBadgeClass;
+                                if (Application.TA_IV_CONFIRMED.equals(ivTa)) { taBadge = "已确认"; taBadgeClass = "badge-accepted"; }
+                                else if (Application.TA_IV_DECLINED.equals(ivTa)) { taBadge = "拒绝"; taBadgeClass = "badge-rejected"; }
+                                else if (Application.TA_IV_RESCHEDULE.equals(ivTa)) { taBadge = "更换时间"; taBadgeClass = "badge-interview"; }
+                                else { taBadge = "待确认"; taBadgeClass = "badge-pending"; }
+                                boolean needReschedule = Application.TA_IV_DECLINED.equals(ivTa) || Application.TA_IV_RESCHEDULE.equals(ivTa);
+                            %>
+                            <div style="font-size:.8rem;color:#64748b;margin-bottom:.4rem;">
+                                <% if (ivAt > 0) { %><strong><%= sdf.format(new Date(ivAt)) %></strong><br><% } %>
+                                <span style="word-break:break-all;"><%= detEsc.isEmpty() ? "—" : detEsc %></span><br>
+                                <span class="badge <%= taBadgeClass %>" style="margin-top:.25rem;"><%= taBadge %></span>
+                            </div>
+                            <form method="post" action="${pageContext.request.contextPath}/mo/job-applicants" style="display:inline;" onsubmit="return confirm('确定录用「<%= jsName %>」吗？\n录用后该岗位将自动关闭。');">
+                                <input type="hidden" name="action" value="applicationStatus">
+                                <input type="hidden" name="jobId" value="<%= job.getId() %>">
+                                <input type="hidden" name="applicationId" value="<%= appId %>">
+                                <input type="hidden" name="status" value="accepted">
+                                <input type="hidden" name="filter" value="<%= filterAttr %>">
+                                <input type="hidden" name="q" value="<%= qAttrEsc %>">
+                                <input type="hidden" name="sort" value="<%= sortAttr %>">
+                                <input type="hidden" name="minScore" value="<%= minScoreAttr %>">
+                                <button type="submit" class="btn btn-primary btn-small">录用</button>
+                            </form>
+                            <form method="post" action="${pageContext.request.contextPath}/mo/job-applicants" style="display:inline;" onsubmit="return confirm('确定拒绝录用「<%= jsName %>」吗？');">
+                                <input type="hidden" name="action" value="applicationStatus">
+                                <input type="hidden" name="jobId" value="<%= job.getId() %>">
+                                <input type="hidden" name="applicationId" value="<%= appId %>">
+                                <input type="hidden" name="status" value="rejected">
+                                <input type="hidden" name="filter" value="<%= filterAttr %>">
+                                <input type="hidden" name="q" value="<%= qAttrEsc %>">
+                                <input type="hidden" name="sort" value="<%= sortAttr %>">
+                                <input type="hidden" name="minScore" value="<%= minScoreAttr %>">
+                                <button type="submit" class="btn btn-secondary btn-small">拒绝</button>
+                            </form>
+                            <% if (needReschedule) { %>
+                            <details class="interview-box" style="margin-top:.5rem;">
+                                <summary>重新安排面试/试讲</summary>
+                                <form class="schedule-form" method="post" action="${pageContext.request.contextPath}/mo/job-applicants">
+                                    <input type="hidden" name="action" value="scheduleInterview">
+                                    <input type="hidden" name="jobId" value="<%= job.getId() %>">
+                                    <input type="hidden" name="applicationId" value="<%= appId %>">
+                                    <input type="hidden" name="filter" value="<%= filterAttr %>">
+                                    <input type="hidden" name="q" value="<%= qAttrEsc %>">
+                                    <input type="hidden" name="sort" value="<%= sortAttr %>">
+                                    <input type="hidden" name="minScore" value="<%= minScoreAttr %>">
+                                    <label for="iv-at-re-<%= appId %>">新时间</label>
+                                    <input id="iv-at-re-<%= appId %>" type="datetime-local" name="interviewAt" required>
+                                    <label for="iv-d-re-<%= appId %>">地点或线上链接</label>
+                                    <textarea id="iv-d-re-<%= appId %>" name="interviewDetail" rows="2" placeholder="更新后的教室或会议链接" required></textarea>
+                                    <button type="submit" class="btn btn-primary btn-small">保存新安排</button>
+                                </form>
+                            </details>
+                            <% } %>
                             <% } else if ("cancelled".equals(status)) { %>
                             <span class="badge badge-cancelled">已撤销</span>
                             <% } else { %>

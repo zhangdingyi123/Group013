@@ -68,6 +68,7 @@
       .muted-op{color:#94a3b8;font-size:.85rem}
       .msg-err{color:#991b1b;background:#fee2e2;padding:.6rem .85rem;border-radius:6px;margin-bottom:1rem;font-size:.9rem}
       .msg-ok{color:#065f46;background:#d1fae5;padding:.6rem .85rem;border-radius:6px;margin-bottom:1rem;font-size:.9rem}
+      .nav-dm-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.15rem;padding:0 .32rem;margin-left:.35rem;font-size:.68rem;font-weight:700;line-height:1.25;border-radius:999px;background:#dc2626;color:#fff;vertical-align:middle}
     </style>
 </head>
 <body>
@@ -76,6 +77,8 @@
             <a href="<%= ctx %>/" class="back-link">← 首页</a>
             <h1>课程组织者工作台</h1>
             <div class="header-actions">
+                <a href="<%= ctx %>/forum" class="header-nav-link">论坛</a>
+                <a href="<%= ctx %>/assistant" class="header-nav-link">小助手</a>
                 <a href="<%= ctx %>/mo/profile" class="header-nav-link">个人中心</a>
                 <a href="<%= ctx %>/mo/auth?logout=1" class="logout">退出登录</a>
             </div>
@@ -84,7 +87,7 @@
         <nav class="mo-subnav" aria-label="工作台分区">
             <a href="<%= ctx %>/mo/dashboard?tab=positions" class="<%= "positions".equals(tab) ? "active" : "" %>">我的岗位</a>
             <a href="<%= ctx %>/mo/dashboard?tab=post" class="<%= "post".equals(tab) ? "active" : "" %>">发布新岗位</a>
-            <a href="<%= ctx %>/mo/dashboard?tab=messages" class="<%= "messages".equals(tab) ? "active" : "" %>">私信</a>
+            <a href="<%= ctx %>/mo/dashboard?tab=messages" class="<%= "messages".equals(tab) ? "active" : "" %>">私信<c:if test="${moDmTotalUnread > 0}"><span class="nav-dm-badge" title="未读私信">${moDmTotalUnread > 99 ? '99+' : moDmTotalUnread}</span></c:if></a>
         </nav>
 
         <% if (request.getAttribute("error") != null) { %>

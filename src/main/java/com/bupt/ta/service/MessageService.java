@@ -2,6 +2,7 @@ package com.bupt.ta.service;
 
 import com.bupt.ta.model.Application;
 import com.bupt.ta.model.DirectMessage;
+import com.bupt.ta.model.DmReadState;
 import com.bupt.ta.model.Job;
 import com.bupt.ta.storage.Storage;
 
@@ -207,5 +208,100 @@ public class MessageService {
             this.applicantId = applicantId;
             this.moduleOrganiserId = moduleOrganiserId;
         }
+    }
+
+    // ---------- 已读 / 未读（dm_read_states.json）----------
+
+    private static DmReadState findOrCreateState(List<DmReadState> list, String applicantId, String moId) {
+        for (DmReadState s : list) {
+            if (applicantId.equals(s.getApplicantId()) && moId.equals(s.getModuleOrganiserId())) {
+                return s;
+            }
+        }
+        DmReadState n = new DmReadState();
+        n.setApplicantId(applicantId);
+        n.setModuleOrganiserId(moId);
+        list.add(n);
+        return n;
+    }
+
+    public void markConversationReadByTa(String applicantId, String moId) throws IOException {
+        if (applicantId == null || moId == null) {
+            return;
+        }
+        List<DirectMessage> conv = findConversation(applicantId, moId);
+        long t = conv.isEmpty() ? System.currentTimeMillis() : conv.get(conv.size() - 1).getSentAt();
+        List<DmReadState> list = Storage.loadDmReadStates();
+        DmReadState s = findOrCreateState(list, applicantId, moId);
+        if (t >= s.getTaLastReadAt()) {
+            s.setTaLastReadAt(t);
+        }
+        Storage.saveDmReadStates(list);
+    }
+
+    public void markConversationReadByMo(String applicantId, String moId) throws IOException {
+        if (applicantId == null || moId == null) {
+            return;
+        }
+        List<DirectMessage> conv = findConversation(applicantId, moId);
+        long t = conv.isEmpty() ? System.currentTimeMillis() : conv.get(conv.size() - 1).getSentAt();
+        List<DmReadState> list = Storage.loadDmReadStates();
+        DmReadState s = findOrCreateState(list, applicantId, moId);
+        if (t >= s.getMoLastReadAt()) {
+            s.setMoLastReadAt(t);
+        }
+        Storage.saveDmReadStates(list);
+    }
+
+    private long getTaReadAt(String applicantId, String moId) throws IOException {
+        for (DmReadState s : Storage.loadDmReadStates()) {
+            if (applicantId.equals(s.getApplicantId()) && moId.equals(s.getModuleOrganiserId())) {
+                return s.getTaLastReadAt();
+            }
+        }
+        return 0L;
+    }
+
+    private long getMoReadAt(String applicantId, String moId) throws IOException {
+        for (DmReadState s : Storage.loadDmReadStates()) {
+            if (applicantId.equals(s.getApplicantId()) && moId.equals(s.getModuleOrganiserId())) {
+                return s.getMoLastReadAt();
+            }
+        }
+        return 0L;
+    }
+
+    /** 招聘者发给应聘者的、尚未被应聘者读到的条数 */
+    public int countUnreadForTa(String applicantId, String moId) throws IOException {
+        long read = getTaReadAt(applicantId, moId);
+        return (int) Storage.loadMessages().stream()
+                .filter(m -> applicantId.equals(m.getApplicantId()) && moId.equals(m.getModuleOrganiserId()))
+                .filter(m -> DirectMessage.SENDER_MO.equals(m.getSenderRole()) && m.getSentAt() > read)
+                .count();
+    }
+
+    /** 应聘者发给招聘者的、尚未被招聘者读到的条数 */
+    public int countUnreadForMo(String applicantId, String moId) throws IOException {
+        long read = getMoReadAt(applicantId, moId);
+        return (int) Storage.loadMessages().stream()
+                .filter(m -> applicantId.equals(m.getApplicantId()) && moId.equals(m.getModuleOrganiserId()))
+                .filter(m -> DirectMessage.SENDER_TA.equals(m.getSenderRole()) && m.getSentAt() > read)
+                .count();
+    }
+
+    public int totalUnreadForApplicant(String applicantId) throws IOException {
+        int n = 0;
+        for (String moId : contactableMoIdsForApplicant(applicantId)) {
+            n += countUnreadForTa(applicantId, moId);
+        }
+        return n;
+    }
+
+    public int totalUnreadForMo(String moId) throws IOException {
+        int n = 0;
+        for (ApplicantMoPair p : listThreadsForMo(moId)) {
+            n += countUnreadForMo(p.applicantId, moId);
+        }
+        return n;
     }
 }

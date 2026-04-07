@@ -66,6 +66,9 @@ public class TADashboardServlet extends HttpServlet {
         }
         String tab = readDashboardTab(req);
         req.setAttribute("applicant", user);
+        try {
+            req.setAttribute("taDmTotalUnread", messageService.totalUnreadForApplicant(user.getId()));
+        } catch (IOException ignored) {}
         if (user.getResumePath() != null && !user.getResumePath().isEmpty()) {
             try {
                 boolean isText = applicantService.isResumeText(user.getResumePath());
@@ -452,6 +455,36 @@ public class TADashboardServlet extends HttpServlet {
             resp.sendRedirect(jobsTabUrlWithFilters(req));
             return;
         }
+        if ("confirmInterview".equals(action)) {
+            String applicationId = req.getParameter("applicationId");
+            if (applicationId != null && !applicationId.trim().isEmpty()) {
+                try {
+                    applicationService.confirmInterviewByApplicant(applicationId.trim(), user.getId());
+                } catch (Exception ignored) {}
+            }
+            resp.sendRedirect(dashboardUrl(req, "applications"));
+            return;
+        }
+        if ("declineInterview".equals(action)) {
+            String applicationId = req.getParameter("applicationId");
+            if (applicationId != null && !applicationId.trim().isEmpty()) {
+                try {
+                    applicationService.declineInterviewByApplicant(applicationId.trim(), user.getId());
+                } catch (Exception ignored) {}
+            }
+            resp.sendRedirect(dashboardUrl(req, "applications"));
+            return;
+        }
+        if ("requestRescheduleInterview".equals(action)) {
+            String applicationId = req.getParameter("applicationId");
+            if (applicationId != null && !applicationId.trim().isEmpty()) {
+                try {
+                    applicationService.requestRescheduleByApplicant(applicationId.trim(), user.getId());
+                } catch (Exception ignored) {}
+            }
+            resp.sendRedirect(dashboardUrl(req, "applications"));
+            return;
+        }
         if ("cancelApplication".equals(action)) {
             String applicationId = req.getParameter("applicationId");
             if (applicationId != null && !applicationId.isEmpty()) {
@@ -535,21 +568,6 @@ public class TADashboardServlet extends HttpServlet {
                 return 0L;
             }
         }).reversed());
-        List<TaMoThreadRow> rows = new ArrayList<>();
-        for (String moId : sorted) {
-            Optional<ModuleOrganiser> mo = moduleOrganiserService.findById(moId);
-            String name = mo.map(ModuleOrganiser::getName).orElse("招聘者");
-            List<DirectMessage> conv = messageService.findConversation(user.getId(), moId);
-            String preview = "";
-            long lastAt = 0;
-            if (!conv.isEmpty()) {
-                DirectMessage last = conv.get(conv.size() - 1);
-                preview = MessageService.lastPreview(last.getBody(), 80);
-                lastAt = last.getSentAt();
-            }
-            rows.add(new TaMoThreadRow(moId, name, preview, lastAt));
-        }
-        req.setAttribute("taDmThreads", rows);
         String withMo = req.getParameter("withMo");
         if (withMo != null) {
             withMo = withMo.trim();
@@ -568,17 +586,37 @@ public class TADashboardServlet extends HttpServlet {
             req.setAttribute("taDmPrefillJobId", dmJobIdParam);
             jobService.findById(dmJobIdParam).ifPresent(j -> req.setAttribute("taDmPrefillMoId", j.getModuleOrganiserId()));
         }
+        String activeMo = null;
         if (withMo != null && !withMo.isEmpty() && moIds.contains(withMo)) {
-            req.setAttribute("taDmWithMo", withMo);
-            req.setAttribute("taDmConversation", messageService.findConversation(user.getId(), withMo));
-            moduleOrganiserService.findById(withMo).ifPresent(m -> req.setAttribute("taDmMo", m));
+            activeMo = withMo;
         } else if (!sorted.isEmpty()) {
-            String first = sorted.get(0);
-            req.setAttribute("taDmWithMo", first);
-            req.setAttribute("taDmConversation", messageService.findConversation(user.getId(), first));
-            moduleOrganiserService.findById(first).ifPresent(m -> req.setAttribute("taDmMo", m));
+            activeMo = sorted.get(0);
         }
-        String activeMo = (String) req.getAttribute("taDmWithMo");
+        if (activeMo != null) {
+            messageService.markConversationReadByTa(user.getId(), activeMo);
+        }
+        List<TaMoThreadRow> rows = new ArrayList<>();
+        for (String moId : sorted) {
+            Optional<ModuleOrganiser> mo = moduleOrganiserService.findById(moId);
+            String name = mo.map(ModuleOrganiser::getName).orElse("招聘者");
+            List<DirectMessage> conv = messageService.findConversation(user.getId(), moId);
+            String preview = "";
+            long lastAt = 0;
+            if (!conv.isEmpty()) {
+                DirectMessage last = conv.get(conv.size() - 1);
+                preview = MessageService.lastPreview(last.getBody(), 80);
+                lastAt = last.getSentAt();
+            }
+            int unread = messageService.countUnreadForTa(user.getId(), moId);
+            rows.add(new TaMoThreadRow(moId, name, preview, lastAt, unread));
+        }
+        req.setAttribute("taDmThreads", rows);
+        req.setAttribute("taDmTotalUnread", messageService.totalUnreadForApplicant(user.getId()));
+        if (activeMo != null) {
+            req.setAttribute("taDmWithMo", activeMo);
+            req.setAttribute("taDmConversation", messageService.findConversation(user.getId(), activeMo));
+            moduleOrganiserService.findById(activeMo).ifPresent(m -> req.setAttribute("taDmMo", m));
+        }
         if (activeMo != null && !activeMo.isEmpty()) {
             req.setAttribute("taDmIsFriend", friendService.isFriend(user.getId(), activeMo));
             req.setAttribute("taDmHasApplicationToMo", messageService.hasNonCancelledApplicationToMo(user.getId(), activeMo));
@@ -617,16 +655,19 @@ public class TADashboardServlet extends HttpServlet {
         private final String moName;
         private final String lastPreview;
         private final long lastAt;
-        public TaMoThreadRow(String moId, String moName, String lastPreview, long lastAt) {
+        private final int unreadCount;
+        public TaMoThreadRow(String moId, String moName, String lastPreview, long lastAt, int unreadCount) {
             this.moId = moId;
             this.moName = moName;
             this.lastPreview = lastPreview;
             this.lastAt = lastAt;
+            this.unreadCount = unreadCount;
         }
         public String getMoId() { return moId; }
         public String getMoName() { return moName; }
         public String getLastPreview() { return lastPreview; }
         public long getLastAt() { return lastAt; }
+        public int getUnreadCount() { return unreadCount; }
         public String getLastAtText() {
             if (lastAt <= 0) {
                 return "—";

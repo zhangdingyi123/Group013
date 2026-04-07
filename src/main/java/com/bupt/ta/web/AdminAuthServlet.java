@@ -34,15 +34,25 @@ public class AdminAuthServlet extends HttpServlet {
         if ("login".equals(action)) {
             String email = req.getParameter("email");
             String password = req.getParameter("password");
+            String emailTrim = email != null ? email.trim() : "";
+            if (emailTrim.isEmpty() || password == null || password.isEmpty()) {
+                req.setAttribute("error", "请填写邮箱和密码");
+                req.getRequestDispatcher("/admin/auth.jsp").forward(req, resp);
+                return;
+            }
             try {
-                Optional<Admin> opt = adminService.findByEmail(email);
+                Optional<Admin> opt = adminService.findByEmail(emailTrim);
                 if (opt.isPresent() && PasswordUtil.check(password, opt.get().getPasswordHash())) {
                     HttpSession session = req.getSession(true);
                     session.setAttribute("adminUser", opt.get());
                     resp.sendRedirect(req.getContextPath() + "/admin/workload");
                     return;
                 }
-            } catch (Exception ignored) {}
+            } catch (IOException e) {
+                req.setAttribute("error", "登录失败，请稍后重试");
+                req.getRequestDispatcher("/admin/auth.jsp").forward(req, resp);
+                return;
+            }
             req.setAttribute("error", "邮箱或密码错误");
             req.getRequestDispatcher("/admin/auth.jsp").forward(req, resp);
             return;
