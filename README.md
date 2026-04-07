@@ -35,8 +35,6 @@
 
 ### 业务规则（内置逻辑，非外部 AI）
 
-- 岗位与应聘者 **技能匹配** 与 **短板** 计算
-- 推荐与负荷相关逻辑在同等条件下倾向 **录用较少** 的应聘者，便于分工均衡
 
 ---
 
@@ -111,11 +109,7 @@ mvn tomcat7:run -Dmaven.tomcat.port=8083
 
 **注意**：内嵌运行与独立 Tomcat 部署的 **上下文路径不同**（`/` 与 `/ta-recruitment/`），书签与说明中的链接需按实际环境替换。
 
-### 3. IDE
 
-在 IntelliJ IDEA / Eclipse 中配置 Tomcat，部署 **WAR** 或 **exploded artifact** 即可；重大类或 JSP 变更后建议 **全量重新构建并 redeploy**，避免 JSP 编译缓存与 class 版本不一致。
-
----
 
 ## 主要 URL 速查
 
