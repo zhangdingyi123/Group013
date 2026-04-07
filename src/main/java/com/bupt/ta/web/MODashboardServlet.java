@@ -47,6 +47,9 @@ public class MODashboardServlet extends HttpServlet {
             return;
         }
         req.setAttribute("mo", user);
+        try {
+            req.setAttribute("moDmTotalUnread", messageService.totalUnreadForMo(user.getId()));
+        } catch (IOException ignored) {}
         HttpSession session = req.getSession();
         String moNotice = (String) session.getAttribute("moNotice");
         if (moNotice != null) {
@@ -85,29 +88,38 @@ public class MODashboardServlet extends HttpServlet {
                 preview = MessageService.lastPreview(last.getBody(), 80);
                 lastAt = last.getSentAt();
             }
-            rows.add(new MoApplicantThreadRow(p.applicantId, name, preview, lastAt));
+            rows.add(new MoApplicantThreadRow(p.applicantId, name, preview, lastAt, 0));
         }
         rows.sort(Comparator.comparingLong((MoApplicantThreadRow r) -> r.lastAt).reversed());
-        req.setAttribute("moDmThreads", rows);
         String withApplicant = req.getParameter("withApplicant");
         if (withApplicant != null) {
             withApplicant = withApplicant.trim();
         }
         Set<String> applicantIds = new HashSet<>();
         for (MoApplicantThreadRow r : rows) {
-            applicantIds.add(r.applicantId);
+            applicantIds.add(r.getApplicantId());
         }
+        String activeApplicant = null;
         if (withApplicant != null && !withApplicant.isEmpty() && applicantIds.contains(withApplicant)) {
-            req.setAttribute("moDmWithApplicant", withApplicant);
-            req.setAttribute("moDmConversation", messageService.findConversation(withApplicant, mo.getId()));
-            applicantService.findById(withApplicant).ifPresent(a -> req.setAttribute("moDmApplicant", a));
+            activeApplicant = withApplicant;
         } else if (!rows.isEmpty()) {
-            String first = rows.get(0).applicantId;
-            req.setAttribute("moDmWithApplicant", first);
-            req.setAttribute("moDmConversation", messageService.findConversation(first, mo.getId()));
-            applicantService.findById(first).ifPresent(a -> req.setAttribute("moDmApplicant", a));
+            activeApplicant = rows.get(0).getApplicantId();
         }
-        String activeApplicant = (String) req.getAttribute("moDmWithApplicant");
+        if (activeApplicant != null) {
+            messageService.markConversationReadByMo(activeApplicant, mo.getId());
+        }
+        List<MoApplicantThreadRow> rowsWithUnread = new ArrayList<>();
+        for (MoApplicantThreadRow r : rows) {
+            int unread = messageService.countUnreadForMo(r.getApplicantId(), mo.getId());
+            rowsWithUnread.add(new MoApplicantThreadRow(r.getApplicantId(), r.getApplicantName(), r.getLastPreview(), r.getLastAt(), unread));
+        }
+        req.setAttribute("moDmThreads", rowsWithUnread);
+        req.setAttribute("moDmTotalUnread", messageService.totalUnreadForMo(mo.getId()));
+        if (activeApplicant != null) {
+            req.setAttribute("moDmWithApplicant", activeApplicant);
+            req.setAttribute("moDmConversation", messageService.findConversation(activeApplicant, mo.getId()));
+            applicantService.findById(activeApplicant).ifPresent(a -> req.setAttribute("moDmApplicant", a));
+        }
         if (activeApplicant != null && !activeApplicant.isEmpty()) {
             req.setAttribute("moDmIsFriend", friendService.isFriend(activeApplicant, mo.getId()));
             req.setAttribute("moDmHasApplicationToMo", messageService.hasNonCancelledApplicationToMo(activeApplicant, mo.getId()));
@@ -146,16 +158,19 @@ public class MODashboardServlet extends HttpServlet {
         private final String applicantName;
         private final String lastPreview;
         private final long lastAt;
-        public MoApplicantThreadRow(String applicantId, String applicantName, String lastPreview, long lastAt) {
+        private final int unreadCount;
+        public MoApplicantThreadRow(String applicantId, String applicantName, String lastPreview, long lastAt, int unreadCount) {
             this.applicantId = applicantId;
             this.applicantName = applicantName;
             this.lastPreview = lastPreview;
             this.lastAt = lastAt;
+            this.unreadCount = unreadCount;
         }
         public String getApplicantId() { return applicantId; }
         public String getApplicantName() { return applicantName; }
         public String getLastPreview() { return lastPreview; }
         public long getLastAt() { return lastAt; }
+        public int getUnreadCount() { return unreadCount; }
         public String getLastAtText() {
             if (lastAt <= 0) {
                 return "—";

@@ -40,6 +40,10 @@
                 <input type="email" name="email" required placeholder="your@email.com" value="<%= request.getAttribute("regEmail") != null ? request.getAttribute("regEmail") : "" %>">
             </div>
             <div class="form-group">
+                <label>电话 *</label>
+                <input type="tel" name="phone" inputmode="tel" required autocomplete="tel" placeholder="手机号或常用联系方式" value="<%= request.getAttribute("regPhone") != null ? request.getAttribute("regPhone") : "" %>">
+            </div>
+            <div class="form-group">
                 <label>密码 *</label>
                 <input type="password" name="password" required placeholder="请设置登录密码">
             </div>

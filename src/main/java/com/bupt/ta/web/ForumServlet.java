@@ -80,10 +80,27 @@ public class ForumServlet extends HttpServlet {
                 req.setAttribute("forumThread", t.get());
                 req.setAttribute("forumReplies", forumService.findRepliesForThread(threadId));
                 req.setAttribute("forumAuthor", resolveAuthor(req));
+                String notice = consumeForumNotice(req);
+                if (notice != null) {
+                    req.setAttribute("forumNotice", notice);
+                }
                 req.getRequestDispatcher("/forum/thread.jsp").forward(req, resp);
                 return;
             }
-            req.setAttribute("forumThreads", forumService.listThreadsSorted());
+            String q = req.getParameter("q");
+            String sort = req.getParameter("sort");
+            int page = 1;
+            try {
+                page = Integer.parseInt(req.getParameter("page"));
+            } catch (NumberFormatException ignored) {}
+            ForumService.ForumIndexPage indexPage = forumService.listThreadsForIndex(q, sort, page, ForumService.DEFAULT_PAGE_SIZE);
+            req.setAttribute("forumThreads", indexPage.threads);
+            req.setAttribute("forumIndexTotal", indexPage.total);
+            req.setAttribute("forumIndexPage", indexPage.page);
+            req.setAttribute("forumIndexPageSize", indexPage.pageSize);
+            req.setAttribute("forumIndexTotalPages", indexPage.totalPages);
+            req.setAttribute("forumQuery", q != null ? q : "");
+            req.setAttribute("forumSort", sort != null ? sort : "");
             req.setAttribute("forumAuthor", resolveAuthor(req));
             String notice = consumeForumNotice(req);
             if (notice != null) {
@@ -93,6 +110,12 @@ public class ForumServlet extends HttpServlet {
         } catch (Exception e) {
             req.setAttribute("forumError", e.getMessage());
             req.setAttribute("forumThreads", java.util.Collections.emptyList());
+            req.setAttribute("forumIndexTotal", 0);
+            req.setAttribute("forumIndexPage", 1);
+            req.setAttribute("forumIndexPageSize", ForumService.DEFAULT_PAGE_SIZE);
+            req.setAttribute("forumIndexTotalPages", 1);
+            req.setAttribute("forumQuery", "");
+            req.setAttribute("forumSort", "");
             req.setAttribute("forumAuthor", resolveAuthor(req));
             req.getRequestDispatcher("/forum/index.jsp").forward(req, resp);
         }
@@ -134,7 +157,7 @@ public class ForumServlet extends HttpServlet {
                     resp.sendRedirect(req.getContextPath() + "/forum");
                 } else {
                     resp.sendRedirect(req.getContextPath() + "/forum?threadId="
-                            + URLEncoder.encode(threadId, StandardCharsets.UTF_8));
+                            + URLEncoder.encode(threadId, StandardCharsets.UTF_8) + "#reply-form");
                 }
                 return;
             }

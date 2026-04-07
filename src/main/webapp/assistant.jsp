@@ -25,7 +25,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智能小助手 · 助教招聘系统</title>
     <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=3">
-    <link rel="stylesheet" href="<%= ctx %>/css/assistant.css?v=7">
+    <link rel="stylesheet" href="<%= ctx %>/css/assistant.css?v=9">
 </head>
 <body class="assistant-page">
     <div class="assistant-page-bg" aria-hidden="true"></div>
@@ -37,7 +37,7 @@
                 <h1>智能小助手</h1>
                 <p class="assistant-header-tagline">招聘问答 · 简历辅助</p>
             </div>
-            <span class="assistant-page-header-spacer" aria-hidden="true"></span>
+            <a href="<%= ctx %>/forum" class="back-link assistant-back assistant-header-forum">交流论坛</a>
         </header>
 
         <div class="assistant-intro">
@@ -49,6 +49,7 @@
             </nav>
         </div>
 
+        <div class="assistant-config-grid">
         <section class="section assistant-section assistant-resume-card" aria-labelledby="resume-card-title">
             <div class="assistant-resume-head">
                 <span class="assistant-card-icon" aria-hidden="true">📄</span>
@@ -98,7 +99,9 @@
             </div>
             <% } %>
         </div>
+        </div>
 
+        <div class="assistant-conversation assistant-conversation-card">
         <section class="section assistant-section assistant-chat-section" aria-label="对话">
             <div class="assistant-chat-head">
                 <div class="assistant-chat-head-left">
@@ -130,6 +133,7 @@
                 </div>
             </div>
         </form>
+        </div>
     </div>
 
     <script>

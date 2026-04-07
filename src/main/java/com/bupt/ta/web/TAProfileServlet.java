@@ -62,9 +62,11 @@ public class TAProfileServlet extends HttpServlet {
         if ("updateProfile".equals(action)) {
             String name = req.getParameter("name");
             String studentId = req.getParameter("studentId");
+            String phone = req.getParameter("phone");
             String skillsStr = req.getParameter("skills");
             if (name != null) user.setName(name.trim());
             if (studentId != null) user.setStudentId(studentId.trim());
+            if (phone != null) user.setPhone(phone.trim());
             if (skillsStr != null) {
                 List<String> skills = new ArrayList<>();
                 for (String s : skillsStr.split("[,，\\s]+")) {

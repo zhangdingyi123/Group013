@@ -29,13 +29,16 @@ public class ApplicantService {
         return Storage.loadApplicants().stream().filter(a -> sid.equals(a.getStudentId())).findFirst();
     }
 
-    public Applicant create(String name, String email, String passwordHash, String studentId) throws IOException {
+    public Applicant create(String name, String email, String passwordHash, String studentId, String phone) throws IOException {
         List<Applicant> list = Storage.loadApplicants();
         String sid = studentId != null ? studentId.trim() : "";
         if (!sid.isEmpty() && list.stream().anyMatch(a -> sid.equals(a.getStudentId()))) {
             return null; // 学号已注册过
         }
         Applicant a = new Applicant(UUID.randomUUID().toString(), name, email, passwordHash, sid);
+        if (phone != null && !phone.trim().isEmpty()) {
+            a.setPhone(phone.trim());
+        }
         list.add(a);
         Storage.saveApplicants(list);
         return a;

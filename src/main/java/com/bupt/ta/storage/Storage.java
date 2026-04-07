@@ -29,6 +29,7 @@ public class Storage {
     private static final String FORUM_REPLIES_FILE = "forum_replies.json";
     private static final String FRIEND_LINKS_FILE = "friend_links.json";
     private static final String FRIEND_REQUESTS_FILE = "friend_requests.json";
+    private static final String DM_READ_STATES_FILE = "dm_read_states.json";
     private static final String RESUMES_DIR = "resumes";
 
     private static volatile String dataDir = DEFAULT_DATA_DIR;
@@ -143,6 +144,14 @@ public class Storage {
     }
     public static void saveMessages(List<DirectMessage> list) throws IOException {
         writeList(dataPath(MESSAGES_FILE), list);
+    }
+
+    private static final Type DM_READ_STATE_LIST_TYPE = new TypeToken<ArrayList<DmReadState>>(){}.getType();
+    public static List<DmReadState> loadDmReadStates() throws IOException {
+        return readList(dataPath(DM_READ_STATES_FILE), DM_READ_STATE_LIST_TYPE);
+    }
+    public static void saveDmReadStates(List<DmReadState> list) throws IOException {
+        writeList(dataPath(DM_READ_STATES_FILE), list);
     }
 
     // ---------- Forum ----------

@@ -52,26 +52,35 @@ public class TAAuthServlet extends HttpServlet {
             String email = req.getParameter("email");
             String password = req.getParameter("password");
             String studentId = req.getParameter("studentId");
+            String phone = req.getParameter("phone");
             if (name == null || name.trim().isEmpty() || email == null || email.trim().isEmpty()
-                    || password == null || password.trim().isEmpty() || studentId == null || studentId.trim().isEmpty()) {
-                req.setAttribute("error", "请填写全部必填项（含学号）");
+                    || password == null || password.trim().isEmpty() || studentId == null || studentId.trim().isEmpty()
+                    || phone == null || phone.trim().isEmpty()) {
+                req.setAttribute("error", "请填写全部必填项（含学号与电话）");
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
             String sid = studentId.trim();
             if (applicantService.findByStudentId(sid).isPresent()) {
                 req.setAttribute("error", "该学号已注册过，请直接登录或使用其他学号");
+                req.setAttribute("regName", name.trim());
+                req.setAttribute("regEmail", email.trim());
+                req.setAttribute("regStudentId", sid);
+                req.setAttribute("regPhone", phone.trim());
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
             HttpSession session = req.getSession(true);
+            String phoneTrim = phone.trim();
             session.setAttribute("taRegName", name.trim());
             session.setAttribute("taRegEmail", email.trim());
             session.setAttribute("taRegStudentId", sid);
+            session.setAttribute("taRegPhone", phoneTrim);
             session.setAttribute("taRegPassword", password);
             req.setAttribute("regName", name.trim());
             req.setAttribute("regEmail", email.trim());
             req.setAttribute("regStudentId", sid);
+            req.setAttribute("regPhone", phoneTrim);
             req.getRequestDispatcher("/ta/register_confirm.jsp").forward(req, resp);
             return;
         }
@@ -82,14 +91,17 @@ public class TAAuthServlet extends HttpServlet {
             String email = session != null ? (String) session.getAttribute("taRegEmail") : null;
             String password = session != null ? (String) session.getAttribute("taRegPassword") : null;
             String studentId = session != null ? (String) session.getAttribute("taRegStudentId") : null;
+            String phone = session != null ? (String) session.getAttribute("taRegPhone") : null;
             if (session != null) {
                 session.removeAttribute("taRegName");
                 session.removeAttribute("taRegEmail");
                 session.removeAttribute("taRegStudentId");
+                session.removeAttribute("taRegPhone");
                 session.removeAttribute("taRegPassword");
             }
             if (name == null || name.isEmpty() || email == null || email.isEmpty()
-                    || password == null || password.isEmpty() || studentId == null || studentId.isEmpty()) {
+                    || password == null || password.isEmpty() || studentId == null || studentId.isEmpty()
+                    || phone == null || phone.trim().isEmpty()) {
                 req.setAttribute("error", "核准已过期，请重新填写注册信息");
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
@@ -99,7 +111,7 @@ public class TAAuthServlet extends HttpServlet {
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
-            Applicant a = applicantService.create(name, email, PasswordUtil.hash(password), studentId);
+            Applicant a = applicantService.create(name, email, PasswordUtil.hash(password), studentId, phone.trim());
             if (a == null) {
                 req.setAttribute("error", "该学号已注册过");
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);

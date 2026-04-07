@@ -3,9 +3,11 @@
     String regName = (String) request.getAttribute("regName");
     String regEmail = (String) request.getAttribute("regEmail");
     String regStudentId = (String) request.getAttribute("regStudentId");
+    String regPhone = (String) request.getAttribute("regPhone");
     if (regName == null) regName = "";
     if (regEmail == null) regEmail = "";
     if (regStudentId == null) regStudentId = "";
+    if (regPhone == null) regPhone = "";
 %>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -47,6 +49,10 @@
             <div class="confirm-row">
                 <span class="confirm-label">邮箱</span>
                 <span class="confirm-value"><%= regEmail %></span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-label">电话</span>
+                <span class="confirm-value"><%= regPhone %></span>
             </div>
         </div>
         <form method="post" action="${pageContext.request.contextPath}/ta/auth">

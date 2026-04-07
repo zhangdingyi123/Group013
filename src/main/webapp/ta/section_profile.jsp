@@ -23,17 +23,21 @@
             ? applicant.getEmail() : "—";
     String sidDisp = applicant.getStudentId() != null && !applicant.getStudentId().isEmpty()
             ? applicant.getStudentId() : "未填写";
+    String phoneDisp = applicant.getPhone() != null && !applicant.getPhone().trim().isEmpty()
+            ? applicant.getPhone().trim() : "未填写";
     String rp = applicant.getResumePath();
     boolean hasResume = rp != null && !rp.trim().isEmpty();
     String resumeLabel = hasResume ? "已上传" : "未上传";
     boolean hasSkills = skillsJoined != null && !skillsJoined.trim().isEmpty();
     boolean nameOk = applicant.getName() != null && !applicant.getName().trim().isEmpty();
     boolean sidOk = applicant.getStudentId() != null && !applicant.getStudentId().trim().isEmpty();
+    boolean phoneOk = applicant.getPhone() != null && !applicant.getPhone().trim().isEmpty();
     int pct = 0;
-    if (nameOk) pct += 25;
-    if (sidOk) pct += 25;
-    if (hasSkills) pct += 25;
-    if (hasResume) pct += 25;
+    if (nameOk) pct += 20;
+    if (sidOk) pct += 20;
+    if (phoneOk) pct += 20;
+    if (hasSkills) pct += 20;
+    if (hasResume) pct += 20;
     List<String> skillList = applicant.getSkills();
 %>
 <div id="pc-overview" class="pc-profile-stack">
@@ -43,7 +47,7 @@
             <div class="pc-avatar-xl" aria-hidden="true"><%= avLetter %></div>
             <div class="pc-hero-info">
                 <h2 class="pc-name"><%= dispName %></h2>
-                <p class="pc-subline"><span class="pc-email"><%= emailDisp %></span><span class="pc-dot">·</span><span>学号 <%= sidDisp %></span></p>
+                <p class="pc-subline"><span class="pc-email"><%= emailDisp %></span><span class="pc-dot">·</span><span>学号 <%= sidDisp %></span><span class="pc-dot">·</span><span>电话 <%= phoneDisp %></span></p>
                 <% if (skillList != null && !skillList.isEmpty()) { %>
                 <div class="pc-tags">
                     <% for (String s : skillList) {

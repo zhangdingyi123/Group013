@@ -64,6 +64,8 @@
       tbody tr:hover{background:#f8fafc}
       .badge{display:inline-block;padding:.25rem .6rem;border-radius:999px;font-size:.8rem;font-weight:500}
       .badge-pending{background:#fef3c7;color:#92400e}.badge-accepted{background:#d1fae5;color:#065f46}.badge-rejected{background:#fee2e2;color:#991b1b}.badge-cancelled{background:#f1f5f9;color:#475569}
+      .badge-interview{background:#e0e7ff;color:#3730a3}
+      .app-iv-note{font-size:.82rem;color:#64748b;margin-top:.25rem;line-height:1.45;word-break:break-word}
       .badge-open{background:#dbeafe;color:#1e40af}.badge-closed{background:#f1f5f9;color:#475569}
       .empty-hint{color:#64748b;font-size:.9rem;padding:1rem 0}
       .msg-ok{color:#065f46;background:#d1fae5;padding:.6rem .85rem;border-radius:6px;margin-bottom:1rem;font-size:.9rem}
@@ -99,6 +101,7 @@
       .resume-ai-msg-label{font-size:.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:.2rem}
       .resume-ai-warn{font-size:.85rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:.65rem .85rem;margin:.5rem 0}
       .resume-ai-hint{font-size:.85rem;color:#64748b;margin:.35rem 0 0}
+      .nav-dm-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.15rem;padding:0 .32rem;margin-left:.35rem;font-size:.68rem;font-weight:700;line-height:1.25;border-radius:999px;background:#dc2626;color:#fff;vertical-align:middle}
     </style>
 </head>
 <body>
@@ -107,6 +110,8 @@
             <a href="<%= ctx %>/" class="back-link">← 首页</a>
             <h1>应聘者工作台</h1>
             <div class="header-actions">
+                <a href="<%= ctx %>/forum" class="header-nav-link">论坛</a>
+                <a href="<%= ctx %>/assistant" class="header-nav-link">小助手</a>
                 <a href="<%= ctx %>/ta/profile" class="header-nav-link">个人中心</a>
                 <a href="<%= ctx %>/ta/auth?logout=1" class="logout">退出登录</a>
             </div>
@@ -120,7 +125,7 @@
             <a href="${navResume}" class="<%= "resume".equals(tab) ? "active" : "" %>">简历与匹配</a>
             <a href="${navJobs}" class="<%= "jobs".equals(tab) ? "active" : "" %>">开放岗位</a>
             <a href="${navApplications}" class="<%= "applications".equals(tab) ? "active" : "" %>">我的申请</a>
-            <a href="${navMessages}" class="<%= "messages".equals(tab) ? "active" : "" %>">私信</a>
+            <a href="${navMessages}" class="<%= "messages".equals(tab) ? "active" : "" %>">私信<c:if test="${taDmTotalUnread > 0}"><span class="nav-dm-badge" title="未读私信">${taDmTotalUnread > 99 ? '99+' : taDmTotalUnread}</span></c:if></a>
         </nav>
 
         <% if (request.getAttribute("error") != null) { %>

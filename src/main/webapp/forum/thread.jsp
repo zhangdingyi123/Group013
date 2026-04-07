@@ -16,39 +16,156 @@
     <title><c:out value="${forumThread.title}"/> - 交流论坛</title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css?v=3">
     <style>
-      *{box-sizing:border-box} body{margin:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;line-height:1.6}
-      .wrap{max-width:920px;margin:0 auto;padding:1.5rem}
-      .page-header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0}
-      .page-header h1{margin:0;font-size:1.35rem;font-weight:600;flex:1;min-width:0}
-      .back-link{color:#2563eb;text-decoration:none;font-size:.9rem;border-radius:6px;padding:.4rem .75rem;white-space:nowrap}
-      .back-link:hover{background:#dbeafe}
-      .post{background:#fff;border-radius:10px;padding:1.35rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e2e8f0;border-left:4px solid #2563eb}
-      .post-meta{font-size:.85rem;color:#64748b;margin-bottom:.75rem}
-      .post-body{white-space:pre-wrap;word-break:break-word;font-size:.95rem;color:#334155}
-      .reply{border:1px solid #e2e8f0;border-radius:8px;padding:1rem;margin-bottom:.75rem;background:#fafafa}
-      .reply-meta{font-size:.8rem;color:#64748b;margin-bottom:.5rem}
-      .reply-body{white-space:pre-wrap;word-break:break-word;font-size:.9rem;color:#334155}
-      .badge{display:inline-block;padding:.15rem .5rem;border-radius:999px;font-size:.75rem;font-weight:500;margin-right:.35rem}
-      .badge-ta{background:#dbeafe;color:#1e40af}
-      .badge-mo{background:#fef3c7;color:#92400e}
-      .badge-admin{background:#f3e8ff;color:#6b21a8}
-      .section{background:#fff;border-radius:10px;padding:1.35rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e2e8f0}
-      .section h2{font-size:1.05rem;font-weight:600;margin:0 0 1rem;color:#1e293b}
-      .form-group{margin-bottom:1rem}
-      .form-group label{display:block;font-size:.9rem;font-weight:500;margin-bottom:.4rem;color:#1e293b}
-      .form-group textarea{width:100%;padding:.65rem .85rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.95rem;font-family:inherit;min-height:100px;resize:vertical}
-      .btn{display:inline-block;padding:.45rem 1rem;border:none;border-radius:6px;font-size:.875rem;font-weight:500;cursor:pointer;font-family:inherit;background:#2563eb;color:#fff}
-      .btn:hover{background:#1d4ed8}
-      .login-hint{font-size:.9rem;color:#64748b}
-      h2.replies-title{font-size:1rem;margin:0 0 .75rem;color:#475569}
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: linear-gradient(165deg, #eef6ff 0%, #e0f2fe 40%, #f8fafc 100%);
+        color: #1e293b;
+        min-height: 100vh;
+        line-height: 1.6;
+      }
+      .wrap { max-width: 920px; margin: 0 auto; padding: 1.35rem 1.25rem 2rem; }
+      .forum-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 0.75rem 1rem;
+        margin-bottom: 1.25rem;
+        padding: 1rem 1.15rem 1.1rem;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+      .forum-header h1 {
+        margin: 0;
+        font-size: clamp(1rem, 3vw, 1.25rem);
+        font-weight: 700;
+        line-height: 1.4;
+        color: #0f172a;
+      }
+      .back-link {
+        color: #2563eb;
+        text-decoration: none;
+        font-size: 0.88rem;
+        font-weight: 500;
+        border-radius: 999px;
+        padding: 0.45rem 0.85rem;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.85);
+        white-space: nowrap;
+      }
+      .back-link:hover { background: #eff6ff; border-color: #bfdbfe; }
+      .msg-ok {
+        color: #065f46;
+        background: linear-gradient(180deg, #d1fae5, #ecfdf5);
+        padding: 0.65rem 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        border: 1px solid #a7f3d0;
+      }
+      .post {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1.4rem 1.45rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        border-left: 4px solid #2563eb;
+      }
+      .post-meta { font-size: 0.85rem; color: #64748b; margin-bottom: 0.85rem; }
+      .post-body { white-space: pre-wrap; word-break: break-word; font-size: 0.95rem; color: #334155; }
+      .replies-title {
+        font-size: 1rem;
+        margin: 0 0 0.75rem;
+        color: #475569;
+        font-weight: 600;
+      }
+      .reply {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 1.1rem;
+        margin-bottom: 0.65rem;
+        background: #fafafa;
+        transition: background 0.15s ease;
+      }
+      .reply:hover { background: #f8fafc; }
+      .reply-meta { font-size: 0.8rem; color: #64748b; margin-bottom: 0.45rem; }
+      .reply-body { white-space: pre-wrap; word-break: break-word; font-size: 0.9rem; color: #334155; }
+      .badge {
+        display: inline-block;
+        padding: 0.18rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        margin-right: 0.35rem;
+      }
+      .badge-ta { background: #dbeafe; color: #1e40af; }
+      .badge-mo { background: #fef3c7; color: #92400e; }
+      .badge-admin { background: #f3e8ff; color: #6b21a8; }
+      .section {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1.4rem 1.45rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+      }
+      .section h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 1rem; color: #0f172a; }
+      .form-group { margin-bottom: 1rem; }
+      .form-group label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.4rem; color: #1e293b; }
+      .form-group textarea {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        min-height: 120px;
+        resize: vertical;
+      }
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+      .btn {
+        display: inline-block;
+        padding: 0.5rem 1.15rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        background: #2563eb;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+      }
+      .btn:hover { background: #1d4ed8; }
+      .login-hint { font-size: 0.9rem; color: #64748b; line-height: 1.55; }
+      .login-hint a { color: #2563eb; font-weight: 500; }
+      @media (max-width: 560px) {
+        .forum-header { grid-template-columns: 1fr 1fr; text-align: center; }
+        .forum-header h1 { order: -1; grid-column: 1 / -1; }
+      }
     </style>
 </head>
 <body>
     <div class="wrap">
-        <div class="page-header">
+        <header class="forum-header">
             <a href="<%= ctx %>/forum" class="back-link">← 论坛列表</a>
             <h1><c:out value="${forumThread.title}"/></h1>
-        </div>
+            <a href="<%= ctx %>/assistant" class="back-link">小助手</a>
+        </header>
+
+        <c:if test="${not empty forumNotice}">
+            <p class="msg-ok"><c:out value="${forumNotice}"/></p>
+        </c:if>
 
         <div class="post">
             <div class="post-meta">
@@ -79,7 +196,7 @@
             </div>
         </c:forEach>
 
-        <div class="section">
+        <div id="reply-form" class="section" tabindex="-1">
             <h2>发表回复</h2>
             <c:choose>
                 <c:when test="${empty forumAuthor}">

@@ -32,6 +32,10 @@
                 <input id="pf-sid" type="text" name="studentId" autocomplete="off" value="<%= applicant.getStudentId() != null ? applicant.getStudentId() : "" %>">
             </div>
             <div class="form-group">
+                <label for="pf-phone">电话</label>
+                <input id="pf-phone" type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="手机号或常用联系方式" value="<%= applicant.getPhone() != null ? applicant.getPhone() : "" %>">
+            </div>
+            <div class="form-group">
                 <label for="pf-skills">技能标签（逗号分隔）</label>
                 <input id="pf-skills" type="text" name="skills" placeholder="例如：Java, Python, 监考" value="<%= skillsJoined %>">
             </div>
