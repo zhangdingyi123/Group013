@@ -5,6 +5,7 @@ import com.bupt.ta.service.ApplicantService;
 import com.bupt.ta.service.FriendService;
 import com.bupt.ta.service.JobService;
 import com.bupt.ta.service.MessageService;
+import com.bupt.ta.util.I18n;
 import com.bupt.ta.model.FriendRequest;
 
 import javax.servlet.ServletException;
@@ -79,7 +80,7 @@ public class MODashboardServlet extends HttpServlet {
         List<MoApplicantThreadRow> rows = new ArrayList<>();
         for (MessageService.ApplicantMoPair p : pairs) {
             String name = applicantService.findById(p.applicantId)
-                    .map(Applicant::getName).orElse("应聘者");
+                    .map(Applicant::getName).orElse(I18n.msg(req, "role.default.ta"));
             List<DirectMessage> conv = messageService.findConversation(p.applicantId, mo.getId());
             String preview = "";
             long lastAt = 0;
@@ -131,7 +132,7 @@ public class MODashboardServlet extends HttpServlet {
         List<FriendRequest> pendingFromTa = friendService.listPendingFromTaToMo(mo.getId());
         List<MoFriendRequestRow> moFriendRows = new ArrayList<>();
         for (FriendRequest fr : pendingFromTa) {
-            String name = applicantService.findById(fr.getApplicantId()).map(Applicant::getName).orElse("应聘者");
+            String name = applicantService.findById(fr.getApplicantId()).map(Applicant::getName).orElse(I18n.msg(req, "role.default.ta"));
             moFriendRows.add(new MoFriendRequestRow(fr.getId(), fr.getApplicantId(), name));
         }
         req.setAttribute("moFriendRequestsPending", moFriendRows);
@@ -313,9 +314,9 @@ public class MODashboardServlet extends HttpServlet {
             String requestId = req.getParameter("requestId");
             try {
                 boolean ok = friendService.acceptRequestAsMo(requestId, user.getId());
-                session.setAttribute("moDmNotice", ok ? "已接受好友请求，可与对方私信。" : "无法接受该请求。");
+                session.setAttribute("moDmNotice", ok ? I18n.msg(req, "dm.mo.accept.ok") : I18n.msg(req, "dm.mo.accept.fail"));
             } catch (Exception e) {
-                session.setAttribute("moDmNotice", "操作失败，请稍后重试。");
+                session.setAttribute("moDmNotice", I18n.msg(req, "dm.ta.op.fail"));
             }
             resp.sendRedirect(moDashboardUrl(req, "messages"));
             return;
@@ -324,9 +325,9 @@ public class MODashboardServlet extends HttpServlet {
             String applicantId = req.getParameter("applicantId");
             try {
                 boolean ok = friendService.requestFromMo(user.getId(), applicantId != null ? applicantId.trim() : null);
-                session.setAttribute("moDmNotice", ok ? "好友请求已发送，对方同意后即可私信。" : "无法发送好友请求（对方需曾申请过您的岗位，且当前不能已通过投递建立联系）。");
+                session.setAttribute("moDmNotice", ok ? I18n.msg(req, "dm.mo.req.ok") : I18n.msg(req, "dm.mo.req.fail"));
             } catch (Exception e) {
-                session.setAttribute("moDmNotice", "操作失败，请稍后重试。");
+                session.setAttribute("moDmNotice", I18n.msg(req, "dm.ta.op.fail"));
             }
             resp.sendRedirect(moDashboardUrl(req, "messages"));
             return;
@@ -338,12 +339,12 @@ public class MODashboardServlet extends HttpServlet {
                 try {
                     DirectMessage sent = messageService.sendFromMo(user.getId(), applicantId.trim(), body);
                     if (sent == null) {
-                        session.setAttribute("moDmNotice", "发送失败：仅可与已投递您岗位的应聘者或好友私信，且内容不能为空。");
+                        session.setAttribute("moDmNotice", I18n.msg(req, "dm.mo.send.fail.rule"));
                     } else {
-                        session.setAttribute("moDmNotice", "已发送。");
+                        session.setAttribute("moDmNotice", I18n.msg(req, "dm.mo.send.ok"));
                     }
                 } catch (Exception ignored) {
-                    session.setAttribute("moDmNotice", "发送失败，请稍后重试。");
+                    session.setAttribute("moDmNotice", I18n.msg(req, "dm.mo.send.fail"));
                 }
             }
             StringBuilder to = new StringBuilder(req.getContextPath() + "/mo/dashboard?tab=messages");

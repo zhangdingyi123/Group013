@@ -2,6 +2,7 @@ package com.bupt.ta.web;
 
 import com.bupt.ta.model.Applicant;
 import com.bupt.ta.service.ApplicantService;
+import com.bupt.ta.util.I18n;
 import com.bupt.ta.util.PasswordUtil;
 import com.bupt.ta.util.SessionLogoutUtil;
 
@@ -42,7 +43,7 @@ public class TAAuthServlet extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/ta/dashboard");
                 return;
             }
-            req.setAttribute("error", "邮箱或密码错误");
+            req.setAttribute("error", I18n.msg(req, "err.login.bad"));
             req.getRequestDispatcher("/ta/auth.jsp").forward(req, resp);
             return;
         }
@@ -56,13 +57,13 @@ public class TAAuthServlet extends HttpServlet {
             if (name == null || name.trim().isEmpty() || email == null || email.trim().isEmpty()
                     || password == null || password.trim().isEmpty() || studentId == null || studentId.trim().isEmpty()
                     || phone == null || phone.trim().isEmpty()) {
-                req.setAttribute("error", "请填写全部必填项（含学号与电话）");
+                req.setAttribute("error", I18n.msg(req, "err.ta.fields"));
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
             String sid = studentId.trim();
             if (applicantService.findByStudentId(sid).isPresent()) {
-                req.setAttribute("error", "该学号已注册过，请直接登录或使用其他学号");
+                req.setAttribute("error", I18n.msg(req, "err.ta.sid.taken"));
                 req.setAttribute("regName", name.trim());
                 req.setAttribute("regEmail", email.trim());
                 req.setAttribute("regStudentId", sid);
@@ -102,18 +103,18 @@ public class TAAuthServlet extends HttpServlet {
             if (name == null || name.isEmpty() || email == null || email.isEmpty()
                     || password == null || password.isEmpty() || studentId == null || studentId.isEmpty()
                     || phone == null || phone.trim().isEmpty()) {
-                req.setAttribute("error", "核准已过期，请重新填写注册信息");
+                req.setAttribute("error", I18n.msg(req, "err.ta.confirm.expired"));
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
             if (applicantService.findByStudentId(studentId).isPresent()) {
-                req.setAttribute("error", "该学号已注册过");
+                req.setAttribute("error", I18n.msg(req, "err.ta.sid.exists"));
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
             Applicant a = applicantService.create(name, email, PasswordUtil.hash(password), studentId, phone.trim());
             if (a == null) {
-                req.setAttribute("error", "该学号已注册过");
+                req.setAttribute("error", I18n.msg(req, "err.ta.sid.exists"));
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }

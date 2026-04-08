@@ -1,16 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%
     String ctx = request.getContextPath();
 %>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="<%= I18n.htmlLangAttr(request) %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>交流论坛 - 助教招聘系统</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=3">
+    <title><%= I18n.msg(request, "forum.index.title") %> - <%= I18n.msg(request, "common.sysName") %></title>
+    <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=4">
     <style>
       * { box-sizing: border-box; }
       body {
@@ -268,10 +269,11 @@
 </head>
 <body>
     <div class="wrap">
+        <div style="text-align:right;margin-bottom:0.5rem;"><jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/></div>
         <header class="forum-header">
-            <a href="<%= ctx %>/" class="back-link">← 首页</a>
-            <h1>交流论坛</h1>
-            <a href="<%= ctx %>/assistant" class="back-link">智能小助手</a>
+            <a href="<%= ctx %>/" class="back-link"><%= I18n.msg(request, "forum.back") %></a>
+            <h1><%= I18n.msg(request, "forum.index.title") %></h1>
+            <a href="<%= ctx %>/assistant" class="back-link"><%= I18n.msg(request, "common.assistant") %></a>
         </header>
 
         <c:if test="${not empty forumNotice}">
@@ -282,26 +284,26 @@
         </c:if>
 
         <div class="section">
-            <h2>主题列表</h2>
-            <form class="forum-toolbar" method="get" action="<%= ctx %>/forum" role="search" aria-label="搜索与排序">
+            <h2><%= I18n.msg(request, "forum.list.title") %></h2>
+            <form class="forum-toolbar" method="get" action="<%= ctx %>/forum" role="search" aria-label="<%= I18n.msg(request, "forum.search.sortAria") %>">
                 <div class="forum-filter-form">
-                    <label class="sr-only" for="forum-q">按标题搜索</label>
-                    <input type="search" id="forum-q" name="q" value="<c:out value='${forumQuery}'/>" placeholder="搜索标题关键词…" maxlength="100" autocomplete="off">
-                    <label for="forum-sort">排序</label>
-                    <select id="forum-sort" name="sort" aria-label="排序方式">
-                        <option value="" ${empty forumSort ? 'selected' : ''}>最新回复优先</option>
-                        <option value="created" ${forumSort eq 'created' ? 'selected' : ''}>最新发帖优先</option>
+                    <label class="sr-only" for="forum-q"><%= I18n.msg(request, "forum.search.label") %></label>
+                    <input type="search" id="forum-q" name="q" value="<c:out value='${forumQuery}'/>" placeholder="<%= I18n.msg(request, "forum.search.ph") %>" maxlength="100" autocomplete="off">
+                    <label for="forum-sort"><%= I18n.msg(request, "forum.sort") %></label>
+                    <select id="forum-sort" name="sort" aria-label="<%= I18n.msg(request, "forum.sort") %>">
+                        <option value="" ${empty forumSort ? 'selected' : ''}><%= I18n.msg(request, "forum.sort.reply") %></option>
+                        <option value="created" ${forumSort eq 'created' ? 'selected' : ''}><%= I18n.msg(request, "forum.sort.created") %></option>
                     </select>
-                    <button type="submit" class="btn btn-secondary">应用</button>
+                    <button type="submit" class="btn btn-secondary"><%= I18n.msg(request, "common.apply") %></button>
                 </div>
-                <p class="forum-meta-line">共 <strong>${forumIndexTotal}</strong> 条主题 · 第 ${forumIndexPage} / ${forumIndexTotalPages} 页</p>
+                <p class="forum-meta-line"><%= I18n.msg(request, "forum.meta", request.getAttribute("forumIndexTotal"), request.getAttribute("forumIndexPage"), request.getAttribute("forumIndexTotalPages")) %></p>
             </form>
             <c:choose>
                 <c:when test="${empty forumThreads}">
                     <p class="empty-hint">
                         <c:choose>
-                            <c:when test="${not empty forumQuery and fn:length(forumQuery) > 0}">没有标题包含「<c:out value="${forumQuery}"/>」的主题，可换关键词或<a href="<%= ctx %>/forum">清空搜索</a>。</c:when>
-                            <c:otherwise>当前还没有主题，登录后下方可发布第一条帖文。</c:otherwise>
+                            <c:when test="${not empty forumQuery and fn:length(forumQuery) > 0}"><%= I18n.msg(request, "forum.empty.search", request.getAttribute("forumQuery"), ctx + "/forum") %></c:when>
+                            <c:otherwise><%= I18n.msg(request, "forum.empty.none") %></c:otherwise>
                         </c:choose>
                     </p>
                 </c:when>
@@ -315,34 +317,34 @@
                                 <a class="title" href="${threadUrl}"><c:out value="${t.title}"/></a>
                                 <div class="thread-meta">
                                     <c:choose>
-                                        <c:when test="${t.authorRole eq 'ta'}"><span class="badge badge-ta">应聘者</span></c:when>
-                                        <c:when test="${t.authorRole eq 'mo'}"><span class="badge badge-mo">课程组织者</span></c:when>
-                                        <c:when test="${t.authorRole eq 'admin'}"><span class="badge badge-admin">管理员</span></c:when>
-                                        <c:otherwise><span class="badge">用户</span></c:otherwise>
+                                        <c:when test="${t.authorRole eq 'ta'}"><span class="badge badge-ta"><%= I18n.msg(request, "forum.badge.ta") %></span></c:when>
+                                        <c:when test="${t.authorRole eq 'mo'}"><span class="badge badge-mo"><%= I18n.msg(request, "forum.badge.mo") %></span></c:when>
+                                        <c:when test="${t.authorRole eq 'admin'}"><span class="badge badge-admin"><%= I18n.msg(request, "forum.badge.admin") %></span></c:when>
+                                        <c:otherwise><span class="badge"><%= I18n.msg(request, "forum.badge.user") %></span></c:otherwise>
                                     </c:choose>
-                                    <c:out value="${t.authorName}"/> · 最后回复 <c:out value="${t.lastReplyAtText}"/> · 回复 ${t.replyCount}
+                                    <c:out value="${t.authorName}"/> · <%= I18n.msg(request, "forum.lastReply") %> <c:out value="${t.lastReplyAtText}"/> · <%= I18n.msg(request, "forum.replies") %> ${t.replyCount}
                                 </div>
                             </li>
                         </c:forEach>
                     </ul>
                     <c:if test="${forumIndexTotalPages > 1}">
-                        <nav class="forum-pagination" aria-label="分页">
+                        <nav class="forum-pagination" aria-label="<%= I18n.msg(request, "forum.nav.aria") %>">
                             <c:if test="${forumIndexPage > 1}">
                                 <c:url var="forumPrev" value="/forum">
                                     <c:param name="q" value="${forumQuery}"/>
                                     <c:param name="sort" value="${forumSort}"/>
                                     <c:param name="page" value="${forumIndexPage - 1}"/>
                                 </c:url>
-                                <a href="${forumPrev}">上一页</a>
+                                <a href="${forumPrev}"><%= I18n.msg(request, "forum.page.prev") %></a>
                             </c:if>
-                            <span class="muted">第 ${forumIndexPage} / ${forumIndexTotalPages} 页</span>
+                            <span class="muted"><%= I18n.msg(request, "forum.page.of", request.getAttribute("forumIndexPage"), request.getAttribute("forumIndexTotalPages")) %></span>
                             <c:if test="${forumIndexPage < forumIndexTotalPages}">
                                 <c:url var="forumNext" value="/forum">
                                     <c:param name="q" value="${forumQuery}"/>
                                     <c:param name="sort" value="${forumSort}"/>
                                     <c:param name="page" value="${forumIndexPage + 1}"/>
                                 </c:url>
-                                <a href="${forumNext}">下一页</a>
+                                <a href="${forumNext}"><%= I18n.msg(request, "forum.page.next") %></a>
                             </c:if>
                         </nav>
                     </c:if>
@@ -351,23 +353,23 @@
         </div>
 
         <div class="section">
-            <h2>发布新主题</h2>
+            <h2><%= I18n.msg(request, "forum.new.title") %></h2>
             <c:choose>
                 <c:when test="${empty forumAuthor}">
-                    <p class="login-hint">登录后即可发帖。请选择入口：<a href="<%= ctx %>/ta/auth">应聘者</a>、<a href="<%= ctx %>/mo/auth">课程组织者</a> 或 <a href="<%= ctx %>/admin/auth">管理员</a>。</p>
+                    <p class="login-hint"><%= I18n.msg(request, "forum.login.hint", ctx + "/ta/auth", ctx + "/mo/auth", ctx + "/admin/auth") %></p>
                 </c:when>
                 <c:otherwise>
                     <form method="post" action="<%= ctx %>/forum">
                         <input type="hidden" name="action" value="newThread">
                         <div class="form-group">
-                            <label for="title">标题</label>
-                            <input id="title" name="title" type="text" maxlength="200" required placeholder="简要概括讨论主题">
+                            <label for="title"><%= I18n.msg(request, "forum.label.title") %></label>
+                            <input id="title" name="title" type="text" maxlength="200" required placeholder="<%= I18n.msg(request, "forum.title.ph") %>">
                         </div>
                         <div class="form-group">
-                            <label for="body">正文</label>
-                            <textarea id="body" name="body" required placeholder="分享经验、提问或讨论…"></textarea>
+                            <label for="body"><%= I18n.msg(request, "forum.label.body") %></label>
+                            <textarea id="body" name="body" required placeholder="<%= I18n.msg(request, "forum.body.ph") %>"></textarea>
                         </div>
-                        <button type="submit" class="btn">发布主题</button>
+                        <button type="submit" class="btn"><%= I18n.msg(request, "forum.submit.thread") %></button>
                     </form>
                 </c:otherwise>
             </c:choose>

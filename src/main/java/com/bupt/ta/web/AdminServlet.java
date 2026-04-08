@@ -7,6 +7,7 @@ import com.bupt.ta.model.Job;
 import com.bupt.ta.service.ApplicantService;
 import com.bupt.ta.service.ApplicationService;
 import com.bupt.ta.service.JobService;
+import com.bupt.ta.util.I18n;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -97,29 +98,29 @@ public class AdminServlet extends HttpServlet {
         String applicationId = req.getParameter("applicationId");
         HttpSession session = req.getSession();
         if (applicationId == null || applicationId.trim().isEmpty()) {
-            session.setAttribute("adminNotice", "缺少申请记录。");
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.missing.app"));
             resp.sendRedirect(req.getContextPath() + "/admin/workload");
             return;
         }
         try {
             Optional<Application> appOpt = applicationService.findById(applicationId.trim());
             if (appOpt.isEmpty()) {
-                session.setAttribute("adminNotice", "申请记录不存在。");
+                session.setAttribute("adminNotice", I18n.msg(req, "admin.app.notfound"));
                 resp.sendRedirect(req.getContextPath() + "/admin/workload");
                 return;
             }
             Application app = appOpt.get();
             if (!Application.STATUS_ACCEPTED.equals(app.getStatus())) {
-                session.setAttribute("adminNotice", "仅可对已录用状态的申请执行取消。");
+                session.setAttribute("adminNotice", I18n.msg(req, "admin.cancel.rule"));
                 resp.sendRedirect(req.getContextPath() + "/admin/workload");
                 return;
             }
             String jobId = app.getJobId();
             applicationService.updateStatus(applicationId.trim(), Application.STATUS_CANCELLED);
             reopenJobIfNoAcceptedRemain(jobId);
-            session.setAttribute("adminNotice", "已强行取消该录用关系；若该岗位无其他已录用者，岗位已重新开放。");
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.cancel.ok"));
         } catch (Exception e) {
-            session.setAttribute("adminNotice", "操作失败，请重试。");
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.op.fail"));
         }
         resp.sendRedirect(req.getContextPath() + "/admin/workload");
     }

@@ -12,6 +12,7 @@ import com.bupt.ta.service.FriendService;
 import com.bupt.ta.service.MatchHelper;
 import com.bupt.ta.service.MessageService;
 import com.bupt.ta.service.ModuleOrganiserService;
+import com.bupt.ta.util.I18n;
 import com.bupt.ta.service.assistant.AssistantConfig;
 import com.bupt.ta.model.FriendRequest;
 
@@ -448,7 +449,7 @@ public class TADashboardServlet extends HttpServlet {
                 try {
                     Application applied = applicationService.apply(user.getId(), jobId, note);
                     if (applied == null && applicationService.findByApplicantAndJob(user.getId(), jobId).isPresent()) {
-                        req.getSession().setAttribute("applyMessage", "您已经申请过该职位");
+                        req.getSession().setAttribute("applyMessage", I18n.msg(req, "flash.apply.duplicate"));
                     }
                 } catch (Exception ignored) {}
             }
@@ -504,9 +505,9 @@ public class TADashboardServlet extends HttpServlet {
             try {
                 FriendService fs = new FriendService();
                 boolean ok = fs.requestFromTa(user.getId(), moId != null ? moId.trim() : null);
-                req.getSession().setAttribute("dmNotice", ok ? "好友请求已发送，对方同意后即可私信。" : "无法发送好友请求（可能已是好友、已投递该方岗位或已有待处理请求）。");
+                req.getSession().setAttribute("dmNotice", ok ? I18n.msg(req, "dm.ta.req.ok") : I18n.msg(req, "dm.ta.req.fail"));
             } catch (Exception e) {
-                req.getSession().setAttribute("dmNotice", "操作失败，请稍后重试。");
+                req.getSession().setAttribute("dmNotice", I18n.msg(req, "dm.ta.op.fail"));
             }
             resp.sendRedirect(dashboardUrl(req, "messages"));
             return;
@@ -516,9 +517,9 @@ public class TADashboardServlet extends HttpServlet {
             try {
                 FriendService fs = new FriendService();
                 boolean ok = fs.acceptRequestAsTa(requestId, user.getId());
-                req.getSession().setAttribute("dmNotice", ok ? "已接受好友请求，可以私信对方。" : "无法接受该请求。");
+                req.getSession().setAttribute("dmNotice", ok ? I18n.msg(req, "dm.ta.accept.ok") : I18n.msg(req, "dm.ta.accept.fail"));
             } catch (Exception e) {
-                req.getSession().setAttribute("dmNotice", "操作失败，请稍后重试。");
+                req.getSession().setAttribute("dmNotice", I18n.msg(req, "dm.ta.op.fail"));
             }
             resp.sendRedirect(dashboardUrl(req, "messages"));
             return;
@@ -532,12 +533,12 @@ public class TADashboardServlet extends HttpServlet {
                     DirectMessage sent = messageService.sendFromApplicant(user.getId(), moId.trim(), body,
                             jobId != null ? jobId.trim() : null);
                     if (sent == null) {
-                        req.getSession().setAttribute("dmNotice", "发送失败：仅可与已投递岗位的招聘者或好友私信，且内容不能为空。");
+                        req.getSession().setAttribute("dmNotice", I18n.msg(req, "dm.ta.send.fail.rule"));
                     } else {
-                        req.getSession().setAttribute("dmNotice", "已发送。");
+                        req.getSession().setAttribute("dmNotice", I18n.msg(req, "dm.ta.send.ok"));
                     }
                 } catch (Exception ignored) {
-                    req.getSession().setAttribute("dmNotice", "发送失败，请稍后重试。");
+                    req.getSession().setAttribute("dmNotice", I18n.msg(req, "dm.ta.send.fail"));
                 }
             }
             StringBuilder to = new StringBuilder(dashboardUrl(req, "messages"));
@@ -598,7 +599,7 @@ public class TADashboardServlet extends HttpServlet {
         List<TaMoThreadRow> rows = new ArrayList<>();
         for (String moId : sorted) {
             Optional<ModuleOrganiser> mo = moduleOrganiserService.findById(moId);
-            String name = mo.map(ModuleOrganiser::getName).orElse("招聘者");
+            String name = mo.map(ModuleOrganiser::getName).orElse(I18n.msg(req, "role.recruiter"));
             List<DirectMessage> conv = messageService.findConversation(user.getId(), moId);
             String preview = "";
             long lastAt = 0;
@@ -628,7 +629,7 @@ public class TADashboardServlet extends HttpServlet {
         List<TaFriendRequestRow> taFriendRows = new ArrayList<>();
         for (FriendRequest fr : pendingFromMo) {
             String name = moduleOrganiserService.findById(fr.getModuleOrganiserId())
-                    .map(ModuleOrganiser::getName).orElse("招聘者");
+                    .map(ModuleOrganiser::getName).orElse(I18n.msg(req, "role.recruiter"));
             taFriendRows.add(new TaFriendRequestRow(fr.getId(), fr.getModuleOrganiserId(), name));
         }
         req.setAttribute("taFriendRequestsFromMo", taFriendRows);

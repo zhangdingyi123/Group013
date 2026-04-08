@@ -34,48 +34,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= pageTitle %> - 助教招聘系统</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=3">
-    <style>
-      *{box-sizing:border-box} body{margin:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;line-height:1.6}
-      .page{max-width:960px;margin:0 auto;padding:1.5rem}
-      .page-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0}
-      .page-header h1{margin:0;font-size:1.4rem;font-weight:600;color:#1e293b}
-      .back-link{padding:.45rem .85rem;color:#2563eb;text-decoration:none;font-size:.9rem;border-radius:6px}
-      .back-link:hover{background:#dbeafe}
-      .section{background:#fff;border-radius:10px;padding:1.35rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e2e8f0;border-left:4px solid #2563eb}
-      .section h2{font-size:1.05rem;font-weight:600;margin:0 0 1rem;color:#1e293b}
-      .section-desc{margin:0 0 .75rem;color:#64748b;font-size:.9rem}
-      .btn{display:inline-block;padding:.4rem .85rem;border:none;border-radius:6px;font-size:.875rem;font-weight:500;cursor:pointer;font-family:inherit;text-decoration:none}
-      .btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
-      .btn-secondary{background:#e2e8f0;color:#475569}.btn-secondary:hover{background:#cbd5e1}
-      .btn-small{font-size:.8rem;padding:.35rem .65rem}
-      .table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #e2e8f0;margin-top:.5rem}
-      table{width:100%;border-collapse:collapse;font-size:.9rem}
-      th,td{padding:.7rem .9rem;text-align:left;border-bottom:1px solid #e2e8f0}
-      tr:last-child td{border-bottom:none}
-      th{background:#f1f5f9;color:#1e293b;font-weight:600;font-size:.85rem}
-      tbody tr:hover{background:#f8fafc}
-      .badge{display:inline-block;padding:.25rem .6rem;border-radius:999px;font-size:.8rem;font-weight:500}
-      .badge-pending{background:#fef3c7;color:#92400e}.badge-accepted{background:#d1fae5;color:#065f46}.badge-rejected{background:#fee2e2;color:#991b1b}
-      .score{font-weight:600;color:#2563eb}.gaps{font-size:.85rem;color:#64748b}
-      .empty-hint{color:#64748b;font-size:.9rem;padding:1rem 0}
-      .filter-bar{display:flex;flex-wrap:wrap;gap:.65rem;align-items:flex-end;margin-bottom:.75rem;padding:.85rem 1rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
-      .filter-bar label{font-size:.8rem;font-weight:500;color:#475569;display:block;margin-bottom:.25rem}
-      .filter-bar select,.filter-bar input[type=text]{padding:.45rem .65rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.875rem;font-family:inherit;min-width:140px}
-      .filter-bar input[type=text]{min-width:200px}
-      .filter-bar .btn{margin-bottom:0}
-      .filter-meta{margin:0 0 1rem;font-size:.85rem;color:#64748b}
-      .filter-meta strong{color:#334155}
-      .badge-cancelled{background:#f1f5f9;color:#475569}
-      .badge-interview{background:#e0e7ff;color:#3730a3}
-      .interview-box{font-size:.78rem;color:#475569;margin-top:.35rem;padding:.45rem .55rem;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;max-width:22rem}
-      .interview-box summary{cursor:pointer;color:#2563eb;font-weight:500}
-      .schedule-form{margin-top:.45rem;display:flex;flex-direction:column;gap:.4rem;align-items:stretch}
-      .schedule-form input[type=datetime-local],.schedule-form textarea{padding:.4rem .5rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.82rem;font-family:inherit}
-      .msg-ok{background:#ecfdf5;color:#065f46;padding:.55rem .85rem;border-radius:8px;font-size:.88rem;margin:0 0 1rem;border:1px solid #a7f3d0}
-    </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=4">
 </head>
-<body>
+<body class="mo-job-page">
     <div class="page">
         <div class="page-header">
             <a href="${pageContext.request.contextPath}/mo/dashboard?tab=positions" class="back-link">← 返回我的岗位</a>
@@ -289,5 +250,6 @@
         </div>
         <% } %>
     </div>
+    <script src="${pageContext.request.contextPath}/js/ui.js?v=1" defer></script>
 </body>
 </html>

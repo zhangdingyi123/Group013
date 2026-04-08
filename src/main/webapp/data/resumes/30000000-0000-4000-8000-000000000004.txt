@@ -1,5 +1,5 @@
-孙浩
-联系方式：sunhao@bupt.edu.cn | 13800138004
+Hao Sun
+Contact: sunhao@bupt.edu.cn | 13800138004
 
-熟悉 Java 与 Spring 基础，参与过团队课设（需求—设计—迭代）。
-希望担任软件工程相关助教工作。
+Comfortable with Java and Spring basics; participated in a team course project (requirements—design—iteration).
+Interested in TA roles related to software engineering.

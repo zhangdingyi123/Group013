@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%@ page import="com.bupt.ta.web.AdminServlet" %>
 <%@ page import="java.util.List" %>
 <%
@@ -14,12 +15,12 @@
     if (acceptedDetails == null) acceptedDetails = java.util.Collections.emptyList();
 %>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="<%= I18n.htmlLangAttr(request) %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>助教工作负荷 - 管理员</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=3">
+    <title><%= I18n.msg(request, "admin.wl.title") %></title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=4">
     <style>
       *{box-sizing:border-box}
       body.admin-workload-page{
@@ -171,12 +172,13 @@
     <div class="dashboard admin-workload">
       <div class="panel">
         <div class="page-header">
-            <a href="${pageContext.request.contextPath}/" class="back-link">← 首页</a>
-            <h1>助教整体工作负荷</h1>
-            <a href="${pageContext.request.contextPath}/admin/auth?logout=1" class="logout">退出登录</a>
+            <a href="${pageContext.request.contextPath}/" class="back-link"><%= I18n.msg(request, "header.backHome") %></a>
+            <h1><%= I18n.msg(request, "admin.wl.h1") %></h1>
+            <a href="${pageContext.request.contextPath}/admin/auth?logout=1" class="logout"><%= I18n.msg(request, "common.logout") %></a>
         </div>
-        <p class="intro">下表汇总系统中已被录用（accepted）的助教及其当前承担的岗位数，便于掌握整体人力分配。</p>
-        <p class="summary">承担岗位的助教共 <strong><%= taCount %></strong> 人；录用岗位合计 <strong><%= totalAssignments %></strong> 个</p>
+        <div style="text-align:right;margin-bottom:0.65rem;"><jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/></div>
+        <p class="intro"><%= I18n.msg(request, "admin.wl.intro") %></p>
+        <p class="summary"><%= I18n.msg(request, "admin.wl.summary", taCount, totalAssignments) %></p>
         <% if (request.getAttribute("error") != null) { %>
         <p class="error"><%= request.getAttribute("error") %></p>
         <% } %>
@@ -184,21 +186,21 @@
         <p class="notice"><%= request.getAttribute("notice") %></p>
         <% } %>
         <% if (workload.isEmpty()) { %>
-        <p class="empty-hint">暂无录用记录。</p>
+        <p class="empty-hint"><%= I18n.msg(request, "admin.wl.empty") %></p>
         <% } else { %>
         <div class="workload-tabs">
             <input type="radio" name="wtab" id="wtab-summary" class="wtab-input" checked>
             <input type="radio" name="wtab" id="wtab-detail" class="wtab-input">
-            <div class="tab-bar" role="tablist" aria-label="工作负荷视图">
-                <label for="wtab-summary" role="tab">按助教汇总</label>
-                <label for="wtab-detail" role="tab">录用明细</label>
+            <div class="tab-bar" role="tablist" aria-label="<%= I18n.msg(request, "admin.wl.tab.aria") %>">
+                <label for="wtab-summary" role="tab"><%= I18n.msg(request, "admin.wl.tab.summary") %></label>
+                <label for="wtab-detail" role="tab"><%= I18n.msg(request, "admin.wl.tab.detail") %></label>
             </div>
             <div class="tab-panel panel-summary" id="panel-summary" role="tabpanel">
-                <p class="panel-intro">按助教聚合展示每人当前承担的录用岗位数。</p>
+                <p class="panel-intro"><%= I18n.msg(request, "admin.wl.panel.summary.intro") %></p>
                 <div class="table-wrap">
                 <table>
                     <thead>
-                        <tr><th>姓名</th><th>邮箱</th><th>录用岗位数</th></tr>
+                        <tr><th><%= I18n.msg(request, "admin.wl.th.name") %></th><th><%= I18n.msg(request, "admin.wl.th.email") %></th><th><%= I18n.msg(request, "admin.wl.th.count") %></th></tr>
                     </thead>
                     <tbody>
                     <% for (AdminServlet.WorkloadEntry e : workload) { %>
@@ -213,21 +215,21 @@
                 </div>
             </div>
             <div class="tab-panel panel-detail" id="panel-detail" role="tabpanel">
-                <p class="panel-intro">逐条列出录用关系；工作负荷过高时可<strong>强行取消录用</strong>。取消后申请状态为「已取消」；若该岗位已无其他已录用者，岗位将自动重新开放。</p>
+                <p class="panel-intro"><%= I18n.msg(request, "admin.wl.panel.detail.intro") %></p>
                 <% if (acceptedDetails.isEmpty()) { %>
-                <p class="empty-hint">暂无录用明细。</p>
+                <p class="empty-hint"><%= I18n.msg(request, "admin.wl.detail.empty") %></p>
                 <% } else { %>
                 <div class="table-wrap">
                 <table>
                     <thead>
-                        <tr><th>助教</th><th>邮箱</th><th>岗位</th><th>操作</th></tr>
+                        <tr><th><%= I18n.msg(request, "admin.wl.th.ta") %></th><th><%= I18n.msg(request, "admin.wl.th.email") %></th><th><%= I18n.msg(request, "admin.wl.th.job") %></th><th><%= I18n.msg(request, "common.ops") %></th></tr>
                     </thead>
                     <tbody>
                     <% for (AdminServlet.AcceptedAssignment row : acceptedDetails) {
                         String dispName = row.applicantName != null ? row.applicantName : "";
-                        String jsName = dispName.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
                         String jobDisp = row.jobTitle != null ? row.jobTitle : "";
-                        String jsJob = jobDisp.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
+                        String cfmRaw = I18n.msg(request, "admin.wl.cancel.confirm", dispName, jobDisp);
+                        String jsCfm = cfmRaw.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", "\\n");
                     %>
                         <tr>
                             <td><%= row.applicantName %></td>
@@ -235,10 +237,10 @@
                             <td><%= row.jobTitle %></td>
                             <td>
                                 <form method="post" action="${pageContext.request.contextPath}/admin/workload" style="display:inline;margin:0"
-                                      onsubmit="return confirm('确定强行取消「<%= jsName %>」在「<%= jsJob %>」的录用吗？\n此操作不可撤销。');">
+                                      onsubmit="return confirm('<%= jsCfm %>');">
                                     <input type="hidden" name="action" value="cancelApplication">
                                     <input type="hidden" name="applicationId" value="<%= row.applicationId %>">
-                                    <button type="submit" class="btn-danger">强行取消录用</button>
+                                    <button type="submit" class="btn-danger"><%= I18n.msg(request, "admin.wl.cancel") %></button>
                                 </form>
                             </td>
                         </tr>

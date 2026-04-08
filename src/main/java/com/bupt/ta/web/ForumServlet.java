@@ -6,6 +6,7 @@ import com.bupt.ta.model.ForumReply;
 import com.bupt.ta.model.ForumThread;
 import com.bupt.ta.model.ModuleOrganiser;
 import com.bupt.ta.service.ForumService;
+import com.bupt.ta.util.I18n;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -46,19 +47,19 @@ public class ForumServlet extends HttpServlet {
         if (ta instanceof Applicant) {
             Applicant a = (Applicant) ta;
             String n = a.getName();
-            return new ForumAuthor(a.getId(), "ta", (n != null && !n.isEmpty()) ? n : "应聘者");
+            return new ForumAuthor(a.getId(), "ta", (n != null && !n.isEmpty()) ? n : I18n.msg(req, "role.default.ta"));
         }
         Object mo = s.getAttribute("moUser");
         if (mo instanceof ModuleOrganiser) {
             ModuleOrganiser m = (ModuleOrganiser) mo;
             String n = m.getName();
-            return new ForumAuthor(m.getId(), "mo", (n != null && !n.isEmpty()) ? n : "课程组织者");
+            return new ForumAuthor(m.getId(), "mo", (n != null && !n.isEmpty()) ? n : I18n.msg(req, "role.default.mo"));
         }
         Object ad = s.getAttribute("adminUser");
         if (ad instanceof Admin) {
             Admin a = (Admin) ad;
             String n = a.getName();
-            return new ForumAuthor(a.getId(), "admin", (n != null && !n.isEmpty()) ? n : "管理员");
+            return new ForumAuthor(a.getId(), "admin", (n != null && !n.isEmpty()) ? n : I18n.msg(req, "role.default.admin"));
         }
         return null;
     }
@@ -126,7 +127,7 @@ public class ForumServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         ForumAuthor author = resolveAuthor(req);
         if (author == null) {
-            req.getSession(true).setAttribute("forumNotice", "请先登录后再发帖或回复（应聘者 / 课程组织者 / 管理员入口均可）。");
+            req.getSession(true).setAttribute("forumNotice", I18n.msg(req, "forum.need.login"));
             resp.sendRedirect(req.getContextPath() + "/forum");
             return;
         }
@@ -137,7 +138,7 @@ public class ForumServlet extends HttpServlet {
                 String body = req.getParameter("body");
                 ForumThread created = forumService.createThread(author.userId, author.role, author.displayName, title, body);
                 if (created == null) {
-                    req.getSession(true).setAttribute("forumNotice", "发帖失败：标题或正文不能为空。");
+                    req.getSession(true).setAttribute("forumNotice", I18n.msg(req, "forum.new.fail"));
                     resp.sendRedirect(req.getContextPath() + "/forum");
                 } else {
                     resp.sendRedirect(req.getContextPath() + "/forum?threadId="
@@ -153,7 +154,7 @@ public class ForumServlet extends HttpServlet {
                 }
                 ForumReply reply = forumService.addReply(threadId, author.userId, author.role, author.displayName, body);
                 if (reply == null) {
-                    req.getSession(true).setAttribute("forumNotice", "回复失败：主题不存在或内容为空。");
+                    req.getSession(true).setAttribute("forumNotice", I18n.msg(req, "forum.reply.fail"));
                     resp.sendRedirect(req.getContextPath() + "/forum");
                 } else {
                     resp.sendRedirect(req.getContextPath() + "/forum?threadId="
@@ -162,7 +163,7 @@ public class ForumServlet extends HttpServlet {
                 return;
             }
         } catch (Exception e) {
-            req.getSession(true).setAttribute("forumNotice", "操作失败：" + e.getMessage());
+            req.getSession(true).setAttribute("forumNotice", I18n.msg(req, "forum.op.fail", e.getMessage()));
         }
         resp.sendRedirect(req.getContextPath() + "/forum");
     }

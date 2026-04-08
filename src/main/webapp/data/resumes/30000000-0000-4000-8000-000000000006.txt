@@ -1,4 +1,4 @@
-吴刚
+Gang Wu
 wugang@bupt.edu.cn
 
-Go 语言基础，了解分布式概念；可参加期末监考排班。
+Go basics; familiar with distributed systems concepts; available for end-of-term exam proctoring shifts.

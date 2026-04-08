@@ -22,5 +22,37 @@
     "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
     "department": "网络空间安全学院",
     "createdAt": 1772486400000
+  },
+  {
+    "id": "20000000-0000-4000-8000-000000000004",
+    "name": "陈静",
+    "email": "chenjing@bupt.edu.cn",
+    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
+    "department": "国际学院",
+    "createdAt": 1772572800000
+  },
+  {
+    "id": "20000000-0000-4000-8000-000000000005",
+    "name": "马超",
+    "email": "machao@bupt.edu.cn",
+    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
+    "department": "人工智能学院",
+    "createdAt": 1772659200000
+  },
+  {
+    "id": "20000000-0000-4000-8000-000000000006",
+    "name": "林芳",
+    "email": "linfang@bupt.edu.cn",
+    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
+    "department": "电子工程学院",
+    "createdAt": 1772745600000
+  },
+  {
+    "id": "d8cb06d0-f132-49a7-9946-3cf1efa6650a",
+    "name": "Dingyi Zhang",
+    "email": "zdy40@bupt.edu.cn",
+    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
+    "department": "",
+    "createdAt": 1775570547903
   }
 ]

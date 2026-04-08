@@ -2,6 +2,7 @@ package com.bupt.ta.web;
 
 import com.bupt.ta.model.Applicant;
 import com.bupt.ta.service.ApplicantService;
+import com.bupt.ta.util.I18n;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -76,7 +77,7 @@ public class TAProfileServlet extends HttpServlet {
             }
             try {
                 applicantService.update(user);
-                req.getSession().setAttribute("profileNotice", "资料已保存");
+                req.getSession().setAttribute("profileNotice", I18n.msg(req, "profile.saved.ta"));
             } catch (Exception ignored) {}
         }
         resp.sendRedirect(req.getContextPath() + "/ta/profile");
