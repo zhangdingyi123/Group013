@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%
     String ctx = request.getContextPath();
     Boolean kimiOk = (Boolean) request.getAttribute("assistantKimiConfigured");
@@ -19,25 +20,26 @@
     boolean canUseSavedResume = loggedInTa && savedTxt != null && savedTxt;
 %>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="<%= I18n.htmlLangAttr(request) %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能小助手 · 助教招聘系统</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=3">
+    <title><%= I18n.msg(request, "asst.title") %></title>
+    <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=4">
     <link rel="stylesheet" href="<%= ctx %>/css/assistant.css?v=9">
 </head>
 <body class="assistant-page">
     <div class="assistant-page-bg" aria-hidden="true"></div>
     <div class="dashboard assistant-dashboard">
         <header class="page-header assistant-header">
-            <a href="<%= ctx %>/" class="back-link assistant-back">← 首页</a>
-            <div class="assistant-header-center">
+            <a href="<%= ctx %>/" class="back-link assistant-back"><%= I18n.msg(request, "header.backHome") %></a>
+            <div class="assistant-header-center" style="position:relative;">
+                <div style="position:absolute;top:-0.25rem;right:0;"><jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/></div>
                 <span class="assistant-header-badge" aria-hidden="true">AI</span>
-                <h1>智能小助手</h1>
-                <p class="assistant-header-tagline">招聘问答 · 简历辅助</p>
+                <h1><%= I18n.msg(request, "asst.h1") %></h1>
+                <p class="assistant-header-tagline"><%= I18n.msg(request, "asst.tagline") %></p>
             </div>
-            <a href="<%= ctx %>/forum" class="back-link assistant-back assistant-header-forum">交流论坛</a>
+            <a href="<%= ctx %>/forum" class="back-link assistant-back assistant-header-forum"><%= I18n.msg(request, "home.card.forum") %></a>
         </header>
 
         <div class="assistant-intro">

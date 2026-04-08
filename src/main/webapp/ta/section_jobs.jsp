@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.bupt.ta.model.Job" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.List" %>
@@ -45,22 +46,22 @@
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 %>
 <div class="section">
-    <h2>开放岗位</h2>
-    <p class="section-desc">按类型、关键词与技能筛选岗位；技能可从列表快速选择，或在输入框中模糊匹配，多个词用逗号或空格分隔（满足其一即可）。可按匹配度或发布时间排序。</p>
+    <h2><%= I18n.msg(request, "jobs.title") %></h2>
+    <p class="section-desc"><%= I18n.msg(request, "jobs.desc") %></p>
 
     <form class="job-filter-bar" method="get" action="<%= ctx %>/ta/dashboard">
         <input type="hidden" name="tab" value="jobs">
         <div>
-            <label for="job-q">关键词</label>
-            <input type="text" id="job-q" name="jobQ" value="<%= qEsc %>" placeholder="岗位名称、描述或技能" autocomplete="off">
+            <label for="job-q"><%= I18n.msg(request, "jobs.keyword") %></label>
+            <input type="text" id="job-q" name="jobQ" value="<%= qEsc %>" placeholder="<%= I18n.msg(request, "jobs.keyword.ph") %>" autocomplete="off">
         </div>
         <div>
-            <label for="job-type">岗位类型</label>
+            <label for="job-type"><%= I18n.msg(request, "jobs.type") %></label>
             <select id="job-type" name="jobType">
-                <option value="all" <%= "all".equals(jobFilterType) ? "selected" : "" %>>全部类型</option>
-                <option value="course_ta" <%= "course_ta".equals(jobFilterType) ? "selected" : "" %>>课程助教</option>
-                <option value="invigilation" <%= "invigilation".equals(jobFilterType) ? "selected" : "" %>>监考</option>
-                <option value="activity" <%= "activity".equals(jobFilterType) ? "selected" : "" %>>活动支持</option>
+                <option value="all" <%= "all".equals(jobFilterType) ? "selected" : "" %>><%= I18n.msg(request, "jobs.type.all") %></option>
+                <option value="course_ta" <%= "course_ta".equals(jobFilterType) ? "selected" : "" %>><%= I18n.msg(request, "jobs.type.course_ta") %></option>
+                <option value="invigilation" <%= "invigilation".equals(jobFilterType) ? "selected" : "" %>><%= I18n.msg(request, "jobs.type.invigilation") %></option>
+                <option value="activity" <%= "activity".equals(jobFilterType) ? "selected" : "" %>><%= I18n.msg(request, "jobs.type.activity") %></option>
             </select>
         </div>
         <%
@@ -80,10 +81,10 @@
             boolean allSkillsPresetSelected = jobFilterSkill.isEmpty() || !oneSkillFilter || !presetMatchesAny;
         %>
         <div class="job-skill-wrap">
-            <span class="job-skill-label">技能</span>
-            <label class="sr-only" for="job-skill-preset">快速选择技能</label>
-            <select id="job-skill-preset" class="job-skill-preset" title="从当前开放岗位所需技能中选择">
-                <option value="" <%= allSkillsPresetSelected ? "selected" : "" %>>全部技能</option>
+            <span class="job-skill-label"><%= I18n.msg(request, "jobs.skill") %></span>
+            <label class="sr-only" for="job-skill-preset"><%= I18n.msg(request, "jobs.skill.preset") %></label>
+            <select id="job-skill-preset" class="job-skill-preset" title="<%= I18n.msg(request, "jobs.skill.preset.title") %>">
+                <option value="" <%= allSkillsPresetSelected ? "selected" : "" %>><%= I18n.msg(request, "jobs.skill.all") %></option>
                 <% for (String skOpt : jobSkillOptions) {
                     if (skOpt == null) continue;
                     String skTrim = skOpt.trim();
@@ -94,8 +95,8 @@
                 <option value="<%= skAttr %>" <%= presetSel ? "selected" : "" %>><%= skAttr %></option>
                 <% } %>
             </select>
-            <label for="job-skill">模糊匹配</label>
-            <input type="text" id="job-skill" name="jobSkill" value="<%= skillEsc %>" placeholder="如 java、英语 或 Java, Python" autocomplete="off" list="job-skill-datalist">
+            <label for="job-skill"><%= I18n.msg(request, "jobs.skill.fuzzy") %></label>
+            <input type="text" id="job-skill" name="jobSkill" value="<%= skillEsc %>" placeholder="<%= I18n.msg(request, "jobs.skill.fuzzy.ph") %>" autocomplete="off" list="job-skill-datalist">
             <datalist id="job-skill-datalist">
                 <% for (String skOpt : jobSkillOptions) {
                     if (skOpt == null) continue;
@@ -117,59 +118,59 @@
         })();
         </script>
         <div>
-            <label for="job-sort">排序</label>
+            <label for="job-sort"><%= I18n.msg(request, "jobs.sort") %></label>
             <select id="job-sort" name="jobSort">
-                <option value="newest" <%= "newest".equals(jobFilterSort) ? "selected" : "" %>>发布时间 · 最新</option>
-                <option value="oldest" <%= "oldest".equals(jobFilterSort) ? "selected" : "" %>>发布时间 · 最早</option>
-                <option value="match_desc" <%= "match_desc".equals(jobFilterSort) ? "selected" : "" %>>匹配度 · 高→低</option>
-                <option value="title_asc" <%= "title_asc".equals(jobFilterSort) ? "selected" : "" %>>岗位名称 A→Z</option>
+                <option value="newest" <%= "newest".equals(jobFilterSort) ? "selected" : "" %>><%= I18n.msg(request, "jobs.sort.newest") %></option>
+                <option value="oldest" <%= "oldest".equals(jobFilterSort) ? "selected" : "" %>><%= I18n.msg(request, "jobs.sort.oldest") %></option>
+                <option value="match_desc" <%= "match_desc".equals(jobFilterSort) ? "selected" : "" %>><%= I18n.msg(request, "jobs.sort.matchDesc") %></option>
+                <option value="title_asc" <%= "title_asc".equals(jobFilterSort) ? "selected" : "" %>><%= I18n.msg(request, "jobs.sort.titleAsc") %></option>
             </select>
         </div>
         <div class="chk">
             <input type="checkbox" id="hide-applied" name="hideApplied" value="1" <%= hideApplied ? "checked" : "" %>>
-            <label for="hide-applied">隐藏已投递</label>
+            <label for="hide-applied"><%= I18n.msg(request, "jobs.hideApplied") %></label>
         </div>
-        <button type="submit" class="btn btn-secondary btn-small">应用筛选</button>
-        <a href="<%= ctx %>/ta/dashboard?tab=jobs" class="btn btn-secondary btn-small" style="text-decoration:none;display:inline-block;line-height:1.25">重置</a>
+        <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "common.apply") %></button>
+        <a href="<%= ctx %>/ta/dashboard?tab=jobs" class="btn btn-secondary btn-small" style="text-decoration:none;display:inline-block;line-height:1.25"><%= I18n.msg(request, "jobs.reset") %></a>
     </form>
-    <p class="job-filter-meta">共 <strong><%= openJobsTotal %></strong> 个开放岗位；当前列表 <strong><%= openJobs.size() %></strong> 个。</p>
+    <p class="job-filter-meta"><%= I18n.msg(request, "jobs.meta", openJobsTotal, openJobs.size()) %></p>
 
     <% if (openJobsTotal == 0) { %>
-    <p class="empty-hint">当前没有开放岗位。</p>
+    <p class="empty-hint"><%= I18n.msg(request, "jobs.empty.none") %></p>
     <% } else if (openJobs.isEmpty()) { %>
-    <p class="empty-hint">没有符合当前筛选条件的岗位，请尝试放宽关键词或取消「隐藏已投递」。</p>
+    <p class="empty-hint"><%= I18n.msg(request, "jobs.empty.filtered") %></p>
     <% } else { %>
     <% for (Job j : openJobs) {
         if (!Job.STATUS_OPEN.equals(j.getStatus())) continue;
         boolean already = appliedJobIds.contains(j.getId());
         String typeLabel = "-";
-        if ("course_ta".equals(j.getType())) typeLabel = "课程助教";
-        else if ("invigilation".equals(j.getType())) typeLabel = "监考";
-        else if ("activity".equals(j.getType())) typeLabel = "活动支持";
+        if ("course_ta".equals(j.getType())) typeLabel = I18n.msg(request, "jobs.type.course_ta");
+        else if ("invigilation".equals(j.getType())) typeLabel = I18n.msg(request, "jobs.type.invigilation");
+        else if ("activity".equals(j.getType())) typeLabel = I18n.msg(request, "jobs.type.activity");
         else if (j.getType() != null) typeLabel = j.getType();
         Integer mscore = jobMatchScores.get(j.getId());
-        String scoreLabel = mscore != null ? mscore + " 分" : "—";
+        String scoreLabel = mscore != null ? I18n.msg(request, "jobs.score.points", mscore) : I18n.msg(request, "common.dash");
     %>
     <div class="job-card">
-        <h3><%= j.getTitle() != null ? j.getTitle() : "（未命名）" %>
-            <% if (mscore != null) { %><span class="job-match-pill" title="与您的技能标签匹配度">匹配 <%= scoreLabel %></span><% } %>
+        <h3><%= j.getTitle() != null ? j.getTitle() : I18n.msg(request, "jobs.unnamed") %>
+            <% if (mscore != null) { %><span class="job-match-pill" title="<%= I18n.msg(request, "jobs.match.title") %>"><%= I18n.msg(request, "jobs.match", scoreLabel) %></span><% } %>
         </h3>
         <p class="section-desc job-type-label" style="margin-bottom:.35rem">
-            <span class="badge badge-open">开放</span>
+            <span class="badge badge-open"><%= I18n.msg(request, "common.open") %></span>
             &nbsp;·&nbsp;<%= typeLabel %>
-            <% if (j.getCreatedAt() > 0) { %>&nbsp;·&nbsp;发布 <%= sdf.format(new Date(j.getCreatedAt())) %><% } %>
+            <% if (j.getCreatedAt() > 0) { %>&nbsp;·&nbsp;<%= I18n.msg(request, "jobs.published") %> <%= sdf.format(new Date(j.getCreatedAt())) %><% } %>
         </p>
         <% if (j.getDescription() != null && !j.getDescription().isEmpty()) { %>
         <p class="section-desc"><%= j.getDescription() %></p>
         <% } %>
         <% if (j.getRequiredSkills() != null && !j.getRequiredSkills().isEmpty()) { %>
-        <p class="section-desc">所需技能：<%= String.join("、", j.getRequiredSkills()) %></p>
+        <p class="section-desc"><%= I18n.msg(request, "jobs.required") %> <%= String.join("、", j.getRequiredSkills()) %></p>
         <% } %>
         <p style="margin:.5rem 0 0">
-            <a href="<%= ctx %>/ta/dashboard?tab=messages&amp;dmJobId=<%= j.getId() %>" class="btn btn-secondary btn-small">私信招聘者</a>
+            <a href="<%= ctx %>/ta/dashboard?tab=messages&amp;dmJobId=<%= j.getId() %>" class="btn btn-secondary btn-small"><%= I18n.msg(request, "jobs.dmRecruiter") %></a>
         </p>
         <% if (already) { %>
-        <p class="applied-tag">您已申请该岗位</p>
+        <p class="applied-tag"><%= I18n.msg(request, "jobs.appliedTag") %></p>
         <% } else { %>
         <form method="post" action="<%= ctx %>/ta/dashboard">
             <input type="hidden" name="action" value="apply">
@@ -180,10 +181,10 @@
             <input type="hidden" name="jobSkill" value="<%= skillEsc %>">
             <% if (hideApplied) { %><input type="hidden" name="hideApplied" value="1"><% } %>
             <div class="form-group">
-                <label>申请备注（选填）</label>
-                <input type="text" name="note" placeholder="简短说明">
+                <label><%= I18n.msg(request, "jobs.note") %></label>
+                <input type="text" name="note" placeholder="<%= I18n.msg(request, "jobs.note.ph") %>">
             </div>
-            <button type="submit" class="btn btn-primary">申请</button>
+            <button type="submit" class="btn btn-primary"><%= I18n.msg(request, "jobs.apply.btn") %></button>
         </form>
         <% } %>
     </div>

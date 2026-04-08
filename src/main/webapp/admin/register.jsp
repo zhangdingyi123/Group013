@@ -1,49 +1,46 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="<%= I18n.htmlLangAttr(request) %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理员注册 - 助教招聘系统</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=3">
-    <style>
-      *{box-sizing:border-box} body{margin:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;padding:2rem 0}
-      .form-page{max-width:400px;margin:0 auto;padding:2.25rem;background:#fff;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.08);border:1px solid #e2e8f0}
-      .form-page h1{font-size:1.4rem;font-weight:600;margin:0 0 1.5rem;text-align:center}
-      .form-group{margin-bottom:1.1rem}.form-group label{display:block;font-size:.9rem;font-weight:500;margin-bottom:.4rem}
-      .form-group input{width:100%;padding:.65rem .85rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.95rem}
-      .form-group input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px #dbeafe}
-      .form-actions{margin-top:1.25rem}
-      .btn{display:inline-block;padding:.65rem 1.35rem;border:none;border-radius:6px;font-size:.95rem;font-weight:500;cursor:pointer;width:100%;text-align:center;background:#2563eb;color:#fff;font-family:inherit}
-      .btn:hover{background:#1d4ed8}.error{color:#dc2626;font-size:.9rem;margin-bottom:1rem;padding:.6rem .85rem;background:#fef2f2;border-radius:6px}
-      .links{text-align:center;margin-top:1.25rem;font-size:.9rem;color:#64748b}.links a{color:#2563eb;text-decoration:none}.links a:hover{text-decoration:underline}
-    </style>
+    <title><%= I18n.msg(request, "reg.admin.title") %> - <%= I18n.msg(request, "common.sysName") %></title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=4">
 </head>
-<body>
-    <div class="form-page">
-        <h1>管理员注册</h1>
+<body class="auth-page auth-page--admin">
+    <div class="auth-bg" aria-hidden="true"></div>
+    <main class="auth-shell">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:0.65rem;">
+            <jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/>
+        </div>
+        <a href="${pageContext.request.contextPath}/" class="auth-back"><%= I18n.msg(request, "common.backHome") %></a>
+        <div class="form-page">
+        <h1><%= I18n.msg(request, "reg.admin.title") %></h1>
         <% if (request.getAttribute("error") != null) { %>
         <p class="error"><%= request.getAttribute("error") %></p>
         <% } %>
         <form method="post" action="${pageContext.request.contextPath}/admin/auth">
             <input type="hidden" name="action" value="register">
             <div class="form-group">
-                <label>姓名</label>
-                <input type="text" name="name" placeholder="可选">
+                <label><%= I18n.msg(request, "auth.label.name") %></label>
+                <input type="text" name="name" placeholder="<%= I18n.msg(request, "reg.admin.name.opt") %>">
             </div>
             <div class="form-group">
-                <label>邮箱 *</label>
+                <label><%= I18n.msg(request, "common.email") %> *</label>
                 <input type="email" name="email" required placeholder="admin@bupt.edu.cn">
             </div>
             <div class="form-group">
-                <label>密码 *</label>
+                <label><%= I18n.msg(request, "common.password") %> *</label>
                 <input type="password" name="password" required>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn">注册</button>
+                <button type="submit" class="btn btn-primary"><%= I18n.msg(request, "mo.register.btn") %></button>
             </div>
         </form>
-        <p class="links"><a href="${pageContext.request.contextPath}/admin/auth">已有账号？登录</a> &nbsp;|&nbsp; <a href="${pageContext.request.contextPath}/">返回首页</a></p>
-    </div>
+        <p class="links"><a href="${pageContext.request.contextPath}/admin/auth"><%= I18n.msg(request, "auth.link.hasAccount") %></a><span class="dot">·</span><a href="${pageContext.request.contextPath}/"><%= I18n.msg(request, "auth.link.home") %></a></p>
+        </div>
+    </main>
+    <script src="${pageContext.request.contextPath}/js/ui.js?v=1" defer></script>
 </body>
 </html>

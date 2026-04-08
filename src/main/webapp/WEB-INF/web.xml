@@ -12,6 +12,16 @@
         <session-timeout>30</session-timeout>
     </session-config>
 
+    <filter>
+        <filter-name>LocaleFilter</filter-name>
+        <filter-class>com.bupt.ta.web.filter.LocaleFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>LocaleFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+
     <!-- 管理员登录/注册，显式映射避免点击入口无反应 -->
     <servlet>
         <servlet-name>AdminAuthServlet</servlet-name>

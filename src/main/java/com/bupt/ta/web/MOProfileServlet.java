@@ -4,6 +4,7 @@ import com.bupt.ta.model.Job;
 import com.bupt.ta.model.ModuleOrganiser;
 import com.bupt.ta.service.JobService;
 import com.bupt.ta.service.ModuleOrganiserService;
+import com.bupt.ta.util.I18n;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -67,7 +68,7 @@ public class MOProfileServlet extends HttpServlet {
             try {
                 moduleOrganiserService.update(user);
                 session.setAttribute("moUser", user);
-                session.setAttribute("moNotice", "个人资料已保存");
+                session.setAttribute("moNotice", I18n.msg(req, "profile.saved.mo"));
             } catch (Exception ignored) {}
         }
         resp.sendRedirect(req.getContextPath() + "/mo/profile");

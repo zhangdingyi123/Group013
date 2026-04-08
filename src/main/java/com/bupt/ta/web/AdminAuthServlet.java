@@ -2,6 +2,7 @@ package com.bupt.ta.web;
 
 import com.bupt.ta.model.Admin;
 import com.bupt.ta.service.AdminService;
+import com.bupt.ta.util.I18n;
 import com.bupt.ta.util.PasswordUtil;
 import com.bupt.ta.util.SessionLogoutUtil;
 
@@ -36,7 +37,7 @@ public class AdminAuthServlet extends HttpServlet {
             String password = req.getParameter("password");
             String emailTrim = email != null ? email.trim() : "";
             if (emailTrim.isEmpty() || password == null || password.isEmpty()) {
-                req.setAttribute("error", "请填写邮箱和密码");
+                req.setAttribute("error", I18n.msg(req, "err.login.fields"));
                 req.getRequestDispatcher("/admin/auth.jsp").forward(req, resp);
                 return;
             }
@@ -49,11 +50,11 @@ public class AdminAuthServlet extends HttpServlet {
                     return;
                 }
             } catch (IOException e) {
-                req.setAttribute("error", "登录失败，请稍后重试");
+                req.setAttribute("error", I18n.msg(req, "err.login.fail"));
                 req.getRequestDispatcher("/admin/auth.jsp").forward(req, resp);
                 return;
             }
-            req.setAttribute("error", "邮箱或密码错误");
+            req.setAttribute("error", I18n.msg(req, "err.login.bad"));
             req.getRequestDispatcher("/admin/auth.jsp").forward(req, resp);
             return;
         }
@@ -62,7 +63,7 @@ public class AdminAuthServlet extends HttpServlet {
             String email = req.getParameter("email");
             String password = req.getParameter("password");
             if (email == null || email.trim().isEmpty() || password == null || password.trim().isEmpty()) {
-                req.setAttribute("error", "请填写邮箱和密码");
+                req.setAttribute("error", I18n.msg(req, "err.login.fields"));
                 req.getRequestDispatcher("/admin/register.jsp").forward(req, resp);
                 return;
             }
@@ -72,7 +73,7 @@ public class AdminAuthServlet extends HttpServlet {
                         email.trim(),
                         PasswordUtil.hash(password));
                 if (admin == null) {
-                    req.setAttribute("error", "该邮箱已注册");
+                    req.setAttribute("error", I18n.msg(req, "err.admin.registered"));
                     req.getRequestDispatcher("/admin/register.jsp").forward(req, resp);
                     return;
                 }
@@ -81,7 +82,7 @@ public class AdminAuthServlet extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/admin/workload");
                 return;
             } catch (Exception e) {
-                req.setAttribute("error", e.getMessage() != null ? e.getMessage() : "注册失败");
+                req.setAttribute("error", e.getMessage() != null ? e.getMessage() : I18n.msg(req, "err.admin.register.fail"));
                 req.getRequestDispatcher("/admin/register.jsp").forward(req, resp);
                 return;
             }

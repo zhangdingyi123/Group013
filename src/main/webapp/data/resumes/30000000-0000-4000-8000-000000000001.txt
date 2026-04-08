@@ -1,15 +1,15 @@
-陈明 · 北京邮电大学 · 硕士在读
-邮箱：chenming@bupt.edu.cn | 手机：13800138001
+Ming Chen · Beijing University of Posts and Telecommunications · Master's student
+Email: chenming@bupt.edu.cn | Phone: 13800138001
 
-教育背景
-2023—至今  北京邮电大学  计算机科学与技术
+Education
+2023—present  BUPT  Computer Science and Technology
 
-项目与经历
-- 数据结构课程项目：实现 B+ 树与外部排序实验模块
-- 程序设计竞赛校队成员
+Projects & experience
+- Data structures course project: B+ tree and external sorting lab modules
+- Member of the university programming contest team
 
-技能
-Java、数据结构、算法基础
+Skills
+Java, data structures, algorithms fundamentals
 
-自我评价
-耐心细致，乐于答疑，可保证每周固定答疑时间。
+Summary
+Patient and detail-oriented; happy to answer questions; can commit to fixed weekly office hours.

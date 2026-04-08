@@ -6,6 +6,7 @@ import com.bupt.ta.model.ModuleOrganiser;
 import com.bupt.ta.service.ApplicationService;
 import com.bupt.ta.service.JobService;
 import com.bupt.ta.service.MatchHelper;
+import com.bupt.ta.util.I18n;
 import com.bupt.ta.service.MatchHelper.ApplicantMatch;
 
 import javax.servlet.ServletException;
@@ -59,12 +60,12 @@ public class JobApplicantsServlet extends HttpServlet {
         try {
             Optional<Job> jobOpt = jobService.findById(jobId.trim());
             if (jobOpt.isEmpty() || !user.getId().equals(jobOpt.get().getModuleOrganiserId())) {
-                req.setAttribute("error", "岗位不存在或您无权查看该岗位的应聘者。");
+                req.setAttribute("error", I18n.msg(req, "mo.ja.err.job"));
                 req.setAttribute("job", null);
             } else {
                 Job job = jobOpt.get();
                 if (!Job.STATUS_OPEN.equals(job.getStatus())) {
-                    session.setAttribute("moNotice", "该岗位已关闭，无法继续筛选应聘者。");
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.ja.closed"));
                     resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
                     return;
                 }
@@ -167,32 +168,32 @@ public class JobApplicantsServlet extends HttpServlet {
             try {
                 Optional<Application> appOpt = applicationService.findById(appId.trim());
                 if (appOpt.isEmpty()) {
-                    session.setAttribute("moNotice", "申请记录不存在。");
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.ja.app.missing"));
                     redirectAfterPost(req, resp, jobIdParam);
                     return;
                 }
                 String jobId = appOpt.get().getJobId();
                 Optional<Job> jobOpt = jobService.findById(jobId);
                 if (jobOpt.isEmpty() || !user.getId().equals(jobOpt.get().getModuleOrganiserId())) {
-                    session.setAttribute("moNotice", "无权处理该申请。");
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.ja.app.forbidden"));
                     redirectAfterPost(req, resp, jobIdParam);
                     return;
                 }
                 Job job = jobOpt.get();
                 if (!Job.STATUS_OPEN.equals(job.getStatus())) {
-                    session.setAttribute("moNotice", "该岗位已关闭，无法安排面试。");
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.ja.closed.iv"));
                     redirectAfterPost(req, resp, jobIdParam);
                     return;
                 }
                 if (atMs <= 0) {
-                    session.setAttribute("moNotice", "请选择有效的面试/试讲时间。");
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.ja.iv.time.invalid"));
                 } else if (!applicationService.scheduleInterview(appId.trim(), atMs, interviewDetail)) {
-                    session.setAttribute("moNotice", "仅待审核的申请可设为待面试。");
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.ja.iv.pending.only"));
                 } else {
-                    session.setAttribute("moNotice", "已标记为待面试，并通知应聘者查看时间与地点。");
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.ja.iv.scheduled"));
                 }
             } catch (Exception e) {
-                session.setAttribute("moNotice", "操作失败，请重试。");
+                session.setAttribute("moNotice", I18n.msg(req, "mo.ja.op.fail"));
             }
             String backJobId = jobIdParam != null && !jobIdParam.trim().isEmpty() ? jobIdParam.trim() : null;
             if (backJobId == null || backJobId.isEmpty()) {
@@ -226,14 +227,14 @@ public class JobApplicantsServlet extends HttpServlet {
         try {
             Optional<Application> appOpt = applicationService.findById(appId.trim());
             if (appOpt.isEmpty()) {
-                session.setAttribute("moNotice", "申请记录不存在。");
+                session.setAttribute("moNotice", I18n.msg(req, "mo.ja.app.missing"));
                 resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
                 return;
             }
             Application currentApp = appOpt.get();
             String curSt = currentApp.getStatus();
             if (!Application.STATUS_PENDING.equals(curSt) && !Application.STATUS_INTERVIEW.equals(curSt)) {
-                session.setAttribute("moNotice", "当前状态不可录用或拒绝。");
+                session.setAttribute("moNotice", I18n.msg(req, "mo.ja.status.bad"));
                 String backJobId = (jobIdParam != null && !jobIdParam.trim().isEmpty()) ? jobIdParam.trim() : currentApp.getJobId();
                 resp.sendRedirect(applicantsListUrl(req.getContextPath(), backJobId,
                         req.getParameter("filter"), req.getParameter("q"),
@@ -243,13 +244,13 @@ public class JobApplicantsServlet extends HttpServlet {
             String jobId = currentApp.getJobId();
             Optional<Job> jobOpt = jobService.findById(jobId);
             if (jobOpt.isEmpty() || !user.getId().equals(jobOpt.get().getModuleOrganiserId())) {
-                session.setAttribute("moNotice", "无权处理该申请。");
+                session.setAttribute("moNotice", I18n.msg(req, "mo.ja.app.forbidden"));
                 resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
                 return;
             }
             Job job = jobOpt.get();
             if (!Job.STATUS_OPEN.equals(job.getStatus())) {
-                session.setAttribute("moNotice", "该岗位已关闭，无法变更申请状态。");
+                session.setAttribute("moNotice", I18n.msg(req, "mo.ja.closed.status"));
                 resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
                 return;
             }
@@ -257,7 +258,7 @@ public class JobApplicantsServlet extends HttpServlet {
             if (Application.STATUS_ACCEPTED.equals(status)) {
                 job.setStatus(Job.STATUS_CLOSED);
                 jobService.update(job);
-                session.setAttribute("moNotice", "已录用该应聘者，岗位已自动关闭。");
+                session.setAttribute("moNotice", I18n.msg(req, "mo.ja.accepted"));
                 resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
                 return;
             }
@@ -266,7 +267,7 @@ public class JobApplicantsServlet extends HttpServlet {
                     req.getParameter("filter"), req.getParameter("q"),
                     req.getParameter("sort"), req.getParameter("minScore")));
         } catch (Exception e) {
-            session.setAttribute("moNotice", "操作失败，请重试。");
+            session.setAttribute("moNotice", I18n.msg(req, "mo.ja.op.fail"));
             resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=positions");
         }
     }

@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="com.bupt.ta.model.Applicant" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%
     Applicant applicant = (Applicant) request.getAttribute("applicant");
     if (applicant == null) {
@@ -14,106 +15,31 @@
     }
     String tab = (String) request.getAttribute("taDashboardTab");
     if (tab == null) tab = "resume";
-    String pageTitle = "简历与匹配";
-    if ("jobs".equals(tab)) pageTitle = "开放岗位";
-    else if ("applications".equals(tab)) pageTitle = "我的申请";
-    else if ("messages".equals(tab)) pageTitle = "私信";
+    String pageTitle = I18n.msg(request, "dash.ta.tab.resume");
+    if ("jobs".equals(tab)) pageTitle = I18n.msg(request, "dash.ta.tab.jobs");
+    else if ("applications".equals(tab)) pageTitle = I18n.msg(request, "dash.ta.tab.apps");
+    else if ("messages".equals(tab)) pageTitle = I18n.msg(request, "dash.ta.tab.msg");
     String ctx = request.getContextPath();
 %>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="<%= I18n.htmlLangAttr(request) %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= pageTitle %> - 应聘者工作台</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=3">
-    <style>
-      *{box-sizing:border-box} body{margin:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;line-height:1.6}
-      .dashboard{max-width:960px;margin:0 auto;padding:1.5rem}
-      .page-header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.75rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0;position:relative;z-index:1}
-      .page-header .back-link{justify-self:start}
-      .page-header h1{margin:0;font-size:1.4rem;font-weight:600;color:#1e293b;justify-self:center;text-align:center}
-      .header-actions{justify-self:end;display:flex;align-items:center;gap:.15rem;flex-wrap:wrap}
-      .back-link{padding:.45rem .85rem;color:#2563eb;text-decoration:none;font-size:.9rem;border-radius:6px}
-      .back-link:hover{background:#dbeafe}
-      .header-nav-link{font-size:.9rem;color:#2563eb;text-decoration:none;padding:.45rem .75rem;border-radius:6px;font-weight:500}
-      .header-nav-link:hover{background:#dbeafe}
-      .logout{font-size:.9rem;color:#64748b;text-decoration:none;padding:.45rem .85rem;border-radius:6px}
-      .logout:hover{color:#dc2626;background:#fef2f2}
-      .ta-subnav{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1.25rem;padding:.35rem;background:#e2e8f0;border-radius:10px;position:relative;z-index:2}
-      .ta-subnav a{display:inline-block;padding:.5rem 1rem;border-radius:8px;font-size:.9rem;font-weight:500;color:#475569;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,.15)}
-      .ta-subnav a:hover{background:#cbd5e1;color:#1e293b}
-      .ta-subnav a.active{background:#fff;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-      .section{background:#fff;border-radius:10px;padding:1.35rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e2e8f0;border-left:4px solid #2563eb}
-      .section h2{font-size:1.05rem;font-weight:600;margin:0 0 1rem;color:#1e293b}
-      .section p,.section-desc{margin:0 0 .75rem;color:#64748b;font-size:.9rem}
-      .form-group{margin-bottom:1.1rem}
-      .form-group label{display:block;font-size:.9rem;font-weight:500;margin-bottom:.4rem;color:#1e293b}
-      .form-group input,.form-group textarea,.form-group select{width:100%;padding:.65rem .85rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.95rem;font-family:inherit}
-      .form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px #dbeafe}
-      .form-group textarea{min-height:100px;resize:vertical}
-      .btn{display:inline-block;padding:.4rem .85rem;border:none;border-radius:6px;font-size:.875rem;font-weight:500;cursor:pointer;font-family:inherit;text-decoration:none}
-      .btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
-      .btn-secondary{background:#e2e8f0;color:#475569}.btn-secondary:hover{background:#cbd5e1}
-      .btn-small{font-size:.8rem;padding:.35rem .65rem}
-      .table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #e2e8f0;margin-top:.5rem}
-      table{width:100%;border-collapse:collapse;font-size:.9rem}
-      th,td{padding:.7rem .9rem;text-align:left;border-bottom:1px solid #e2e8f0}
-      tr:last-child td{border-bottom:none}
-      th{background:#f1f5f9;color:#1e293b;font-weight:600;font-size:.85rem}
-      tbody tr:hover{background:#f8fafc}
-      .badge{display:inline-block;padding:.25rem .6rem;border-radius:999px;font-size:.8rem;font-weight:500}
-      .badge-pending{background:#fef3c7;color:#92400e}.badge-accepted{background:#d1fae5;color:#065f46}.badge-rejected{background:#fee2e2;color:#991b1b}.badge-cancelled{background:#f1f5f9;color:#475569}
-      .badge-interview{background:#e0e7ff;color:#3730a3}
-      .app-iv-note{font-size:.82rem;color:#64748b;margin-top:.25rem;line-height:1.45;word-break:break-word}
-      .badge-open{background:#dbeafe;color:#1e40af}.badge-closed{background:#f1f5f9;color:#475569}
-      .empty-hint{color:#64748b;font-size:.9rem;padding:1rem 0}
-      .msg-ok{color:#065f46;background:#d1fae5;padding:.6rem .85rem;border-radius:6px;margin-bottom:1rem;font-size:.9rem}
-      .msg-err{color:#991b1b;background:#fee2e2;padding:.6rem .85rem;border-radius:6px;margin-bottom:1rem;font-size:.9rem}
-      .hint-list{margin:.5rem 0 0 1.1rem;padding:0;color:#64748b;font-size:.875rem}
-      .job-card{border:1px solid #e2e8f0;border-radius:8px;padding:1rem;margin-bottom:1rem;background:#fafafa}
-      .job-card h3{margin:0 0 .5rem;font-size:1rem;color:#1e293b}
-      .applied-tag{font-size:.8rem;color:#64748b;margin-bottom:.5rem}
-      .job-filter-bar{display:flex;flex-wrap:wrap;gap:.65rem;align-items:flex-end;margin-bottom:.75rem;padding:.85rem 1rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
-      .job-filter-bar label{font-size:.8rem;font-weight:500;color:#475569;display:block;margin-bottom:.25rem}
-      .job-filter-bar input[type=text],.job-filter-bar select{padding:.45rem .65rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.875rem;font-family:inherit;min-width:110px}
-      .job-filter-bar input[type=text]{min-width:160px}
-      .job-filter-bar .chk{display:flex;align-items:center;gap:.35rem;padding-bottom:.2rem}
-      .job-filter-bar .chk input{width:auto;margin:0}
-      .job-filter-bar .chk label{margin:0;font-weight:500}
-      .job-filter-bar .job-skill-wrap{display:flex;flex-direction:column;gap:.3rem;min-width:min(200px,100%)}
-      .job-filter-bar .job-skill-wrap .job-skill-label{font-size:.8rem;font-weight:500;color:#475569}
-      .job-filter-bar .job-skill-wrap .job-skill-preset{max-width:100%;min-width:160px}
-      .job-filter-bar .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-      .job-filter-meta{margin:0 0 1rem;font-size:.85rem;color:#64748b}
-      .job-filter-meta strong{color:#334155}
-      .job-match-pill{display:inline-block;margin-left:.35rem;padding:.12rem .45rem;border-radius:6px;font-size:.75rem;font-weight:600;background:#dbeafe;color:#1e40af;vertical-align:middle}
-      .job-type-label{font-size:.85rem;color:#64748b}
-      .resume-ai-section{border-left-color:#7c3aed}
-      .resume-ai-toolbar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;margin:.75rem 0}
-      .resume-ai-toolbar label{font-size:.85rem;font-weight:500;color:#475569;display:block;margin-bottom:.25rem}
-      .resume-ai-toolbar select{padding:.45rem .65rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.875rem;font-family:inherit}
-      .resume-ai-chat{min-height:100px;max-height:260px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:.75rem;margin:.5rem 0 1rem;background:#fafafa;font-size:.875rem;line-height:1.5}
-      .resume-ai-msg{margin-bottom:.65rem}
-      .resume-ai-msg--user{border-left:3px solid #2563eb;padding-left:.5rem}
-      .resume-ai-msg--asst{border-left:3px solid #7c3aed;padding-left:.5rem}
-      .resume-ai-msg--err{color:#b91c1c;font-size:.875rem;padding:.35rem 0}
-      .resume-ai-msg-label{font-size:.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:.2rem}
-      .resume-ai-warn{font-size:.85rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:.65rem .85rem;margin:.5rem 0}
-      .resume-ai-hint{font-size:.85rem;color:#64748b;margin:.35rem 0 0}
-      .nav-dm-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.15rem;padding:0 .32rem;margin-left:.35rem;font-size:.68rem;font-weight:700;line-height:1.25;border-radius:999px;background:#dc2626;color:#fff;vertical-align:middle}
-    </style>
+    <title><%= I18n.msg(request, "dash.ta.pageTitle", pageTitle) %></title>
+    <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=4">
 </head>
-<body>
+<body class="dashboard-app">
     <div class="dashboard">
-        <div class="page-header">
-            <a href="<%= ctx %>/" class="back-link">← 首页</a>
-            <h1>应聘者工作台</h1>
+        <div class="page-header has-lang">
+            <jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/>
+            <a href="<%= ctx %>/" class="back-link"><%= I18n.msg(request, "header.backHome") %></a>
+            <h1><%= I18n.msg(request, "dash.ta.title") %></h1>
             <div class="header-actions">
-                <a href="<%= ctx %>/forum" class="header-nav-link">论坛</a>
-                <a href="<%= ctx %>/assistant" class="header-nav-link">小助手</a>
-                <a href="<%= ctx %>/ta/profile" class="header-nav-link">个人中心</a>
-                <a href="<%= ctx %>/ta/auth?logout=1" class="logout">退出登录</a>
+                <a href="<%= ctx %>/forum" class="header-nav-link"><%= I18n.msg(request, "header.forum") %></a>
+                <a href="<%= ctx %>/assistant" class="header-nav-link"><%= I18n.msg(request, "header.assistant") %></a>
+                <a href="<%= ctx %>/ta/profile" class="header-nav-link"><%= I18n.msg(request, "header.profile") %></a>
+                <a href="<%= ctx %>/ta/auth?logout=1" class="logout"><%= I18n.msg(request, "common.logout") %></a>
             </div>
         </div>
 
@@ -121,11 +47,11 @@
         <c:url var="navJobs" value="/ta/dashboard"><c:param name="tab" value="jobs"/></c:url>
         <c:url var="navApplications" value="/ta/dashboard"><c:param name="tab" value="applications"/></c:url>
         <c:url var="navMessages" value="/ta/dashboard"><c:param name="tab" value="messages"/></c:url>
-        <nav class="ta-subnav" aria-label="工作台分区">
-            <a href="${navResume}" class="<%= "resume".equals(tab) ? "active" : "" %>">简历与匹配</a>
-            <a href="${navJobs}" class="<%= "jobs".equals(tab) ? "active" : "" %>">开放岗位</a>
-            <a href="${navApplications}" class="<%= "applications".equals(tab) ? "active" : "" %>">我的申请</a>
-            <a href="${navMessages}" class="<%= "messages".equals(tab) ? "active" : "" %>">私信<c:if test="${taDmTotalUnread > 0}"><span class="nav-dm-badge" title="未读私信">${taDmTotalUnread > 99 ? '99+' : taDmTotalUnread}</span></c:if></a>
+        <nav class="ta-subnav" aria-label="<%= I18n.msg(request, "dash.ta.title") %>">
+            <a href="${navResume}" class="<%= "resume".equals(tab) ? "active" : "" %>"><%= I18n.msg(request, "dash.ta.nav.resume") %></a>
+            <a href="${navJobs}" class="<%= "jobs".equals(tab) ? "active" : "" %>"><%= I18n.msg(request, "dash.ta.nav.jobs") %></a>
+            <a href="${navApplications}" class="<%= "applications".equals(tab) ? "active" : "" %>"><%= I18n.msg(request, "dash.ta.nav.apps") %></a>
+            <a href="${navMessages}" class="<%= "messages".equals(tab) ? "active" : "" %>"><%= I18n.msg(request, "dash.ta.nav.msg") %><c:if test="${taDmTotalUnread > 0}"><span class="nav-dm-badge" title="<%= I18n.msg(request, "dash.ta.nav.unreadTitle") %>">${taDmTotalUnread > 99 ? '99+' : taDmTotalUnread}</span></c:if></a>
         </nav>
 
         <% if (request.getAttribute("error") != null) { %>
@@ -150,5 +76,6 @@
             </c:otherwise>
         </c:choose>
     </div>
+    <script src="<%= ctx %>/js/ui.js?v=1" defer></script>
 </body>
 </html>

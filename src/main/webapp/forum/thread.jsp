@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%
     String ctx = request.getContextPath();
     if (request.getAttribute("forumThread") == null) {
@@ -9,12 +10,12 @@
     }
 %>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="<%= I18n.htmlLangAttr(request) %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><c:out value="${forumThread.title}"/> - 交流论坛</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css?v=3">
+    <title><c:out value="${forumThread.title}"/> <%= I18n.msg(request, "forum.thread.suffix") %></title>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css?v=4">
     <style>
       * { box-sizing: border-box; }
       body {
@@ -157,10 +158,11 @@
 </head>
 <body>
     <div class="wrap">
+        <div style="text-align:right;margin-bottom:0.5rem;"><jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/></div>
         <header class="forum-header">
-            <a href="<%= ctx %>/forum" class="back-link">← 论坛列表</a>
+            <a href="<%= ctx %>/forum" class="back-link"><%= I18n.msg(request, "forum.thread.backList") %></a>
             <h1><c:out value="${forumThread.title}"/></h1>
-            <a href="<%= ctx %>/assistant" class="back-link">小助手</a>
+            <a href="<%= ctx %>/assistant" class="back-link"><%= I18n.msg(request, "common.assistantShort") %></a>
         </header>
 
         <c:if test="${not empty forumNotice}">
@@ -170,25 +172,25 @@
         <div class="post">
             <div class="post-meta">
                 <c:choose>
-                    <c:when test="${forumThread.authorRole eq 'ta'}"><span class="badge badge-ta">应聘者</span></c:when>
-                    <c:when test="${forumThread.authorRole eq 'mo'}"><span class="badge badge-mo">课程组织者</span></c:when>
-                    <c:when test="${forumThread.authorRole eq 'admin'}"><span class="badge badge-admin">管理员</span></c:when>
-                    <c:otherwise><span class="badge">用户</span></c:otherwise>
+                    <c:when test="${forumThread.authorRole eq 'ta'}"><span class="badge badge-ta"><%= I18n.msg(request, "forum.badge.ta") %></span></c:when>
+                    <c:when test="${forumThread.authorRole eq 'mo'}"><span class="badge badge-mo"><%= I18n.msg(request, "forum.badge.mo") %></span></c:when>
+                    <c:when test="${forumThread.authorRole eq 'admin'}"><span class="badge badge-admin"><%= I18n.msg(request, "forum.badge.admin") %></span></c:when>
+                    <c:otherwise><span class="badge"><%= I18n.msg(request, "forum.badge.user") %></span></c:otherwise>
                 </c:choose>
                 <c:out value="${forumThread.authorName}"/> · <c:out value="${forumThread.createdAtText}"/>
             </div>
             <div class="post-body"><c:out value="${forumThread.body}"/></div>
         </div>
 
-        <h2 class="replies-title">回复 (${empty forumReplies ? 0 : fn:length(forumReplies)})</h2>
+        <h2 class="replies-title"><%= I18n.msg(request, "forum.replies.title") %> (${empty forumReplies ? 0 : fn:length(forumReplies)})</h2>
         <c:forEach items="${forumReplies}" var="r">
             <div class="reply">
                 <div class="reply-meta">
                     <c:choose>
-                        <c:when test="${r.authorRole eq 'ta'}"><span class="badge badge-ta">应聘者</span></c:when>
-                        <c:when test="${r.authorRole eq 'mo'}"><span class="badge badge-mo">课程组织者</span></c:when>
-                        <c:when test="${r.authorRole eq 'admin'}"><span class="badge badge-admin">管理员</span></c:when>
-                        <c:otherwise><span class="badge">用户</span></c:otherwise>
+                        <c:when test="${r.authorRole eq 'ta'}"><span class="badge badge-ta"><%= I18n.msg(request, "forum.badge.ta") %></span></c:when>
+                        <c:when test="${r.authorRole eq 'mo'}"><span class="badge badge-mo"><%= I18n.msg(request, "forum.badge.mo") %></span></c:when>
+                        <c:when test="${r.authorRole eq 'admin'}"><span class="badge badge-admin"><%= I18n.msg(request, "forum.badge.admin") %></span></c:when>
+                        <c:otherwise><span class="badge"><%= I18n.msg(request, "forum.badge.user") %></span></c:otherwise>
                     </c:choose>
                     <c:out value="${r.authorName}"/> · <c:out value="${r.createdAtText}"/>
                 </div>
@@ -197,20 +199,20 @@
         </c:forEach>
 
         <div id="reply-form" class="section" tabindex="-1">
-            <h2>发表回复</h2>
+            <h2><%= I18n.msg(request, "forum.reply.title") %></h2>
             <c:choose>
                 <c:when test="${empty forumAuthor}">
-                    <p class="login-hint">请 <a href="<%= ctx %>/ta/auth">应聘者登录</a>、<a href="<%= ctx %>/mo/auth">课程组织者登录</a> 或 <a href="<%= ctx %>/admin/auth">管理员登录</a> 后回复。</p>
+                    <p class="login-hint"><%= I18n.msg(request, "forum.reply.login", ctx + "/ta/auth", ctx + "/mo/auth", ctx + "/admin/auth") %></p>
                 </c:when>
                 <c:otherwise>
                     <form method="post" action="<%= ctx %>/forum">
                         <input type="hidden" name="action" value="newReply">
                         <input type="hidden" name="threadId" value="<c:out value='${forumThread.id}'/>">
                         <div class="form-group">
-                            <label for="body">内容</label>
-                            <textarea id="body" name="body" required placeholder="写下你的看法或补充…"></textarea>
+                            <label for="body"><%= I18n.msg(request, "forum.reply.label") %></label>
+                            <textarea id="body" name="body" required placeholder="<%= I18n.msg(request, "forum.reply.ph") %>"></textarea>
                         </div>
-                        <button type="submit" class="btn">发表回复</button>
+                        <button type="submit" class="btn"><%= I18n.msg(request, "forum.reply.submit") %></button>
                     </form>
                 </c:otherwise>
             </c:choose>

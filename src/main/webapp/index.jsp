@@ -1,11 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="<%= I18n.htmlLangAttr(request) %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>助教招聘系统 - 北京邮电大学国际学院</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=3">
+    <title><%= I18n.msg(request, "home.pageTitle") %></title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=4">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/assistant.css?v=9">
     <style>
       * { box-sizing: border-box; }
@@ -100,64 +101,65 @@
         }
     %>
     <div class="home-top-pc">
-        <nav class="home-quick-nav" aria-label="快捷入口">
-            <a href="${pageContext.request.contextPath}/forum">论坛</a>
+        <jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/>
+        <nav class="home-quick-nav" aria-label="<%= I18n.msg(request, "home.quickNavAria") %>">
+            <a href="${pageContext.request.contextPath}/forum"><%= I18n.msg(request, "common.forum") %></a>
             <span aria-hidden="true">·</span>
-            <a href="${pageContext.request.contextPath}/assistant">智能小助手</a>
+            <a href="${pageContext.request.contextPath}/assistant"><%= I18n.msg(request, "common.assistant") %></a>
         </nav>
-        <a href="<%= personalCenterHref %>" class="personal-center-btn"><span class="pc-icon" aria-hidden="true">👤</span>个人中心</a>
+        <a href="<%= personalCenterHref %>" class="personal-center-btn"><span class="pc-icon" aria-hidden="true">👤</span><%= I18n.msg(request, "common.personalCenter") %></a>
     </div>
     <div class="container">
         <header>
-            <h1>助教招聘系统</h1>
-            <p class="subtitle">北京邮电大学国际学院 · TA Recruitment System</p>
+            <h1><%= I18n.msg(request, "home.title") %></h1>
+            <p class="subtitle"><%= I18n.msg(request, "home.subtitle") %></p>
         </header>
         <main>
             <section class="home-section" aria-labelledby="home-identity">
-                <h2 id="home-identity" class="home-section-title">身份入口</h2>
-                <p class="home-section-desc">按角色登录后进入「工作台」完成投递、岗位发布与私信沟通；「个人中心」用于查看与编辑账号资料。</p>
+                <h2 id="home-identity" class="home-section-title"><%= I18n.msg(request, "home.section.identity") %></h2>
+                <p class="home-section-desc"><%= I18n.msg(request, "home.section.identity.desc") %></p>
                 <div class="cards cards--identity">
                     <a href="${pageContext.request.contextPath}/ta/auth" class="card card--emphasis">
                         <div class="card-icon">👤</div>
-                        <h2>应聘者</h2>
-                        <p>注册登录、维护简历、浏览岗位、投递与跟踪申请状态</p>
+                        <h2><%= I18n.msg(request, "home.card.ta") %></h2>
+                        <p><%= I18n.msg(request, "home.card.ta.desc") %></p>
                     </a>
                     <a href="${pageContext.request.contextPath}/mo/auth" class="card card--emphasis">
                         <div class="card-icon">📋</div>
-                        <h2>课程组织者</h2>
-                        <p>发布助教岗位、查看应聘者、筛选与录用、私信沟通</p>
+                        <h2><%= I18n.msg(request, "home.card.mo") %></h2>
+                        <p><%= I18n.msg(request, "home.card.mo.desc") %></p>
                     </a>
                 </div>
             </section>
             <section class="home-section" aria-labelledby="home-tools">
-                <h2 id="home-tools" class="home-section-title">社区与工具</h2>
-                <p class="home-section-desc">面向访客与已登录用户：论坛可公开浏览；智能助手帮助理解流程与润色简历表述。</p>
+                <h2 id="home-tools" class="home-section-title"><%= I18n.msg(request, "home.section.tools") %></h2>
+                <p class="home-section-desc"><%= I18n.msg(request, "home.section.tools.desc") %></p>
                 <div class="cards cards--tools">
                     <a href="${pageContext.request.contextPath}/forum" class="card card--soft">
                         <div class="card-icon">💬</div>
-                        <h2>交流论坛</h2>
-                        <p>发帖讨论；登录后可回复与互动</p>
+                        <h2><%= I18n.msg(request, "home.card.forum") %></h2>
+                        <p><%= I18n.msg(request, "home.card.forum.desc") %></p>
                     </a>
                     <a href="${pageContext.request.contextPath}/assistant" class="card card--soft">
                         <div class="card-icon">🤖</div>
-                        <h2>智能小助手</h2>
-                        <p>多模型问答，辅助简历与系统使用说明</p>
+                        <h2><%= I18n.msg(request, "home.card.assistant") %></h2>
+                        <p><%= I18n.msg(request, "home.card.assistant.desc") %></p>
                     </a>
                 </div>
             </section>
             <section class="home-section" aria-labelledby="home-admin">
-                <h2 id="home-admin" class="home-section-title">系统管理</h2>
-                <p class="home-section-desc">面向教务或系统管理员，与日常应聘/招聘主流程分开。</p>
+                <h2 id="home-admin" class="home-section-title"><%= I18n.msg(request, "home.section.admin") %></h2>
+                <p class="home-section-desc"><%= I18n.msg(request, "home.section.admin.desc") %></p>
                 <a href="<%= request.getContextPath() %>/admin/auth" class="home-admin-row">
-                    <span><strong>管理员登录</strong> — 查看助教工作负荷与录用概况</span>
-                    <span class="meta">进入管理后台 →</span>
+                    <span><%= I18n.msg(request, "home.admin.row") %></span>
+                    <span class="meta"><%= I18n.msg(request, "home.admin.meta") %></span>
                 </a>
             </section>
         </main>
         <footer>
-            <p>数据存储于文本/JSON 文件，无需数据库</p>
+            <p><%= I18n.msg(request, "home.footer") %></p>
         </footer>
     </div>
-    <a href="${pageContext.request.contextPath}/assistant" class="assistant-fab" title="打开智能小助手"><span class="assistant-fab-icon" aria-hidden="true">🤖</span>小助手</a>
+    <a href="${pageContext.request.contextPath}/assistant" class="assistant-fab" title="<%= I18n.msg(request, "home.fab.title") %>"><span class="assistant-fab-icon" aria-hidden="true">🤖</span><%= I18n.msg(request, "home.fab.label") %></a>
 </body>
 </html>

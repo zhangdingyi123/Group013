@@ -1,5 +1,5 @@
-赵雪
-学号：2023210003 | zhaoxue@bupt.edu.cn
+Xue Zhao
+Student ID: 2023210003 | zhaoxue@bupt.edu.cn
 
-操作系统课设：进程调度与内存管理模拟。
-技能标签：C++、操作系统、Linux 基础。
+OS course project: process scheduling and memory management simulation.
+Skills: C++, operating systems, Linux basics.

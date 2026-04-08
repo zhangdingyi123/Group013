@@ -2,6 +2,7 @@ package com.bupt.ta.web;
 
 import com.bupt.ta.model.ModuleOrganiser;
 import com.bupt.ta.service.ModuleOrganiserService;
+import com.bupt.ta.util.I18n;
 import com.bupt.ta.util.PasswordUtil;
 import com.bupt.ta.util.SessionLogoutUtil;
 
@@ -47,7 +48,7 @@ public class MOAuthServlet extends HttpServlet {
                 }
                 return;
             }
-            req.setAttribute("error", "邮箱或密码错误");
+            req.setAttribute("error", I18n.msg(req, "err.login.bad"));
             req.getRequestDispatcher("/mo/auth.jsp").forward(req, resp);
             return;
         }
@@ -58,14 +59,14 @@ public class MOAuthServlet extends HttpServlet {
             String department = req.getParameter("department");
             if (name == null || name.trim().isEmpty() || email == null || email.trim().isEmpty()
                     || password == null || password.trim().isEmpty()) {
-                req.setAttribute("error", "请填写必填项");
+                req.setAttribute("error", I18n.msg(req, "err.mo.fields"));
                 req.getRequestDispatcher("/mo/register.jsp").forward(req, resp);
                 return;
             }
             ModuleOrganiser mo = moService.create(name.trim(), email.trim(), PasswordUtil.hash(password),
                     department != null ? department.trim() : "");
             if (mo == null) {
-                req.setAttribute("error", "该邮箱已注册");
+                req.setAttribute("error", I18n.msg(req, "err.mo.email.used"));
                 req.getRequestDispatcher("/mo/register.jsp").forward(req, resp);
                 return;
             }

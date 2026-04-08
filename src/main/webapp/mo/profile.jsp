@@ -19,61 +19,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>个人中心 - 课程组织者</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=3">
-    <style>
-      :root{
-        --pc-bg:#f5f6f8;
-        --pc-card:#fff;
-        --pc-border:#e8eaed;
-        --pc-text:#1f2329;
-        --pc-muted:#8f959e;
-        --pc-accent:#2563eb;
-        --pc-accent-soft:#eff6ff;
-        --pc-radius:12px;
-        --pc-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.06);
-      }
-      *{box-sizing:border-box}
-      body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--pc-bg);color:var(--pc-text);min-height:100vh;line-height:1.55;font-size:15px}
-      .pc-page{max-width:1120px;margin:0 auto;padding:1.25rem 1rem 2.5rem}
-      .pc-topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.25rem}
-      .pc-topbar h1{margin:0;font-size:1.25rem;font-weight:600;letter-spacing:-.02em}
-      .pc-top-actions{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
-      .pc-link{color:var(--pc-muted);text-decoration:none;font-size:.88rem;padding:.4rem .65rem;border-radius:8px}
-      .pc-link:hover{color:var(--pc-accent);background:var(--pc-accent-soft)}
-      .pc-link-primary{color:var(--pc-accent);font-weight:500}
-      .pc-layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:1.5rem;align-items:start}
-      @media (max-width:900px){.pc-layout{grid-template-columns:1fr}}
-      .pc-sidebar{background:var(--pc-card);border-radius:var(--pc-radius);border:1px solid var(--pc-border);box-shadow:var(--pc-shadow);padding:.85rem 0;position:sticky;top:1rem}
-      @media (max-width:900px){.pc-sidebar{position:relative;display:flex;overflow-x:auto;padding:.5rem}}
-      .pc-side-title{font-size:.72rem;font-weight:600;color:var(--pc-muted);text-transform:uppercase;letter-spacing:.06em;padding:0 1rem .5rem}
-      @media (max-width:900px){.pc-side-title{display:none}}
-      .pc-nav{list-style:none;margin:0;padding:0}
-      @media (max-width:900px){.pc-nav{display:flex;gap:.25rem}}
-      .pc-nav a{display:block;padding:.55rem 1rem;font-size:.9rem;color:var(--pc-text);text-decoration:none;border-left:3px solid transparent}
-      @media (max-width:900px){.pc-nav a{border-left:none;border-radius:8px;white-space:nowrap;padding:.45rem .85rem}}
-      .pc-nav a:hover{background:#f7f8fa;color:var(--pc-accent)}
-      .pc-nav a.is-active{color:var(--pc-accent);background:var(--pc-accent-soft);border-left-color:var(--pc-accent);font-weight:500}
-      @media (max-width:900px){.pc-nav a.is-active{border-left:none}}
-      .pc-main{display:flex;flex-direction:column;gap:1.25rem;min-width:0}
-      .pc-card{background:var(--pc-card);border-radius:var(--pc-radius);border:1px solid var(--pc-border);box-shadow:var(--pc-shadow)}
-      .pc-card-hd{padding:1rem 1.25rem;border-bottom:1px solid var(--pc-border)}
-      .pc-card-hd h2{margin:0;font-size:1rem;font-weight:600}
-      .pc-card-bd{padding:1.25rem}
-      .form-group{margin-bottom:1.1rem}
-      .form-group label{display:block;font-size:.86rem;font-weight:500;margin-bottom:.4rem;color:#374151}
-      .form-group input,.form-group textarea{width:100%;padding:.65rem .85rem;border:1px solid var(--pc-border);border-radius:8px;font-size:.95rem;font-family:inherit}
-      .form-group input:focus{outline:none;border-color:var(--pc-accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
-      .btn{display:inline-block;padding:.55rem 1.15rem;border:none;border-radius:8px;font-size:.9rem;font-weight:500;cursor:pointer;font-family:inherit}
-      .btn-primary{background:var(--pc-accent);color:#fff}
-      .btn-primary:hover{filter:brightness(1.05)}
-      .field-ro{background:#f7f8fa;color:#646a73}
-      .msg-ok{color:#065f46;background:#d1fae5;padding:.65rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.88rem}
-      .msg-err{color:#991b1b;background:#fee2e2;padding:.65rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.88rem}
-      #pc-overview,#pc-quick,#pc-edit{scroll-margin-top:5.5rem}
-      @media (max-width:640px){#pc-overview,#pc-quick,#pc-edit{scroll-margin-top:4rem}}
-    </style>
+    <link rel="stylesheet" href="<%= ctx %>/css/style.css?v=4">
 </head>
-<body>
+<body class="profile-center">
     <div class="pc-page">
         <header class="pc-topbar">
             <h1>招聘方中心</h1>
