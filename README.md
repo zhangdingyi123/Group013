@@ -1,164 +1,165 @@
-# 助教招聘系统 · 北京邮电大学国际学院
+# Teaching Assistant Recruitment System · Beijing University of Posts and Telecommunications, International School
 
-基于 **Java Servlet / JSP** 的轻量级 Web 应用，用于助教申请、岗位发布与录用管理。数据以 **JSON 与文本文件** 持久化在应用目录下的 `data/`，**不依赖数据库**，便于课程演示与本地部署。
-
----
-
-## 功能概览
-
-### 应聘者（TA）
-
-- 注册、登录与个人资料（姓名、学号、技能标签等）
-- 简历：上传纯文本，或借助小助手从 PDF / Word 抽取正文后保存
-- 浏览岗位、提交申请、查看申请状态
-- 工作台：资料、申请、站内信等分栏入口
-- **交流论坛**：浏览、发帖、回复（需登录）
-- **站内信** 与 **好友**：与其他用户建立好友关系并私信（含已读状态）
-
-### 课程组织者（MO）
-
-- 注册、登录
-- 发布与管理岗位（课程助教 / 监考 / 活动支持等，可填写所需技能）
-- 按岗位查看应聘者列表：**技能匹配度**、**技能短板**、录用 / 拒绝、关闭岗位
-- 论坛与站内信、好友（与 TA 侧一致的数据模型）
-
-### 管理员
-
-- 通过 **`/admin/auth`** 登录（会话校验）
-- **`/admin/workload`**：查看助教整体工作负荷（录用数、人均与极值、相对偏高 / 偏低提示），展开每位助教的具体录用岗位，**转移录用**以均衡分工（业务上需事先沟通）
-- 未登录访问工作负荷页会重定向到管理员登录页
-
-### 跨角色与首页
-
-- **`/personal-center`**：个人中心入口；已登录则按角色跳转到 TA / MO / 管理员对应页面，否则进入身份选择页
-- **智能小助手**（`/assistant`）：可选接入大模型 API（见下文），支持对话与简历相关能力；REST：`/api/assistant/chat`、`/api/assistant/extract-resume`
-
-### 业务规则（内置逻辑，非外部 AI）
-
+A lightweight Web application based on **Java Servlet / JSP** for TA application, job posting, and admission management. Data is persisted as **JSON and text files** in the `data/` directory under the application root, **no database dependency**, making it easy for course demonstration and local deployment.
 
 ---
 
-## 技术栈
+## Feature Overview
 
-| 类别 | 说明 |
-|------|------|
-| 运行环境 | Java 11、Maven |
-| Web | Servlet 4.0、JSP、JSTL |
+### Applicant (TA)
+
+- Register, login, and personal profile (name, student ID, skill tags, etc.)
+- Resume: upload plain text, or use the assistant to extract content from PDF/Word and save it
+- Browse jobs, submit applications, check application status
+- Dashboard: tabs for profile, applications, messages, etc.
+- **Discussion Forum**: browse, post, reply (login required)
+- **Internal Messages** and **Friends**: establish friend relationships with other users and send private messages (with read status)
+
+### Module Organiser (MO)
+
+- Register, login
+- Post and manage jobs (course TA, proctoring, event support, etc., with required skills)
+- View applicant list per job: **skill match percentage**, **skill gaps**, admit/reject, close job
+- Forum, internal messages, and friends (same data model as TA side)
+
+### Administrator
+
+- Login via `/admin/auth` (session validation)
+- **`/admin/workload`**: view overall TA workload (number of admitted, average and extreme values, relative high/low indications), expand each TA's admitted jobs, **transfer admissions** to balance workload (requires prior communication in practice)
+- Accessing the workload page without login redirects to admin login page
+
+### Cross‑role & Home
+
+- **`/personal-center`**: personal center entry; if logged in, redirect to the corresponding page for TA/MO/admin, otherwise go to role selection page
+- **Smart Assistant** (`/assistant`): optional integration with LLM API (see below), supports conversation and resume-related capabilities; REST: `/api/assistant/chat`, `/api/assistant/extract-resume`
+
+### Business Rules (built‑in logic, not external AI)
+
+(No content originally – left empty as in source)
+
+---
+
+## Technology Stack
+
+| Category | Description |
+|----------|-------------|
+| Runtime | Java 11, Maven |
+| Web | Servlet 4.0, JSP, JSTL |
 | JSON | Gson |
-| 简历正文 | Apache PDFBox、Apache POI（PDF / Word 文本抽取） |
-| 打包 | `war`，默认产物名 `ta-recruitment.war` |
+| Resume text extraction | Apache PDFBox, Apache POI (PDF/Word text extraction) |
+| Packaging | `war`, default artifact name `ta-recruitment.war` |
 
 ---
 
-## 数据存储
+## Data Storage
 
-应用启动时通过 `AppListener` 将数据目录设为 **`{Web 应用根目录}/data`**（与部署上下文一致）。
+On application startup, `AppListener` sets the data directory to **`{Web application root}/data`** (consistent with the deployment context).
 
-| 文件 / 目录 | 用途 |
-|-------------|------|
-| `applicants.json` | 应聘者 |
-| `module_organisers.json` | 课程组织者 |
-| `admins.json` | 管理员账号 |
-| `jobs.json` | 岗位 |
-| `applications.json` | 申请与录用状态 |
-| `messages.json` | 站内信 |
-| `dm_read_states.json` | 私信已读状态 |
-| `forum_threads.json` / `forum_replies.json` | 论坛帖子与回复 |
-| `friend_links.json` / `friend_requests.json` | 好友关系与好友请求 |
-| `data/resumes/` | 简历文本文件 |
+| File / Directory | Purpose |
+|------------------|---------|
+| `applicants.json` | Applicants |
+| `module_organisers.json` | Module organisers |
+| `admins.json` | Administrator accounts |
+| `jobs.json` | Jobs |
+| `applications.json` | Applications and admission status |
+| `messages.json` | Internal messages |
+| `dm_read_states.json` | Private message read states |
+| `forum_threads.json` / `forum_replies.json` | Forum threads and replies |
+| `friend_links.json` / `friend_requests.json` | Friend relationships and friend requests |
+| `data/resumes/` | Resume text files |
 
-密码经 **SHA-256** 哈希后存入 JSON；请勿将含真实密钥或生产数据的 `data/` 提交到公开仓库。
-
----
-
-## 智能小助手（可选）
-
-小助手相关配置由 `AssistantConfig` 读取，支持 **classpath 内的 `assistant.properties`**，或通过环境变量 **`ASSISTANT_PROPERTIES_PATH`** / JVM 参数 **`-Dassistant.properties.path=`** 指向外部配置文件；**环境变量可覆盖** 文件中的密钥类配置。
-
-可对接 **Moonshot Kimi**、**阿里云通义（OpenAI 兼容）**、**OpenAI** 等（具体模型与 Base URL 以配置为准）。未配置任何 API Key 时，页面会提示未就绪，不影响其余招聘功能。
+Passwords are stored after **SHA-256** hashing into JSON; do not commit the `data/` directory containing real secrets or production data to public repositories.
 
 ---
 
-## 构建与运行
+## Smart Assistant (Optional)
 
-### 1. 打包 WAR
+Assistant‑related configuration is read by `AssistantConfig`, supporting **`assistant.properties` in the classpath**, or an external configuration file via environment variable **`ASSISTANT_PROPERTIES_PATH`** / JVM parameter **`-Dassistant.properties.path=`**; **environment variables can override** key‑type settings from the file.
+
+It can integrate with **Moonshot Kimi**, **Alibaba Tongyi (OpenAI compatible)**, **OpenAI**, etc. (the specific model and Base URL depend on the configuration). When no API key is configured, the page shows a "not ready" message, and other recruitment functions are unaffected.
+
+---
+
+## Build & Run
+
+### 1. Package WAR
 
 ```bash
 mvn clean package
 ```
 
-产物：`target/ta-recruitment.war`。将 WAR 放入 Tomcat 的 `webapps/`，默认访问路径为：
+Artifact: `target/ta-recruitment.war`. Put the WAR into Tomcat's `webapps/`. The default access path is:
 
-- **`http://{主机}:{端口}/ta-recruitment/`**（端口以 Tomcat `server.xml` 为准，常见为 `8080`）
+- **`http://{host}:{port}/ta-recruitment/`** (port depends on Tomcat's `server.xml`, typically `8080`)
 
-### 2. Maven 内嵌 Tomcat（开发常用）
+### 2. Maven Embedded Tomcat (common for development)
 
 ```bash
 mvn tomcat7:run
 ```
 
-当前 `pom.xml` 将插件上下文设为 **`/`**、默认端口 **`8082`**，因此本地根地址为：
+The current `pom.xml` sets the plugin context to **`/`** and default port **`8082`**, so the local root address is:
 
 - **`http://localhost:8082/`**
 
-若端口被占用，可指定例如：
+If the port is occupied, you can specify a different port, e.g.:
 
 ```bash
 mvn tomcat7:run -Dmaven.tomcat.port=8083
 ```
 
-**注意**：内嵌运行与独立 Tomcat 部署的 **上下文路径不同**（`/` 与 `/ta-recruitment/`），书签与说明中的链接需按实际环境替换。
-
-
-
-## 主要 URL 速查
-
-| 路径 | 说明 |
-|------|------|
-| `/` | 首页 |
-| `/personal-center` | 个人中心入口 |
-| `/ta/auth`、`/ta/dashboard`、`/ta/profile` | 应聘者认证与工作台 |
-| `/mo/auth`、`/mo/dashboard`、`/mo/profile` | 课程组织者认证与工作台 |
-| `/mo/job-applicants` | 岗位应聘者管理 |
-| `/admin/auth`、`/admin/workload` | 管理员登录与工作负荷 |
-| `/forum` | 交流论坛 |
-| `/assistant` | 智能小助手页面 |
-
-其余静态页面与分栏 JSP 由对应 Servlet 转发，以项目 `src/main/webapp` 为准。
+**Note**: The context path differs between embedded run and standalone Tomcat deployment (`/` vs. `/ta-recruitment/`). Bookmarks and links in the documentation must be adapted to the actual environment.
 
 ---
 
-## 源码结构（摘要）
+## Main URL Quick Reference
+
+| Path | Description |
+|------|-------------|
+| `/` | Home |
+| `/personal-center` | Personal center entry |
+| `/ta/auth`, `/ta/dashboard`, `/ta/profile` | Applicant authentication and dashboard |
+| `/mo/auth`, `/mo/dashboard`, `/mo/profile` | Module organiser authentication and dashboard |
+| `/mo/job-applicants` | Job applicant management |
+| `/admin/auth`, `/admin/workload` | Admin login and workload |
+| `/forum` | Discussion forum |
+| `/assistant` | Smart assistant page |
+
+Remaining static pages and tab JSPs are forwarded by corresponding Servlets, as per the project's `src/main/webapp`.
+
+---
+
+## Source Code Structure (Summary)
 
 ```
 src/main/java/com/bupt/ta/
-  model/          # 领域模型
-  storage/        # Storage：JSON 读写与路径
-  service/        # 业务服务（含 assistant 子包）
-  util/           # 密码、会话等工具
-  web/            # Servlet、Listener、Filter
+  model/          # Domain models
+  storage/        # Storage: JSON read/write and path
+  service/        # Business services (including assistant subpackage)
+  util/           # Password, session utilities
+  web/            # Servlets, Listener, Filter
 src/main/webapp/
   index.jsp, personal_center_gate.jsp, assistant.jsp, …
   ta/, mo/, admin/, forum/, css/
-  data/           # 运行时数据（部署后位于应用根下）
+  data/           # Runtime data (located under application root after deployment)
   WEB-INF/web.xml
 ```
 
 ---
 
-## 独立 Tomcat 全量更新建议
+## Full Update Recommendation for Standalone Tomcat
 
-升级或排查 JSP 500 时，建议 **整包替换** 并 **清理本应用在 `work/` 下的 JSP 编译缓存**，避免只拷贝单个 class 或单个 JSP 导致版本混用。步骤概要：
+When upgrading or troubleshooting JSP 500 errors, it is recommended to **replace the whole package** and **clean the JSP compilation cache** for this application under `work/` to avoid mixed versions caused by copying only a single class or a single JSP. Steps summary:
 
 1. `mvn clean package -DskipTests`
-2. 停止 Tomcat
-3. 删除 `webapps/ta-recruitment/`、`webapps/ta-recruitment.war`（按你实际部署方式）
-4. 删除 `work/Catalina/localhost/ta-recruitment/`（或实际上下文名对应目录）
-5. 拷贝新 WAR 到 `webapps/`，启动 Tomcat
+2. Stop Tomcat
+3. Delete `webapps/ta-recruitment/` and `webapps/ta-recruitment.war` (depending on your actual deployment)
+4. Delete `work/Catalina/localhost/ta-recruitment/` (or the directory corresponding to the actual context name)
+5. Copy the new WAR to `webapps/` and start Tomcat
 
 ---
 
-## 说明与限制
+## Notes & Limitations
 
-- 本系统面向教学与原型演示；生产环境需补充审计、HTTPS、备份与更细粒度权限等。
-- 管理员与各角色权限以会话与页面逻辑为准；数据文件为明文 JSON，请妥善保管部署目录。
+- This system is intended for teaching and prototype demonstration; for production, additional auditing, HTTPS, backup, and finer‑grained permissions are required.
+- Administrator and other role permissions are based on session and page logic; data files are plain JSON. Keep the deployment directory secure.
