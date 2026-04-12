@@ -4,17 +4,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 应聘者（助教申请人）实体
+ * 助教申请人（TA Applicant）实体类。
+ *
+ * <p>代表系统中的学生用户，可浏览岗位、投递申请、上传简历，
+ * 以及与课程组织者（{@link ModuleOrganiser}）进行私信沟通。</p>
+ *
+ * <p>技能列表（{@link #skills}）用于与 {@link Job#getRequiredSkills()} 进行匹配评分。</p>
+ *
+ * <p>对应持久化文件：{@code data/applicants.json}</p>
+ *
+ * @author handmanhsker
+ * @see com.bupt.ta.storage.Storage#loadApplicants()
+ * @see com.bupt.ta.storage.Storage#saveApplicants(java.util.List)
  */
 public class Applicant {
+
+    /** 唯一标识，UUID v4 格式 */
     private String id;
+
+    /** 申请人姓名 */
     private String name;
+
+    /** 登录邮箱（同时作为登录账号） */
     private String email;
+
+    /** 密码的 SHA-256 哈希值（Base64 编码） */
     private String passwordHash;
+
+    /** 学号（BUPT 学生唯一编号） */
     private String studentId;
-    private String phone;             // 联系电话
-    private List<String> skills;      // 技能标签，如 Java, Python, 监考
-    private String resumePath;        // 简历文件路径（相对 data/resumes/）
+
+    /** 联系电话 */
+    private String phone;
+
+    /** 技能标签列表，如 ["Java", "Python", "数据结构"]，用于岗位匹配 */
+    private List<String> skills;
+
+    /** 简历文件路径（相对于 data/resumes/ 目录），如 "{id}.txt" 或 "{id}.pdf" */
+    private String resumePath;
+
+    /** 账号创建时间（Unix 毫秒时间戳） */
     private long createdAt;
 
     public Applicant() {

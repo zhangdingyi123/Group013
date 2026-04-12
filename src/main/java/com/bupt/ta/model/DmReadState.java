@@ -1,14 +1,33 @@
 package com.bupt.ta.model;
 
 /**
- * 应聘者与课程组织者会话的「读光标」，用于未读条数（持久化于 dm_read_states.json）。
+ * 私信会话的「已读游标」实体类。
+ *
+ * <p>以 (applicantId, moduleOrganiserId) 标识一个会话，
+ * 分别记录双方最后阅读时间戳，用于计算各自的未读消息条数。</p>
+ *
+ * <p>计算未读数的逻辑示例（以申请人视角）：<br>
+ * 未读数 = 对方发送的消息中 {@code sentAt > taLastReadAt} 的条数。</p>
+ *
+ * <p>对应持久化文件：{@code data/dm_read_states.json}</p>
+ *
+ * @author handmanhsker
+ * @see DirectMessage
+ * @see com.bupt.ta.storage.Storage#loadDmReadStates()
+ * @see com.bupt.ta.storage.Storage#saveDmReadStates(java.util.List)
  */
 public class DmReadState {
+
+    /** 申请人 ID，关联 {@link Applicant#getId()} */
     private String applicantId;
+
+    /** 课程组织者 ID，关联 {@link ModuleOrganiser#getId()} */
     private String moduleOrganiserId;
-    /** 应聘者已读至该时间戳（含）之前的对方消息 */
+
+    /** 申请人已读至该时间戳（含）之前的对方消息（Unix 毫秒） */
     private long taLastReadAt;
-    /** 招聘者已读至该时间戳（含）之前的对方消息 */
+
+    /** 课程组织者已读至该时间戳（含）之前的对方消息（Unix 毫秒） */
     private long moLastReadAt;
 
     public DmReadState() {}

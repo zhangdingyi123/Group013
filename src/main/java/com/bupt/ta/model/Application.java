@@ -1,26 +1,66 @@
 package com.bupt.ta.model;
 
 /**
- * 岗位申请记录
+ * 岗位申请记录实体类。
+ *
+ * <p>记录 {@link Applicant} 对 {@link Job} 的申请，包含完整的状态流转：
+ * pending → interview → accepted/rejected，以及申请人主动取消（cancelled）。</p>
+ *
+ * <p>面试流程由 {@link ModuleOrganiser} 发起，设置面试时间和地点后，
+ * 申请人可通过 {@link #interviewTaStatus} 字段确认/拒绝/请求改期。</p>
+ *
+ * <h3>状态流转图</h3>
+ * <pre>
+ *   pending ──→ interview ──→ accepted
+ *     │              │
+ *     │              └──→ rejected
+ *     └──→ cancelled
+ * </pre>
+ *
+ * <p>对应持久化文件：{@code data/applications.json}</p>
+ *
+ * @author handmanhsker
+ * @see com.bupt.ta.storage.Storage#loadApplications()
+ * @see com.bupt.ta.storage.Storage#saveApplications(java.util.List)
  */
 public class Application {
-    public static final String STATUS_PENDING = "pending";   // 待审核
-    public static final String STATUS_INTERVIEW = "interview"; // 待面试（含试讲）
-    public static final String STATUS_ACCEPTED = "accepted"; // 已录用
-    public static final String STATUS_REJECTED = "rejected"; // 已拒绝
-    public static final String STATUS_CANCELLED = "cancelled"; // 已取消
 
-    /** 应聘者对面试安排的反馈（与 {@link #STATUS_INTERVIEW} 配合） */
-    public static final String TA_IV_PENDING = "pending";       // 待确认
-    public static final String TA_IV_CONFIRMED = "confirmed";   // 已确认参加
-    public static final String TA_IV_DECLINED = "declined";     // 拒绝参加
-    public static final String TA_IV_RESCHEDULE = "reschedule"; // 希望更换时间
+    /** 申请状态：待审核 */
+    public static final String STATUS_PENDING = "pending";
+    /** 申请状态：待面试（含试讲） */
+    public static final String STATUS_INTERVIEW = "interview";
+    /** 申请状态：已录用 */
+    public static final String STATUS_ACCEPTED = "accepted";
+    /** 申请状态：已拒绝 */
+    public static final String STATUS_REJECTED = "rejected";
+    /** 申请状态：申请人已取消 */
+    public static final String STATUS_CANCELLED = "cancelled";
 
+    /** 面试反馈：待确认（与 {@link #STATUS_INTERVIEW} 配合使用） */
+    public static final String TA_IV_PENDING = "pending";
+    /** 面试反馈：已确认参加 */
+    public static final String TA_IV_CONFIRMED = "confirmed";
+    /** 面试反馈：拒绝参加 */
+    public static final String TA_IV_DECLINED = "declined";
+    /** 面试反馈：希望更换时间 */
+    public static final String TA_IV_RESCHEDULE = "reschedule";
+
+    /** 唯一标识，UUID v4 格式 */
     private String id;
+
+    /** 申请人 ID，关联 {@link Applicant#getId()} */
     private String applicantId;
+
+    /** 岗位 ID，关联 {@link Job#getId()} */
     private String jobId;
+
+    /** 当前状态，取值为 STATUS_* 常量之一 */
     private String status;
-    private String note;             // 申请人备注
+
+    /** 申请人备注（投递时填写的附言） */
+    private String note;
+
+    /** 申请提交时间（Unix 毫秒时间戳） */
     private long appliedAt;
     /** 面试/试讲时间（毫秒时间戳，与 {@link #STATUS_INTERVIEW} 配合使用） */
     private long interviewAt;

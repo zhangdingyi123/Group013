@@ -1,14 +1,37 @@
 package com.bupt.ta.model;
 
 /**
- * 课程组织者（发布岗位的角色）
+ * 课程组织者（Module Organiser）实体类。
+ *
+ * <p>代表负责发布助教招聘岗位的教师/课程负责人角色。
+ * 课程组织者可以创建 {@link Job}、审阅 {@link Application}、
+ * 安排面试，并与 {@link Applicant} 进行私信沟通。</p>
+ *
+ * <p>对应持久化文件：{@code data/module_organisers.json}</p>
+ *
+ * @author handmanhsker
+ * @see Job
+ * @see com.bupt.ta.storage.Storage#loadModuleOrganisers()
+ * @see com.bupt.ta.storage.Storage#saveModuleOrganisers(java.util.List)
  */
 public class ModuleOrganiser {
+
+    /** 唯一标识，UUID v4 格式 */
     private String id;
+
+    /** 组织者姓名 */
     private String name;
+
+    /** 登录邮箱（同时作为登录账号） */
     private String email;
+
+    /** 密码的 SHA-256 哈希值（Base64 编码） */
     private String passwordHash;
-    private String department;       // 院系/课程组
+
+    /** 所属院系或课程组 */
+    private String department;
+
+    /** 账号创建时间（Unix 毫秒时间戳） */
     private long createdAt;
 
     public ModuleOrganiser() {}
