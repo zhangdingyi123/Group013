@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +30,8 @@ public class TAResumeUploadServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         Applicant user = (Applicant) req.getSession().getAttribute("taUser");
         if (user == null) {
-            resp.sendRedirect(req.getContextPath() + "/ta/auth");
+            resp.sendRedirect(req.getContextPath() + "/ta/auth?returnUrl="
+                    + URLEncoder.encode("/ta/dashboard?tab=resume", StandardCharsets.UTF_8));
             return;
         }
         try {

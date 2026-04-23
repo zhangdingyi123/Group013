@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.bupt.ta.model.Applicant" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%@ page import="java.util.List" %>
 <%
     if (request.getAttribute("applicant") == null) {
@@ -17,17 +18,17 @@
     String ctx = request.getContextPath();
 
     String dispName = applicant.getName() != null && !applicant.getName().trim().isEmpty()
-            ? applicant.getName().trim() : "用户";
+            ? applicant.getName().trim() : I18n.msg(request, "pc.user.default");
     String avLetter = dispName.substring(0, 1);
     String emailDisp = applicant.getEmail() != null && !applicant.getEmail().isEmpty()
             ? applicant.getEmail() : "—";
     String sidDisp = applicant.getStudentId() != null && !applicant.getStudentId().isEmpty()
-            ? applicant.getStudentId() : "未填写";
+            ? applicant.getStudentId() : I18n.msg(request, "pc.field.empty");
     String phoneDisp = applicant.getPhone() != null && !applicant.getPhone().trim().isEmpty()
-            ? applicant.getPhone().trim() : "未填写";
+            ? applicant.getPhone().trim() : I18n.msg(request, "pc.field.empty");
     String rp = applicant.getResumePath();
     boolean hasResume = rp != null && !rp.trim().isEmpty();
-    String resumeLabel = hasResume ? "已上传" : "未上传";
+    String resumeLabel = hasResume ? I18n.msg(request, "pc.resume.uploaded") : I18n.msg(request, "pc.field.empty");
     boolean hasSkills = skillsJoined != null && !skillsJoined.trim().isEmpty();
     boolean nameOk = applicant.getName() != null && !applicant.getName().trim().isEmpty();
     boolean sidOk = applicant.getStudentId() != null && !applicant.getStudentId().trim().isEmpty();
@@ -41,13 +42,13 @@
     List<String> skillList = applicant.getSkills();
 %>
 <div id="pc-overview" class="pc-profile-stack">
-    <section class="pc-card pc-hero-card" aria-label="账户概览">
+    <section class="pc-card pc-hero-card" aria-label="<%= I18n.msg(request, "pc.nav.overview") %>">
         <div class="pc-hero-strip"></div>
         <div class="pc-hero-inner">
             <div class="pc-avatar-xl" aria-hidden="true"><%= avLetter %></div>
             <div class="pc-hero-info">
                 <h2 class="pc-name"><%= dispName %></h2>
-                <p class="pc-subline"><span class="pc-email"><%= emailDisp %></span><span class="pc-dot">·</span><span>学号 <%= sidDisp %></span><span class="pc-dot">·</span><span>电话 <%= phoneDisp %></span></p>
+                <p class="pc-subline"><span class="pc-email"><%= emailDisp %></span><span class="pc-dot">·</span><span><%= I18n.msg(request, "pc.subline.sid") %> <%= sidDisp %></span><span class="pc-dot">·</span><span><%= I18n.msg(request, "pc.subline.phone") %> <%= phoneDisp %></span></p>
                 <% if (skillList != null && !skillList.isEmpty()) { %>
                 <div class="pc-tags">
                     <% for (String s : skillList) {
@@ -57,43 +58,43 @@
                 <% } %>
                 <div class="pc-progress-block">
                     <div class="pc-progress-meta">
-                        <span>资料完整度</span>
+                        <span><%= I18n.msg(request, "pc.profile.complete") %></span>
                         <strong><%= pct %>%</strong>
                     </div>
                     <div class="pc-progress-track" role="progressbar" aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100">
                         <div class="pc-progress-fill" style="width:<%= pct %>%"></div>
                     </div>
-                    <p class="pc-progress-tip">完善资料有助于岗位匹配；简历与投递请在「工作台」操作。</p>
+                    <p class="pc-progress-tip"><%= I18n.msg(request, "pc.profile.tip") %></p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="pc-quick" class="pc-card" aria-label="常用功能">
+    <section id="pc-quick" class="pc-card" aria-label="<%= I18n.msg(request, "pc.quick.title") %>">
         <div class="pc-card-hd">
-            <h2>常用功能</h2>
-            <span class="pc-muted">与招聘平台类似的快捷入口，跳转至工作台对应模块</span>
+            <h2><%= I18n.msg(request, "pc.quick.title") %></h2>
+            <span class="pc-muted"><%= I18n.msg(request, "pc.quick.sub") %></span>
         </div>
         <div class="pc-card-bd pc-quick-wrap">
             <a href="<%= ctx %>/ta/dashboard?tab=jobs" class="pc-tile">
                 <span class="pc-tile-ic" aria-hidden="true">🔍</span>
-                <span class="pc-tile-t">找岗位</span>
-                <span class="pc-tile-d">浏览开放中的助教岗位</span>
+                <span class="pc-tile-t"><%= I18n.msg(request, "pc.tile.find") %></span>
+                <span class="pc-tile-d"><%= I18n.msg(request, "pc.tile.find.d") %></span>
             </a>
             <a href="<%= ctx %>/ta/dashboard?tab=applications" class="pc-tile">
                 <span class="pc-tile-ic" aria-hidden="true">📨</span>
-                <span class="pc-tile-t">我的申请</span>
-                <span class="pc-tile-d">查看投递与审核状态</span>
+                <span class="pc-tile-t"><%= I18n.msg(request, "pc.tile.apps") %></span>
+                <span class="pc-tile-d"><%= I18n.msg(request, "pc.tile.apps.d") %></span>
             </a>
             <a href="<%= ctx %>/ta/dashboard?tab=resume" class="pc-tile">
                 <span class="pc-tile-ic" aria-hidden="true">📄</span>
-                <span class="pc-tile-t">我的简历</span>
-                <span class="pc-tile-d">当前：<%= resumeLabel %></span>
+                <span class="pc-tile-t"><%= I18n.msg(request, "pc.tile.resume") %></span>
+                <span class="pc-tile-d"><%= I18n.msg(request, "pc.tile.resume.d", resumeLabel) %></span>
             </a>
             <a href="<%= ctx %>/ta/dashboard?tab=messages" class="pc-tile">
                 <span class="pc-tile-ic" aria-hidden="true">💬</span>
-                <span class="pc-tile-t">私信</span>
-                <span class="pc-tile-d">与招聘者沟通（已投递或好友）</span>
+                <span class="pc-tile-t"><%= I18n.msg(request, "pc.tile.dm") %></span>
+                <span class="pc-tile-d"><%= I18n.msg(request, "pc.tile.dm.d") %></span>
             </a>
         </div>
     </section>

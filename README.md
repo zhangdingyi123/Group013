@@ -77,6 +77,30 @@
 
 可对接 **Moonshot Kimi**、**阿里云通义（OpenAI 兼容）**、**OpenAI** 等（具体模型与 Base URL 以配置为准）。未配置任何 API Key 时，页面会提示未就绪，不影响其余招聘功能。
 
+为避免跑题，小助手默认开启“提问范围严格限制”：服务端会在调用上游大模型前先判定主题，若明显与助教招聘系统/应聘无关则直接返回固定拒绝话术。可通过环境变量 `ASSISTANT_STRICT_SCOPE=0` 或配置 `assistant.strict.scope=false` 关闭。
+
+### 额度（可选）
+
+小助手支持“按用户每月免费次数 + 付费点数”的简单额度机制：
+
+- 免费额度：环境变量 `ASSISTANT_MONTHLY_FREE_QUOTA` 或配置 `assistant.monthly.free.quota`（默认 30 次/月）
+- 付费点数：当免费额度用尽后，若该用户仍有付费点数则继续扣点；否则接口返回 **402**（Payment Required）
+- 查询额度：`GET /api/assistant/quota`（未登录时按 session 粗略统计）
+- **微信 Native 扫码充值（推荐）**：配置齐全时助手页展示「生成微信收款码」，无需兑换码。需在微信商户平台开通 Native，并配置公网 HTTPS 回调地址，与 `WECHAT_PAY_NOTIFY_URL` / `assistant.pay.wechat.notify.url` 一致；详见 `assistant.properties` 内注释。接口：`POST /api/assistant/pay/wechat/native`（下单）、`GET /api/assistant/pay/wechat/order?outTradeNo=`（轮询状态）、`POST /api/assistant/pay/wechat/notify`（微信服务器回调，勿浏览器访问）。
+- 充值点数（兑换码模式，需登录，在未配置微信时可用）：`POST /api/assistant/quota/topup`，并配置 `ASSISTANT_TOPUP_CODE` 或 `assistant.topup.code`
+- 可选提示：`ASSISTANT_PAY_HINT` 或 `assistant.pay.hint`（用于前端展示“付费/充值引导”文案）
+
+### 语义匹配（可选）
+
+默认的岗位/简历匹配是基于技能关键词的规则打分；也可开启 **embeddings 向量相似度** 作为匹配分来源：
+
+- 在 `assistant.properties` 设置 `match.semantic.enabled=true`（或环境变量 `MATCH_SEMANTIC_ENABLED=1`）
+- 可选指定 `match.semantic.provider=kimi|qwen|openai`（或 `MATCH_SEMANTIC_PROVIDER`），否则跟随 `assistant.default.provider`
+- embeddings 接口与模型可用 `*.embeddings.url` / `*.embedding.model` 配置（不填会尝试由 `*.chat.completions.url` 推断 `/embeddings`）
+- 首次计算会调用外部 embeddings API，并把向量缓存到 `data/embeddings.json`（避免每次请求都调用外部接口）
+
+注意：开启后会将简历/岗位文本发送给第三方大模型服务以生成向量，请按隐私合规要求使用。
+
 ---
 
 ## 构建与运行

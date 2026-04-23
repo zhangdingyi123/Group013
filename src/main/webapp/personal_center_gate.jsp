@@ -33,8 +33,8 @@
         <h1><%= I18n.msg(request, "gate.title") %></h1>
         <p class="gate-lead"><%= I18n.msg(request, "gate.lead") %></p>
         <nav class="gate-choices" aria-label="<%= I18n.msg(request, "common.login") %>">
-            <a href="<%= ctx %>/ta/auth"><%= I18n.msg(request, "gate.ta") %><span><%= I18n.msg(request, "gate.ta.sub") %></span></a>
-            <a href="<%= ctx %>/mo/auth"><%= I18n.msg(request, "gate.mo") %><span><%= I18n.msg(request, "gate.mo.sub") %></span></a>
+            <a href="<%= ctx %>/ta/dashboard"><%= I18n.msg(request, "gate.ta") %><span><%= I18n.msg(request, "gate.ta.sub") %></span></a>
+            <a href="<%= ctx %>/mo/dashboard"><%= I18n.msg(request, "gate.mo") %><span><%= I18n.msg(request, "gate.mo.sub") %></span></a>
             <a href="<%= ctx %>/admin/auth"><%= I18n.msg(request, "gate.admin") %><span><%= I18n.msg(request, "gate.admin.sub") %></span></a>
         </nav>
         <p class="gate-footer-links">

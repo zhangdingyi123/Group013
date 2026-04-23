@@ -1,5 +1,0 @@
-Xue Zhao
-Student ID: 2023210003 | zhaoxue@bupt.edu.cn
-
-OS course project: process scheduling and memory management simulation.
-Skills: C++, operating systems, Linux basics.

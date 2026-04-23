@@ -1,5 +1,15 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.net.URLEncoder" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
 <%@ page import="com.bupt.ta.util.I18n" %>
+<%
+    String ctx = request.getContextPath();
+    String moRu = request.getParameter("returnUrl");
+    String moRegLink = ctx + "/mo/register.jsp";
+    if (moRu != null && !moRu.isEmpty() && moRu.startsWith("/mo/") && !moRu.contains("..")) {
+        moRegLink += "?returnUrl=" + URLEncoder.encode(moRu, StandardCharsets.UTF_8);
+    }
+%>
 <!DOCTYPE html>
 <html lang="<%= I18n.htmlLangAttr(request) %>">
 <head>
@@ -14,7 +24,8 @@
         <div style="display:flex;justify-content:flex-end;margin-bottom:0.65rem;">
             <jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/>
         </div>
-        <a href="${pageContext.request.contextPath}/" class="auth-back"><%= I18n.msg(request, "common.backHome") %></a>
+        <% request.setAttribute("authReturnPrefix", "/mo/"); %>
+        <jsp:include page="/WEB-INF/jsp/auth_back_login_cancel.jsp"/>
         <div class="form-page">
         <h1><%= I18n.msg(request, "auth.mo.title") %></h1>
         <% if (request.getAttribute("error") != null) { %>
@@ -45,7 +56,7 @@
             <button type="submit" class="btn btn-primary"><%= I18n.msg(request, "common.login") %></button>
         </div>
         </form>
-        <p class="links"><a href="${pageContext.request.contextPath}/mo/register.jsp"><%= I18n.msg(request, "auth.link.noAccount") %></a><span class="dot">·</span><a href="${pageContext.request.contextPath}/"><%= I18n.msg(request, "auth.link.home") %></a></p>
+        <p class="links"><a href="<%= moRegLink %>"><%= I18n.msg(request, "auth.link.noAccount") %></a><span class="dot">·</span><a href="<%= ctx %>/"><%= I18n.msg(request, "auth.link.home") %></a></p>
         </div>
     </main>
     <script src="${pageContext.request.contextPath}/js/ui.js?v=1" defer></script>

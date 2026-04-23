@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%@ page import="com.bupt.ta.model.Job" %>
 <%@ page import="com.bupt.ta.model.ModuleOrganiser" %>
 <%@ page import="java.util.List" %>
@@ -23,11 +24,11 @@
     }
     String ctx = request.getContextPath();
     String dispName = mo.getName() != null && !mo.getName().trim().isEmpty()
-            ? mo.getName().trim() : "组织者";
+            ? mo.getName().trim() : I18n.msg(request, "pc.mo.organizer.default");
     String avLetter = dispName.substring(0, 1);
     String emailDisp = mo.getEmail() != null && !mo.getEmail().isEmpty() ? mo.getEmail() : "—";
     String deptDisp = mo.getDepartment() != null && !mo.getDepartment().trim().isEmpty()
-            ? mo.getDepartment().trim() : "未填写";
+            ? mo.getDepartment().trim() : I18n.msg(request, "pc.field.empty");
     boolean nameOk = mo.getName() != null && !mo.getName().trim().isEmpty();
     boolean deptOk = mo.getDepartment() != null && !mo.getDepartment().trim().isEmpty();
     int pct = 40;
@@ -35,52 +36,52 @@
     if (deptOk) pct += 30;
 %>
 <div id="pc-overview" class="mo-pc-stack">
-    <section class="pc-card mo-hero-card" aria-label="账户概览">
+    <section class="pc-card mo-hero-card" aria-label="<%= I18n.msg(request, "pc.mo.hero.aria") %>">
         <div class="mo-hero-strip"></div>
         <div class="mo-hero-inner">
             <div class="mo-avatar-xl" aria-hidden="true"><%= avLetter %></div>
             <div class="mo-hero-info">
-                <p class="mo-badge">课程组织者 · 招聘方</p>
+                <p class="mo-badge"><%= I18n.msg(request, "pc.mo.badge") %></p>
                 <h2 class="mo-name"><%= dispName %></h2>
                 <p class="mo-subline"><span><%= emailDisp %></span><span class="mo-dot">·</span><span><%= deptDisp %></span></p>
                 <div class="mo-stat-row">
-                    <div class="mo-stat-pill"><strong><%= jobCount %></strong><span>已发布岗位</span></div>
-                    <div class="mo-stat-pill mo-stat-open"><strong><%= openCount %></strong><span>招聘中</span></div>
+                    <div class="mo-stat-pill"><strong><%= jobCount %></strong><span><%= I18n.msg(request, "pc.mo.stat.jobs") %></span></div>
+                    <div class="mo-stat-pill mo-stat-open"><strong><%= openCount %></strong><span><%= I18n.msg(request, "pc.mo.stat.open") %></span></div>
                 </div>
                 <div class="mo-progress-block">
                     <div class="mo-progress-meta">
-                        <span>企业资料完整度</span>
+                        <span><%= I18n.msg(request, "pc.mo.profile.complete") %></span>
                         <strong><%= pct %>%</strong>
                     </div>
                     <div class="mo-progress-track" role="progressbar" aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100">
                         <div class="mo-progress-fill" style="width:<%= pct %>%"></div>
                     </div>
-                    <p class="mo-progress-tip">岗位发布、简历筛选与私信请在「工作台」完成，本页专注账号展示与资料维护。</p>
+                    <p class="mo-progress-tip"><%= I18n.msg(request, "pc.mo.profile.tip") %></p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="pc-quick" class="pc-card" aria-label="招聘管理">
+    <section id="pc-quick" class="pc-card" aria-label="<%= I18n.msg(request, "pc.mo.nav.aria") %>">
         <div class="pc-card-hd" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
-            <h2 style="margin:0;font-size:1rem;font-weight:600">招聘管理</h2>
-            <span style="font-size:.82rem;color:#8f959e">类似招聘网站「职位管理 / 沟通」入口</span>
+            <h2 style="margin:0;font-size:1rem;font-weight:600"><%= I18n.msg(request, "pc.mo.quick.title") %></h2>
+            <span style="font-size:.82rem;color:#8f959e"><%= I18n.msg(request, "pc.mo.quick.sub") %></span>
         </div>
         <div class="pc-card-bd mo-quick-wrap">
             <a href="<%= ctx %>/mo/dashboard?tab=positions" class="mo-tile">
                 <span class="mo-tile-ic" aria-hidden="true">📌</span>
-                <span class="mo-tile-t">岗位与申请</span>
-                <span class="mo-tile-d">管理已发布岗位与应聘者</span>
+                <span class="mo-tile-t"><%= I18n.msg(request, "pc.mo.tile.jobs") %></span>
+                <span class="mo-tile-d"><%= I18n.msg(request, "pc.mo.tile.jobs.d") %></span>
             </a>
             <a href="<%= ctx %>/mo/dashboard?tab=post" class="mo-tile">
                 <span class="mo-tile-ic" aria-hidden="true">➕</span>
-                <span class="mo-tile-t">发布岗位</span>
-                <span class="mo-tile-d">发布新的助教岗位</span>
+                <span class="mo-tile-t"><%= I18n.msg(request, "pc.mo.tile.post") %></span>
+                <span class="mo-tile-d"><%= I18n.msg(request, "pc.mo.tile.post.d") %></span>
             </a>
             <a href="<%= ctx %>/mo/dashboard?tab=messages" class="mo-tile">
                 <span class="mo-tile-ic" aria-hidden="true">💬</span>
-                <span class="mo-tile-t">私信沟通</span>
-                <span class="mo-tile-d">与已投递或好友应聘者沟通</span>
+                <span class="mo-tile-t"><%= I18n.msg(request, "pc.mo.tile.dm") %></span>
+                <span class="mo-tile-d"><%= I18n.msg(request, "pc.mo.tile.dm.d") %></span>
             </a>
         </div>
     </section>
@@ -89,26 +90,26 @@
 <section id="pc-edit" class="pc-card mo-edit-card">
     <div class="pc-card-hd" style="border-bottom:1px solid #e8eaed">
         <div>
-            <h2 style="margin:0 0 .25rem;font-size:1rem;font-weight:600">账号资料</h2>
-            <span style="font-size:.82rem;color:#8f959e">用于向应聘者展示的身份信息</span>
+            <h2 style="margin:0 0 .25rem;font-size:1rem;font-weight:600"><%= I18n.msg(request, "pc.mo.edit.title") %></h2>
+            <span style="font-size:.82rem;color:#8f959e"><%= I18n.msg(request, "pc.mo.edit.sub") %></span>
         </div>
     </div>
     <div class="pc-card-bd">
         <form method="post" action="<%= ctx %>/mo/profile">
             <input type="hidden" name="action" value="updateProfile">
             <div class="form-group">
-                <label for="mo-pf-name">姓名 / 称呼</label>
+                <label for="mo-pf-name"><%= I18n.msg(request, "pc.mo.label.name") %></label>
                 <input id="mo-pf-name" type="text" name="name" required value="<%= mo.getName() != null ? mo.getName() : "" %>">
             </div>
             <div class="form-group">
-                <label for="mo-pf-email">登录邮箱</label>
+                <label for="mo-pf-email"><%= I18n.msg(request, "profile.edit.email") %></label>
                 <input id="mo-pf-email" type="email" class="field-ro" value="<%= mo.getEmail() != null ? mo.getEmail() : "" %>" readonly aria-readonly="true">
             </div>
             <div class="form-group">
-                <label for="mo-pf-dept">院系 / 课程组</label>
-                <input id="mo-pf-dept" type="text" name="department" placeholder="例如：计算机学院" value="<%= mo.getDepartment() != null ? mo.getDepartment() : "" %>">
+                <label for="mo-pf-dept"><%= I18n.msg(request, "pc.mo.label.dept") %></label>
+                <input id="mo-pf-dept" type="text" name="department" placeholder="<%= I18n.msg(request, "profile.edit.dept.ph") %>" value="<%= mo.getDepartment() != null ? mo.getDepartment() : "" %>">
             </div>
-            <button type="submit" class="btn btn-primary">保存</button>
+            <button type="submit" class="btn btn-primary"><%= I18n.msg(request, "common.save") %></button>
         </form>
     </div>
 </section>

@@ -1,58 +1,26 @@
 [
   {
-    "id": "20000000-0000-4000-8000-000000000001",
-    "name": "张伟",
-    "email": "zhangwei@bupt.edu.cn",
-    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
-    "department": "计算机学院",
-    "createdAt": 1772323200000
+    "id": "4c61af3f-c065-549a-a953-23493a9ee311",
+    "name": "李教授",
+    "email": "li.prof@bupt-demo.edu.cn",
+    "passwordHash": "062TFbe+XdU7MaJzs7Orpd7+cAgIMFqhajBit2ZYp5E=",
+    "department": "计算机学院（软件工程系）",
+    "createdAt": 1774857600000
   },
   {
-    "id": "20000000-0000-4000-8000-000000000002",
-    "name": "李娜",
-    "email": "lina@bupt.edu.cn",
-    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
-    "department": "软件学院",
-    "createdAt": 1772400000000
-  },
-  {
-    "id": "20000000-0000-4000-8000-000000000003",
-    "name": "王强",
-    "email": "wangqiang@bupt.edu.cn",
-    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
-    "department": "网络空间安全学院",
-    "createdAt": 1772486400000
-  },
-  {
-    "id": "20000000-0000-4000-8000-000000000004",
-    "name": "陈静",
-    "email": "chenjing@bupt.edu.cn",
-    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
-    "department": "国际学院",
-    "createdAt": 1772572800000
-  },
-  {
-    "id": "20000000-0000-4000-8000-000000000005",
-    "name": "马超",
-    "email": "machao@bupt.edu.cn",
-    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
+    "id": "b19c8fa5-62f0-5328-8d6f-0de3460dc91c",
+    "name": "王副教授",
+    "email": "wang.prof@bupt-demo.edu.cn",
+    "passwordHash": "062TFbe+XdU7MaJzs7Orpd7+cAgIMFqhajBit2ZYp5E=",
     "department": "人工智能学院",
-    "createdAt": 1772659200000
+    "createdAt": 1774944000000
   },
   {
-    "id": "20000000-0000-4000-8000-000000000006",
-    "name": "林芳",
-    "email": "linfang@bupt.edu.cn",
-    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
-    "department": "电子工程学院",
-    "createdAt": 1772745600000
-  },
-  {
-    "id": "d8cb06d0-f132-49a7-9946-3cf1efa6650a",
-    "name": "Dingyi Zhang",
-    "email": "zdy40@bupt.edu.cn",
-    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
-    "department": "",
-    "createdAt": 1775570547903
+    "id": "ef8eaba2-4ab7-5e1e-b511-522e208cdf8d",
+    "name": "刘老师",
+    "email": "liu.laoshi@bupt-demo.edu.cn",
+    "passwordHash": "062TFbe+XdU7MaJzs7Orpd7+cAgIMFqhajBit2ZYp5E=",
+    "department": "信息与通信工程学院",
+    "createdAt": 1774987200000
   }
 ]

@@ -6,9 +6,12 @@ import com.google.gson.JsonObject;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
+import com.bupt.ta.model.Applicant;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +33,13 @@ public class AssistantExtractResumeServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
         resp.setContentType("application/json;charset=UTF-8");
+
+        HttpSession session = req.getSession(false);
+        Applicant user = session != null ? (Applicant) session.getAttribute("taUser") : null;
+        if (user == null) {
+            writeError(resp, HttpServletResponse.SC_UNAUTHORIZED, "login required");
+            return;
+        }
 
         Part part;
         try {

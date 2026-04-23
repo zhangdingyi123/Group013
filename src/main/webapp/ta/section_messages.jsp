@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%
@@ -18,19 +19,19 @@
     }
 %>
 <div id="pc-messages" class="section dm-section">
-    <h2>私信招聘者</h2>
-    <p class="section-desc">在开放岗位中可联系发布者，或向已申请岗位的招聘者发送消息；对方可在工作台「私信」中回复。</p>
+    <h2><%= I18n.msg(request, "dm.ta.title") %></h2>
+    <p class="section-desc"><%= I18n.msg(request, "dm.ta.desc") %></p>
     <c:if test="${not empty dmNotice}">
         <p class="msg-ok"><c:out value="${dmNotice}"/></p>
     </c:if>
 
     <c:choose>
         <c:when test="${empty taDmThreads}">
-            <p class="empty-hint">暂无可联系的招聘者。请先浏览「开放岗位」或提交岗位申请。</p>
+            <p class="empty-hint"><%= I18n.msg(request, "dm.ta.empty") %></p>
         </c:when>
         <c:otherwise>
             <div class="dm-layout">
-                <div class="dm-thread-list" role="navigation" aria-label="会话列表">
+                <div class="dm-thread-list" role="navigation" aria-label="<%= I18n.msg(request, "dm.ta.threadAria") %>">
                     <c:forEach items="${taDmThreads}" var="row">
                         <c:choose>
                         <c:when test="${taDmProfileMode}">
@@ -47,11 +48,11 @@
                         </c:choose>
                         <c:set var="isActive" value="${taDmWithMo eq row.moId}"/>
                         <a href="${threadUrl}" class="dm-thread-item ${isActive ? 'active' : ''}">
-                            <span class="dm-thread-name"><c:out value="${row.moName}"/><c:if test="${row.unreadCount > 0}"><span class="dm-unread-badge" title="未读">${row.unreadCount > 99 ? '99+' : row.unreadCount}</span></c:if></span>
+                            <span class="dm-thread-name"><c:out value="${row.moName}"/><c:if test="${row.unreadCount > 0}"><span class="dm-unread-badge" title="<%= I18n.msg(request, "dm.unread") %>">${row.unreadCount > 99 ? '99+' : row.unreadCount}</span></c:if></span>
                             <span class="dm-thread-preview">
                                 <c:choose>
                                     <c:when test="${not empty row.lastPreview}"><c:out value="${row.lastPreview}"/></c:when>
-                                    <c:otherwise>（尚无消息）</c:otherwise>
+                                    <c:otherwise><%= I18n.msg(request, "dm.ta.noMsg") %></c:otherwise>
                                 </c:choose>
                             </span>
                             <span class="dm-thread-time"><c:out value="${row.lastAtText}"/></span>
@@ -60,18 +61,18 @@
                 </div>
                 <div class="dm-pane">
                     <c:if test="${not empty taDmMo}">
-                        <p class="dm-peer-title">与 <strong><c:out value="${taDmMo.name}"/></strong> 的对话</p>
+                        <p class="dm-peer-title"><%= I18n.msg(request, "dm.ta.conv", taDmMo.name) %></p>
                     </c:if>
                     <div class="dm-bubble-list" aria-live="polite">
                         <c:choose>
                             <c:when test="${empty taDmConversation}">
-                                <p class="empty-hint" style="padding:.5rem 0">尚无消息，在下方输入第一条私信。</p>
+                                <p class="empty-hint" style="padding:.5rem 0"><%= I18n.msg(request, "dm.ta.first") %></p>
                             </c:when>
                             <c:otherwise>
                                 <c:forEach items="${taDmConversation}" var="m">
                                     <c:set var="mine" value="${m.senderRole eq 'ta'}"/>
                                     <div class="dm-bubble ${mine ? 'mine' : 'theirs'}">
-                                        <div class="dm-meta">${mine ? '我' : '招聘者'} · <c:out value="${m.sentAtText}"/></div>
+                                        <div class="dm-meta"><%= I18n.msg(request, "dm.ta.meta.me") %> · <c:out value="${m.sentAtText}"/></div>
                                         <div class="dm-body"><c:out value="${m.body}"/></div>
                                     </div>
                                 </c:forEach>
@@ -85,10 +86,10 @@
                             <input type="hidden" name="jobId" value="<c:out value='${taDmPrefillJobId}'/>">
                         </c:if>
                         <div class="form-group">
-                            <label for="dm-body">发送消息</label>
-                            <textarea id="dm-body" name="body" rows="4" placeholder="输入私信内容" required></textarea>
+                            <label for="dm-body"><%= I18n.msg(request, "dm.ta.label") %></label>
+                            <textarea id="dm-body" name="body" rows="4" placeholder="<%= I18n.msg(request, "dm.ta.placeholder") %>" required></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary">发送</button>
+                        <button type="submit" class="btn btn-primary"><%= I18n.msg(request, "common.send") %></button>
                     </form>
                 </div>
             </div>

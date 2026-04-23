@@ -1,9 +1,9 @@
 [
   {
-    "id": "10000000-0000-4000-8000-000000000001",
+    "id": "5486ef89-7bd9-5885-a5fc-8e3f6f6fcd63",
     "name": "系统管理员",
-    "email": "admin@bupt.edu.cn",
-    "passwordHash": "7SGKj7TlVgdU3bpDxDED31l57UQYSrJbB+49z09K/nY=",
-    "createdAt": 1772323200000
+    "email": "admin@bupt-demo.edu.cn",
+    "passwordHash": "JAvlGPq9JyTdtvBO6x2llnRI1+gxwIyPqCKAn3THIKk=",
+    "createdAt": 1774771200000
   }
 ]

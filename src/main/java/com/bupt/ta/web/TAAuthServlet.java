@@ -19,6 +19,16 @@ import java.util.Optional;
 public class TAAuthServlet extends HttpServlet {
     private final ApplicantService applicantService = new ApplicantService();
 
+    /**
+     * 登录成功后的安全回跳路径（站内相对路径，禁止 ..）。
+     */
+    static boolean isSafeTaLoginReturnUrl(String returnUrl) {
+        if (returnUrl == null || returnUrl.isEmpty() || returnUrl.contains("..")) {
+            return false;
+        }
+        return returnUrl.startsWith("/ta/") || "/assistant".equals(returnUrl);
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if ("1".equals(req.getParameter("logout"))) {
@@ -40,7 +50,12 @@ public class TAAuthServlet extends HttpServlet {
             if (opt.isPresent() && PasswordUtil.check(password, opt.get().getPasswordHash())) {
                 HttpSession session = req.getSession(true);
                 session.setAttribute("taUser", opt.get());
-                resp.sendRedirect(req.getContextPath() + "/ta/dashboard");
+                String returnUrl = req.getParameter("returnUrl");
+                if (isSafeTaLoginReturnUrl(returnUrl)) {
+                    resp.sendRedirect(req.getContextPath() + returnUrl);
+                } else {
+                    resp.sendRedirect(req.getContextPath() + "/ta/dashboard");
+                }
                 return;
             }
             req.setAttribute("error", I18n.msg(req, "err.login.bad"));
@@ -49,6 +64,12 @@ public class TAAuthServlet extends HttpServlet {
         }
         if ("confirm".equals(action)) {
             // 个人信息核准：校验并跳转确认页，将信息暂存 session
+            String returnUrlParam = req.getParameter("returnUrl");
+            String safeRegReturn = null;
+            if (returnUrlParam != null && !returnUrlParam.isEmpty()
+                    && returnUrlParam.startsWith("/ta/") && !returnUrlParam.contains("..")) {
+                safeRegReturn = returnUrlParam;
+            }
             String name = req.getParameter("name");
             String email = req.getParameter("email");
             String password = req.getParameter("password");
@@ -58,6 +79,9 @@ public class TAAuthServlet extends HttpServlet {
                     || password == null || password.trim().isEmpty() || studentId == null || studentId.trim().isEmpty()
                     || phone == null || phone.trim().isEmpty()) {
                 req.setAttribute("error", I18n.msg(req, "err.ta.fields"));
+                if (safeRegReturn != null) {
+                    req.setAttribute("regReturnUrl", safeRegReturn);
+                }
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
@@ -68,6 +92,9 @@ public class TAAuthServlet extends HttpServlet {
                 req.setAttribute("regEmail", email.trim());
                 req.setAttribute("regStudentId", sid);
                 req.setAttribute("regPhone", phone.trim());
+                if (safeRegReturn != null) {
+                    req.setAttribute("regReturnUrl", safeRegReturn);
+                }
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
@@ -82,6 +109,9 @@ public class TAAuthServlet extends HttpServlet {
             req.setAttribute("regEmail", email.trim());
             req.setAttribute("regStudentId", sid);
             req.setAttribute("regPhone", phoneTrim);
+            if (safeRegReturn != null) {
+                req.setAttribute("regReturnUrl", safeRegReturn);
+            }
             req.getRequestDispatcher("/ta/register_confirm.jsp").forward(req, resp);
             return;
         }

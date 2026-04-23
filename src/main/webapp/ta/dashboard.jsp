@@ -4,7 +4,8 @@
 <%@ page import="com.bupt.ta.util.I18n" %>
 <%
     Applicant applicant = (Applicant) request.getAttribute("applicant");
-    if (applicant == null) {
+    Boolean taGuestMode = (Boolean) request.getAttribute("taGuestMode");
+    if (applicant == null && !Boolean.TRUE.equals(taGuestMode)) {
         String ctx = request.getContextPath();
         if (session.getAttribute("taUser") != null) {
             response.sendRedirect(ctx + "/ta/dashboard");
@@ -14,7 +15,7 @@
         return;
     }
     String tab = (String) request.getAttribute("taDashboardTab");
-    if (tab == null) tab = "resume";
+    if (tab == null) tab = Boolean.TRUE.equals(taGuestMode) ? "jobs" : "resume";
     String pageTitle = I18n.msg(request, "dash.ta.tab.resume");
     if ("jobs".equals(tab)) pageTitle = I18n.msg(request, "dash.ta.tab.jobs");
     else if ("applications".equals(tab)) pageTitle = I18n.msg(request, "dash.ta.tab.apps");
@@ -38,8 +39,15 @@
             <div class="header-actions">
                 <a href="<%= ctx %>/forum" class="header-nav-link"><%= I18n.msg(request, "header.forum") %></a>
                 <a href="<%= ctx %>/assistant" class="header-nav-link"><%= I18n.msg(request, "header.assistant") %></a>
+                <% if (Boolean.TRUE.equals(taGuestMode)) { %>
+                <c:url var="taLoginProfile" value="/ta/auth"><c:param name="returnUrl" value="/ta/profile"/></c:url>
+                <a href="${taLoginProfile}" class="header-nav-link"><%= I18n.msg(request, "header.profile") %></a>
+                <c:url var="taLoginBar" value="/ta/auth"><c:param name="returnUrl" value="/ta/dashboard?tab=jobs"/></c:url>
+                <a href="${taLoginBar}" class="logout"><%= I18n.msg(request, "common.login") %></a>
+                <% } else { %>
                 <a href="<%= ctx %>/ta/profile" class="header-nav-link"><%= I18n.msg(request, "header.profile") %></a>
                 <a href="<%= ctx %>/ta/auth?logout=1" class="logout"><%= I18n.msg(request, "common.logout") %></a>
+                <% } %>
             </div>
         </div>
 
@@ -47,11 +55,21 @@
         <c:url var="navJobs" value="/ta/dashboard"><c:param name="tab" value="jobs"/></c:url>
         <c:url var="navApplications" value="/ta/dashboard"><c:param name="tab" value="applications"/></c:url>
         <c:url var="navMessages" value="/ta/dashboard"><c:param name="tab" value="messages"/></c:url>
+        <c:url var="authResume" value="/ta/auth"><c:param name="returnUrl" value="/ta/dashboard?tab=resume"/></c:url>
+        <c:url var="authApps" value="/ta/auth"><c:param name="returnUrl" value="/ta/dashboard?tab=applications"/></c:url>
+        <c:url var="authMsg" value="/ta/auth"><c:param name="returnUrl" value="/ta/dashboard?tab=messages"/></c:url>
         <nav class="ta-subnav" aria-label="<%= I18n.msg(request, "dash.ta.title") %>">
+            <% if (Boolean.TRUE.equals(taGuestMode)) { %>
+            <a href="${authResume}" class=""><%= I18n.msg(request, "dash.ta.nav.resume") %></a>
+            <a href="${navJobs}" class="active"><%= I18n.msg(request, "dash.ta.nav.jobs") %></a>
+            <a href="${authApps}"><%= I18n.msg(request, "dash.ta.nav.apps") %></a>
+            <a href="${authMsg}"><%= I18n.msg(request, "dash.ta.nav.msg") %></a>
+            <% } else { %>
             <a href="${navResume}" class="<%= "resume".equals(tab) ? "active" : "" %>"><%= I18n.msg(request, "dash.ta.nav.resume") %></a>
             <a href="${navJobs}" class="<%= "jobs".equals(tab) ? "active" : "" %>"><%= I18n.msg(request, "dash.ta.nav.jobs") %></a>
             <a href="${navApplications}" class="<%= "applications".equals(tab) ? "active" : "" %>"><%= I18n.msg(request, "dash.ta.nav.apps") %></a>
             <a href="${navMessages}" class="<%= "messages".equals(tab) ? "active" : "" %>"><%= I18n.msg(request, "dash.ta.nav.msg") %><c:if test="${taDmTotalUnread > 0}"><span class="nav-dm-badge" title="<%= I18n.msg(request, "dash.ta.nav.unreadTitle") %>">${taDmTotalUnread > 99 ? '99+' : taDmTotalUnread}</span></c:if></a>
+            <% } %>
         </nav>
 
         <% if (request.getAttribute("error") != null) { %>
@@ -59,6 +77,9 @@
         <% } %>
         <% if (request.getAttribute("applyMessage") != null) { %>
         <p class="msg-ok"><%= request.getAttribute("applyMessage") %></p>
+        <% } %>
+        <% if (Boolean.TRUE.equals(taGuestMode)) { %>
+        <p class="section-desc" style="margin-top:0"><%= I18n.msg(request, "dash.ta.guest.banner") %></p>
         <% } %>
 
         <c:choose>

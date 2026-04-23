@@ -1,6 +1,10 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%@ page import="com.bupt.ta.model.Applicant" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="com.google.gson.Gson" %>
 <%
     if (request.getAttribute("applicant") == null) {
         String c = request.getContextPath();
@@ -18,6 +22,15 @@
     if (resumeContent == null) resumeContent = "";
     @SuppressWarnings("unchecked")
     List<String> resumeSkillGaps = (List<String>) request.getAttribute("resumeSkillGaps");
+    Map<String, String> resumeI18nJs = new LinkedHashMap<String, String>();
+    resumeI18nJs.put("errRequestFailed", I18n.msg(request, "asst.js.err.request.failed"));
+    resumeI18nJs.put("errQuota", I18n.msg(request, "asst.js.err.quota"));
+    resumeI18nJs.put("errLogin", I18n.msg(request, "asst.js.err.login"));
+    resumeI18nJs.put("errNoSaved", I18n.msg(request, "asst.js.err.noSaved"));
+    resumeI18nJs.put("networkChat", I18n.msg(request, "asst.js.network.chat"));
+    resumeI18nJs.put("roleUser", I18n.msg(request, "asst.js.role.user"));
+    resumeI18nJs.put("roleAssistant", I18n.msg(request, "asst.js.role.assistant"));
+    String resumeI18nJson = new Gson().toJson(resumeI18nJs);
     if (resumeSkillGaps == null) resumeSkillGaps = java.util.Collections.emptyList();
     @SuppressWarnings("unchecked")
     List<String> resumeStrengths = (List<String>) request.getAttribute("resumeStrengths");
@@ -39,54 +52,54 @@
     boolean canUseAiResume = canAiResume != null && canAiResume;
 %>
 <div class="section">
-    <h2>简历</h2>
+    <h2><%= I18n.msg(request, "resume.title") %></h2>
     <% if (applicant.getResumePath() != null && !applicant.getResumePath().isEmpty()) { %>
-    <p class="section-desc">当前文件：<strong><%= resumeFilename != null ? resumeFilename : applicant.getResumePath() %></strong></p>
+    <p class="section-desc"><%= I18n.msg(request, "resume.currentFile") %><strong><%= resumeFilename != null ? resumeFilename : applicant.getResumePath() %></strong></p>
     <% } else { %>
-    <p class="section-desc">上传文件（.txt / .pdf / .doc / .docx）或粘贴纯文本简历，便于岗位匹配提示。</p>
+    <p class="section-desc"><%= I18n.msg(request, "resume.desc.upload") %></p>
     <% } %>
 
-    <h3 style="font-size:.95rem;margin:1rem 0 .5rem;color:#475569">上传或更新文件</h3>
+    <h3 style="font-size:.95rem;margin:1rem 0 .5rem;color:#475569"><%= I18n.msg(request, "resume.h3.upload") %></h3>
     <form method="post" action="<%= ctx %>/ta/dashboard/upload-resume" enctype="multipart/form-data">
         <div class="form-group">
-            <label>选择文件</label>
+            <label><%= I18n.msg(request, "resume.label.choose") %></label>
             <input type="file" name="resumeFile" accept=".txt,.pdf,.doc,.docx">
         </div>
-        <button type="submit" class="btn btn-primary">上传</button>
+        <button type="submit" class="btn btn-primary"><%= I18n.msg(request, "common.upload") %></button>
     </form>
 
     <% if (Boolean.TRUE.equals(resumeIsText)) { %>
-    <h3 style="font-size:.95rem;margin:1.25rem 0 .5rem;color:#475569">编辑纯文本简历</h3>
+    <h3 style="font-size:.95rem;margin:1.25rem 0 .5rem;color:#475569"><%= I18n.msg(request, "resume.editText") %></h3>
     <form method="post" action="<%= ctx %>/ta/dashboard">
         <input type="hidden" name="action" value="resume">
         <div class="form-group">
-            <label>内容</label>
+            <label><%= I18n.msg(request, "resume.label.content") %></label>
             <textarea name="resumeContent" rows="8"><%= resumeContent %></textarea>
         </div>
-        <button type="submit" class="btn btn-primary">保存文本简历</button>
+        <button type="submit" class="btn btn-primary"><%= I18n.msg(request, "resume.saveText") %></button>
     </form>
     <% } else if (applicant.getResumePath() == null || applicant.getResumePath().isEmpty()) { %>
-    <h3 style="font-size:.95rem;margin:1.25rem 0 .5rem;color:#475569">或粘贴纯文本</h3>
+    <h3 style="font-size:.95rem;margin:1.25rem 0 .5rem;color:#475569"><%= I18n.msg(request, "resume.orPaste") %></h3>
     <form method="post" action="<%= ctx %>/ta/dashboard">
         <input type="hidden" name="action" value="resume">
         <div class="form-group">
-            <label>简历正文</label>
-            <textarea name="resumeContent" rows="8" placeholder="粘贴简历文字…"></textarea>
+            <label><%= I18n.msg(request, "resume.label.body") %></label>
+            <textarea name="resumeContent" rows="8" placeholder="<%= I18n.msg(request, "resume.paste.ph") %>"></textarea>
         </div>
-        <button type="submit" class="btn btn-secondary">保存为文本简历</button>
+        <button type="submit" class="btn btn-secondary"><%= I18n.msg(request, "resume.saveAsText") %></button>
     </form>
     <% } %>
 
     <% if (!resumeStrengths.isEmpty() || !resumeSkillGaps.isEmpty()) { %>
     <div style="margin-top:1.25rem">
         <% if (!resumeStrengths.isEmpty()) { %>
-        <p style="margin:0 0 .35rem;font-size:.9rem;font-weight:600;color:#065f46">与开放岗位匹配的优势</p>
+        <p style="margin:0 0 .35rem;font-size:.9rem;font-weight:600;color:#065f46"><%= I18n.msg(request, "resume.strengths") %></p>
         <ul class="hint-list">
             <% for (String s : resumeStrengths) { %><li><%= s %></li><% } %>
         </ul>
         <% } %>
         <% if (!resumeSkillGaps.isEmpty()) { %>
-        <p style="margin:1rem 0 .35rem;font-size:.9rem;font-weight:600;color:#92400e">可加强的技能方向</p>
+        <p style="margin:1rem 0 .35rem;font-size:.9rem;font-weight:600;color:#92400e"><%= I18n.msg(request, "resume.gaps") %></p>
         <ul class="hint-list">
             <% for (String s : resumeSkillGaps) { %><li><%= s %></li><% } %>
         </ul>
@@ -96,34 +109,35 @@
 </div>
 
 <div class="section resume-ai-section">
-    <h2>AI 修改简历</h2>
-    <p class="section-desc">根据当前<strong>已保存的简历文件</strong>向智能小助手提问，可请其润色表述、调整结构或提出改进建议（不会自动覆盖你的文件，满意后可自行粘贴到上方文本框保存）。</p>
+    <h2><%= I18n.msg(request, "resume.ai.title") %></h2>
+    <p class="section-desc"><%= I18n.msg(request, "resume.ai.desc") %></p>
     <% if (noAssistantKeys) { %>
-    <p class="resume-ai-warn">服务端未配置大模型 API 密钥，无法使用本功能。请在 <code>assistant.properties</code> 或环境变量 <code>KIMI_API_KEY</code> / <code>QWEN_API_KEY</code> / <code>OPENAI_API_KEY</code> 中配置后重启应用。</p>
+    <p class="resume-ai-warn"><%= I18n.msg(request, "resume.ai.warn.keys") %></p>
     <% } else if (!canUseAiResume) { %>
-    <p class="resume-ai-warn">请先在上方上传或保存一份简历（支持 .txt / .pdf / .doc / .docx），保存成功后再使用 AI 辅助。</p>
-    <p class="resume-ai-hint">也可前往 <a href="<%= ctx %>/assistant">智能小助手</a> 页面，粘贴简历正文进行对话。</p>
+    <p class="resume-ai-warn"><%= I18n.msg(request, "resume.ai.warn.noresume") %></p>
+    <p class="resume-ai-hint"><%= I18n.msg(request, "resume.ai.hint", ctx + "/assistant") %></p>
     <% } else { %>
     <div class="resume-ai-toolbar">
         <div>
-            <label for="resumeAiProvider">模型</label>
+            <label for="resumeAiProvider"><%= I18n.msg(request, "resume.ai.model") %></label>
             <select id="resumeAiProvider" name="resumeAiProvider">
                 <option value="kimi" <%= "kimi".equals(defProv) ? "selected" : "" %> <%= disableKimiOption ? "disabled" : "" %>>Kimi K2.5</option>
-                <option value="qwen" <%= "qwen".equals(defProv) ? "selected" : "" %> <%= disableQwenOption ? "disabled" : "" %>>通义千问</option>
+                <option value="qwen" <%= "qwen".equals(defProv) ? "selected" : "" %> <%= disableQwenOption ? "disabled" : "" %>>Qwen</option>
                 <option value="openai" <%= "openai".equals(defProv) ? "selected" : "" %> <%= disableOpenaiOption ? "disabled" : "" %>>OpenAI</option>
             </select>
         </div>
     </div>
     <div id="resumeAiChat" class="resume-ai-chat" aria-live="polite"></div>
     <div class="form-group">
-        <label for="resumeAiInput">你想怎么改？</label>
-        <textarea id="resumeAiInput" rows="3" placeholder="例如：把项目经历写得更突出；帮我压缩到一页纸的要点；语气更正式一些…"></textarea>
+        <label for="resumeAiInput"><%= I18n.msg(request, "resume.ai.ask") %></label>
+        <textarea id="resumeAiInput" rows="3" placeholder="<%= I18n.msg(request, "resume.ai.ask.ph") %>"></textarea>
     </div>
-    <button type="button" id="resumeAiSend" class="btn btn-primary">发送给 AI</button>
-    <button type="button" id="resumeAiClear" class="btn btn-secondary">清空对话</button>
-    <p class="resume-ai-hint">对话会附带你的站内简历正文；请勿在提问中提交敏感密码等信息。</p>
+    <button type="button" id="resumeAiSend" class="btn btn-primary"><%= I18n.msg(request, "resume.ai.send") %></button>
+    <button type="button" id="resumeAiClear" class="btn btn-secondary"><%= I18n.msg(request, "resume.ai.clear") %></button>
+    <p class="resume-ai-hint"><%= I18n.msg(request, "resume.ai.security") %></p>
     <script>
     (function () {
+        var RESUME_I18N = <%= resumeI18nJson %>;
         var apiUrl = '<%= ctx %>/api/assistant/chat';
         var messages = [];
         var logEl = document.getElementById('resumeAiChat');
@@ -131,21 +145,24 @@
         var providerSel = document.getElementById('resumeAiProvider');
         var btn = document.getElementById('resumeAiSend');
         var btnClear = document.getElementById('resumeAiClear');
-        function mapChatError(msg) {
-            if (!msg) return '请求失败';
-            if (msg.indexOf('HTTP 429') === 0 || /quota|balance|余额|欠费/i.test(msg)) {
-                return '模型服务繁忙或账户额度不足，请稍后重试、更换模型或检查 API 配额。';
-            }
-            if (msg === 'login required for saved resume') return '请先登录。';
-            if (msg === 'no saved resume') return '未找到已保存简历。';
-            return msg;
-        }
+	        function mapChatError(msg, data) {
+	            if (!msg) return RESUME_I18N.errRequestFailed;
+	            if (data && data.code === 'ASSISTANT_QUOTA_EXCEEDED') {
+	                return RESUME_I18N.errQuota;
+	            }
+	            if (msg.indexOf('HTTP 429') === 0 || /quota|balance|余额|欠费/i.test(msg)) {
+	                return RESUME_I18N.errQuota;
+	            }
+	            if (msg === 'login required for saved resume') return RESUME_I18N.errLogin;
+	            if (msg === 'no saved resume') return RESUME_I18N.errNoSaved;
+	            return msg;
+	        }
         function append(role, text) {
             var div = document.createElement('div');
             div.className = 'resume-ai-msg resume-ai-msg--' + (role === 'user' ? 'user' : 'asst');
             var lab = document.createElement('span');
             lab.className = 'resume-ai-msg-label';
-            lab.textContent = role === 'user' ? '你' : '小助手';
+            lab.textContent = role === 'user' ? RESUME_I18N.roleUser : RESUME_I18N.roleAssistant;
             var body = document.createElement('div');
             body.textContent = text;
             div.appendChild(lab);
@@ -181,17 +198,17 @@
                 return r.json().then(function (data) {
                     return { ok: r.ok, status: r.status, data: data };
                 });
-            }).then(function (res) {
-                if (res.data && res.data.reply) {
-                    append('assistant', res.data.reply);
-                    messages.push({ role: 'assistant', content: res.data.reply });
-                } else {
-                    var raw = (res.data && res.data.error) ? res.data.error : ('请求失败 (' + res.status + ')');
-                    appendErr(mapChatError(raw));
-                }
-            }).catch(function () {
-                appendErr('网络异常，请稍后重试。');
-            }).finally(function () {
+	            }).then(function (res) {
+	                if (res.data && res.data.reply) {
+	                    append('assistant', res.data.reply);
+	                    messages.push({ role: 'assistant', content: res.data.reply });
+	                } else {
+	                    var raw = (res.data && res.data.error) ? res.data.error : (RESUME_I18N.errRequestFailed + ' (' + res.status + ')');
+	                    appendErr(mapChatError(raw, res.data));
+	                }
+	            }).catch(function () {
+	                appendErr(RESUME_I18N.networkChat);
+	            }).finally(function () {
                 btn.disabled = false;
             });
         });

@@ -34,6 +34,10 @@ public final class AssistantConfig {
     public static final String DEFAULT_OPENAI_BASE = "https://api.openai.com/v1/chat/completions";
     public static final String DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
 
+    /** OpenAI 官方 Embeddings */
+    public static final String DEFAULT_OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
+    public static final String DEFAULT_OPENAI_EMBEDDING_MODEL = "text-embedding-3-small";
+
     private static final String RESOURCE_NAME = "assistant.properties";
     private static volatile Properties filePropsCache;
     private static final Object FILE_PROPS_LOCK = new Object();
@@ -253,6 +257,108 @@ public final class AssistantConfig {
                 DEFAULT_OPENAI_MODEL);
     }
 
+    public static boolean semanticMatchEnabled() {
+        String v = firstOf(env("MATCH_SEMANTIC_ENABLED"), prop("match.semantic.enabled"));
+        if (v.isEmpty()) {
+            return false;
+        }
+        v = v.trim().toLowerCase();
+        return "1".equals(v) || "true".equals(v) || "yes".equals(v) || "on".equals(v);
+    }
+
+    /**
+     * 是否启用“小助手提问范围”严格限制。
+     * <p>开启时，服务端会在调用上游大模型前先做一次主题判定；若明显无关则直接返回固定拒绝话术。</p>
+     * <p>默认开启，可通过环境变量 {@code ASSISTANT_STRICT_SCOPE=0} 或配置 {@code assistant.strict.scope=false} 关闭。</p>
+     */
+    public static boolean strictScopeEnabled() {
+        String v = firstOf(env("ASSISTANT_STRICT_SCOPE"), prop("assistant.strict.scope"));
+        if (v.isEmpty()) {
+            return true;
+        }
+        v = v.trim().toLowerCase();
+        return "1".equals(v) || "true".equals(v) || "yes".equals(v) || "on".equals(v);
+    }
+
+    /** 向量/LLM 匹配使用的提供方：未设置时跟随 {@link #defaultProvider()}。 */
+    public static String semanticMatchProvider() {
+        String p = firstOf(env("MATCH_SEMANTIC_PROVIDER"), prop("match.semantic.provider"));
+        if (p == null || p.trim().isEmpty()) {
+            return defaultProvider();
+        }
+        p = p.trim().toLowerCase();
+        if (PROVIDER_KIMI.equals(p) || PROVIDER_QWEN.equals(p) || PROVIDER_OPENAI.equals(p)) {
+            return p;
+        }
+        return defaultProvider();
+    }
+
+    /** OpenAI 兼容 embeddings url：可显式配置，或从 chat.completions.url 推断。 */
+    private static String inferEmbeddingsUrlFromChatCompletionsUrl(String chatUrl) {
+        if (chatUrl == null || chatUrl.trim().isEmpty()) {
+            return "";
+        }
+        String u = chatUrl.trim();
+        String needle = "/chat/completions";
+        int idx = u.indexOf(needle);
+        if (idx >= 0) {
+            return u.substring(0, idx) + "/embeddings";
+        }
+        return "";
+    }
+
+    public static String embeddingsUrl(String provider) {
+        if (PROVIDER_OPENAI.equals(provider)) {
+            String configured = firstOf(env("OPENAI_EMBEDDINGS_URL"), prop("openai.embeddings.url"));
+            if (!configured.isEmpty()) {
+                return configured;
+            }
+            String inferred = inferEmbeddingsUrlFromChatCompletionsUrl(openaiBaseUrl());
+            return !inferred.isEmpty() ? inferred : DEFAULT_OPENAI_EMBEDDINGS_URL;
+        }
+        if (PROVIDER_QWEN.equals(provider)) {
+            String configured = firstOf(env("QWEN_EMBEDDINGS_URL"), prop("qwen.embeddings.url"));
+            if (!configured.isEmpty()) {
+                return configured;
+            }
+            return inferEmbeddingsUrlFromChatCompletionsUrl(qwenBaseUrl());
+        }
+        if (PROVIDER_KIMI.equals(provider)) {
+            String configured = firstOf(env("KIMI_EMBEDDINGS_URL"), prop("kimi.embeddings.url"));
+            if (!configured.isEmpty()) {
+                return configured;
+            }
+            return inferEmbeddingsUrlFromChatCompletionsUrl(kimiBaseUrl());
+        }
+        return "";
+    }
+
+    public static String embeddingModel(String provider) {
+        if (PROVIDER_OPENAI.equals(provider)) {
+            return firstOf(env("OPENAI_EMBEDDING_MODEL"), prop("openai.embedding.model"), DEFAULT_OPENAI_EMBEDDING_MODEL);
+        }
+        if (PROVIDER_QWEN.equals(provider)) {
+            return firstOf(env("QWEN_EMBEDDING_MODEL"), prop("qwen.embedding.model"));
+        }
+        if (PROVIDER_KIMI.equals(provider)) {
+            return firstOf(env("KIMI_EMBEDDING_MODEL"), prop("kimi.embedding.model"));
+        }
+        return "";
+    }
+
+    public static String apiKeyForProvider(String provider) {
+        if (PROVIDER_OPENAI.equals(provider)) {
+            return openaiApiKey();
+        }
+        if (PROVIDER_QWEN.equals(provider)) {
+            return qwenApiKey();
+        }
+        if (PROVIDER_KIMI.equals(provider)) {
+            return kimiApiKey();
+        }
+        return "";
+    }
+
     /** 默认提供方：kimi / qwen / openai，未设置时优先已配置密钥的一方 */
     public static String defaultProvider() {
         String p = firstOf(env("ASSISTANT_DEFAULT_PROVIDER"), prop("assistant.default.provider"));
@@ -272,5 +378,113 @@ public final class AssistantConfig {
             return PROVIDER_OPENAI;
         }
         return PROVIDER_KIMI;
+    }
+
+    // ---------------- 额度与付费（小助手） ----------------
+
+    /**
+     * 每个用户每月免费对话次数上限（超出后需使用付费点数）。
+     * <p>环境变量：{@code ASSISTANT_MONTHLY_FREE_QUOTA}；配置键：{@code assistant.monthly.free.quota}。</p>
+     */
+    public static int monthlyFreeQuota() {
+        String v = firstOf(env("ASSISTANT_MONTHLY_FREE_QUOTA"), prop("assistant.monthly.free.quota"));
+        if (v.isEmpty()) {
+            return 30;
+        }
+        try {
+            int n = Integer.parseInt(v.trim());
+            return Math.max(0, Math.min(100000, n));
+        } catch (Exception ignored) {
+            return 30;
+        }
+    }
+
+    /**
+     * 兑换码/充值码（模拟付费后的发码流程）。
+     * <p>环境变量：{@code ASSISTANT_TOPUP_CODE}；配置键：{@code assistant.topup.code}。</p>
+     */
+    public static String topupCode() {
+        return firstOf(env("ASSISTANT_TOPUP_CODE"), prop("assistant.topup.code"));
+    }
+
+    /**
+     * 当免费额度用尽时的提示/付费引导（可选）。
+     * <p>环境变量：{@code ASSISTANT_PAY_HINT}；配置键：{@code assistant.pay.hint}。</p>
+     */
+    public static String payHint() {
+        return firstOf(env("ASSISTANT_PAY_HINT"), prop("assistant.pay.hint"));
+    }
+
+    /**
+     * 微信支付 Native：公众号或小程序绑定的 AppID（Native 下单必填）。
+     */
+    public static String wechatPayAppId() {
+        return firstOf(env("WECHAT_PAY_APPID"), prop("assistant.pay.wechat.appid"));
+    }
+
+    public static String wechatPayMchId() {
+        return firstOf(env("WECHAT_PAY_MCHID"), prop("assistant.pay.wechat.mchid"));
+    }
+
+    /** 商户 API 证书序列号（证书管理页可见）。 */
+    public static String wechatPayMerchantSerial() {
+        return firstOf(env("WECHAT_PAY_MERCHANT_SERIAL"), prop("assistant.pay.wechat.merchant.serial"));
+    }
+
+    /** APIv3 密钥（32 字节，微信支付商户平台设置）。 */
+    public static String wechatPayApiV3Key() {
+        return firstOf(env("WECHAT_PAY_API_V3_KEY"), prop("assistant.pay.wechat.api.v3.key"));
+    }
+
+    /** 商户 API 私钥 PEM 文件绝对路径（apiclient_key.pem）。 */
+    public static String wechatPayPrivateKeyPath() {
+        return firstOf(env("WECHAT_PAY_PRIVATE_KEY_PATH"), prop("assistant.pay.wechat.private.key.path"));
+    }
+
+    /**
+     * 支付结果通知 URL，须为公网 HTTPS，与商户平台配置的完全一致。
+     * 例：https://your.domain/ta-recruitment/api/assistant/pay/wechat/notify
+     */
+    public static String wechatPayNotifyUrl() {
+        return firstOf(env("WECHAT_PAY_NOTIFY_URL"), prop("assistant.pay.wechat.notify.url"));
+    }
+
+    /** 每点额度对应价格（分），如 10 表示 1 点 = 0.10 元。 */
+    public static int wechatPayFenPerCredit() {
+        String v = firstOf(env("WECHAT_PAY_FEN_PER_CREDIT"), prop("assistant.pay.wechat.fen.per.credit"));
+        if (v.isEmpty()) {
+            return 10;
+        }
+        try {
+            int n = Integer.parseInt(v.trim());
+            return Math.max(1, Math.min(100000, n));
+        } catch (Exception ignored) {
+            return 10;
+        }
+    }
+
+    public static String wechatPayDescription() {
+        String d = firstOf(env("WECHAT_PAY_DESCRIPTION"), prop("assistant.pay.wechat.description"));
+        return d.isEmpty() ? "小助手额度充值" : d;
+    }
+
+    /**
+     * 是否已配置微信 Native 扫码（私钥文件存在且必填项齐全）。
+     */
+    public static boolean wechatPayNativeReady() {
+        String appid = wechatPayAppId();
+        String mchid = wechatPayMchId();
+        String serial = wechatPayMerchantSerial();
+        String key = wechatPayApiV3Key();
+        String pk = wechatPayPrivateKeyPath();
+        String notify = wechatPayNotifyUrl();
+        if (appid.isEmpty() || mchid.isEmpty() || serial.isEmpty() || key.length() != 32 || pk.isEmpty() || notify.isEmpty()) {
+            return false;
+        }
+        try {
+            return Files.isRegularFile(Paths.get(pk));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

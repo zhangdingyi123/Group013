@@ -31,6 +31,9 @@ public class Storage {
     private static final String FRIEND_REQUESTS_FILE = "friend_requests.json";
     private static final String DM_READ_STATES_FILE = "dm_read_states.json";
     private static final String RESUMES_DIR = "resumes";
+    private static final String EMBEDDINGS_FILE = "embeddings.json";
+    private static final String ASSISTANT_USAGE_FILE = "assistant_usage.json";
+    private static final String ASSISTANT_PAY_ORDERS_FILE = "assistant_pay_orders.json";
 
     private static volatile String dataDir = DEFAULT_DATA_DIR;
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -117,6 +120,33 @@ public class Storage {
     }
     public static void saveApplications(List<Application> list) throws IOException {
         writeList(dataPath(APPLICATIONS_FILE), list);
+    }
+
+    // ---------- Embeddings (semantic match cache) ----------
+    private static final Type EMBEDDING_LIST_TYPE = new TypeToken<ArrayList<EmbeddingRecord>>(){}.getType();
+    public static List<EmbeddingRecord> loadEmbeddings() throws IOException {
+        return readList(dataPath(EMBEDDINGS_FILE), EMBEDDING_LIST_TYPE);
+    }
+    public static void saveEmbeddings(List<EmbeddingRecord> list) throws IOException {
+        writeList(dataPath(EMBEDDINGS_FILE), list);
+    }
+
+    // ---------- Assistant usage / quota ----------
+    private static final Type ASSISTANT_USAGE_LIST_TYPE = new TypeToken<ArrayList<AssistantUsage>>(){}.getType();
+    public static List<AssistantUsage> loadAssistantUsage() throws IOException {
+        return readList(dataPath(ASSISTANT_USAGE_FILE), ASSISTANT_USAGE_LIST_TYPE);
+    }
+    public static void saveAssistantUsage(List<AssistantUsage> list) throws IOException {
+        writeList(dataPath(ASSISTANT_USAGE_FILE), list);
+    }
+
+    // ---------- Assistant WeChat pay orders ----------
+    private static final Type ASSISTANT_PAY_ORDER_LIST_TYPE = new TypeToken<ArrayList<AssistantPayOrder>>(){}.getType();
+    public static List<AssistantPayOrder> loadAssistantPayOrders() throws IOException {
+        return readList(dataPath(ASSISTANT_PAY_ORDERS_FILE), ASSISTANT_PAY_ORDER_LIST_TYPE);
+    }
+    public static void saveAssistantPayOrders(List<AssistantPayOrder> list) throws IOException {
+        writeList(dataPath(ASSISTANT_PAY_ORDERS_FILE), list);
     }
 
     // ---------- Module Organisers ----------

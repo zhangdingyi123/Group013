@@ -6,6 +6,7 @@ import com.bupt.ta.service.FriendService;
 import com.bupt.ta.service.JobService;
 import com.bupt.ta.service.MessageService;
 import com.bupt.ta.util.I18n;
+import com.bupt.ta.util.TextLanguageUtil;
 import com.bupt.ta.model.FriendRequest;
 
 import javax.servlet.ServletException;
@@ -22,6 +23,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +32,8 @@ import java.util.Set;
 
 @WebServlet("/mo/dashboard")
 public class MODashboardServlet extends HttpServlet {
-    private static final Set<String> MO_DASHBOARD_TABS = new HashSet<>(Arrays.asList("positions", "post", "messages"));
+
+    private static final Set<String> MO_DASHBOARD_TABS = new HashSet<>(Arrays.asList("positions", "post", "messages", "edit"));
     private final JobService jobService = new JobService();
     private final MessageService messageService = new MessageService();
     private final ApplicantService applicantService = new ApplicantService();
@@ -40,7 +43,7 @@ public class MODashboardServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         ModuleOrganiser user = (ModuleOrganiser) req.getSession().getAttribute("moUser");
         if (user == null) {
-            resp.sendRedirect(req.getContextPath() + "/mo/auth");
+            handleMoGuestDashboardGet(req, resp);
             return;
         }
         if (wantsLegacyProfileTab(req)) {
@@ -57,6 +60,11 @@ public class MODashboardServlet extends HttpServlet {
             session.removeAttribute("moNotice");
             req.setAttribute("moNotice", moNotice);
         }
+        String moError = (String) session.getAttribute("moError");
+        if (moError != null) {
+            session.removeAttribute("moError");
+            req.setAttribute("moError", moError);
+        }
         try {
             List<Job> myJobs = jobService.findByModuleOrganiserId(user.getId());
             req.setAttribute("myJobs", myJobs);
@@ -64,6 +72,27 @@ public class MODashboardServlet extends HttpServlet {
             req.setAttribute("error", e.getMessage());
         }
         String tab = readMoDashboardTab(req);
+        if ("edit".equals(tab)) {
+            String jobId = req.getParameter("jobId");
+            if (jobId == null || jobId.trim().isEmpty()) {
+                resp.sendRedirect(moDashboardUrl(req, "positions"));
+                return;
+            }
+            try {
+                Optional<Job> ej = jobService.findById(jobId.trim());
+                if (!ej.isPresent() || !user.getId().equals(ej.get().getModuleOrganiserId())
+                        || !Job.STATUS_OPEN.equals(ej.get().getStatus())) {
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.edit.unavailable"));
+                    resp.sendRedirect(moDashboardUrl(req, "positions"));
+                    return;
+                }
+                req.setAttribute("moEditJob", ej.get());
+            } catch (Exception e) {
+                session.setAttribute("moNotice", I18n.msg(req, "mo.edit.unavailable"));
+                resp.sendRedirect(moDashboardUrl(req, "positions"));
+                return;
+            }
+        }
         if ("messages".equals(tab)) {
             try {
                 loadMoMessagesTab(req, user);
@@ -72,6 +101,30 @@ public class MODashboardServlet extends HttpServlet {
             }
         }
         req.setAttribute("moDashboardTab", tab);
+        req.getRequestDispatcher("/mo/dashboard.jsp").forward(req, resp);
+    }
+
+    /**
+     * 未登录访客：可进入工作台；发布岗位、私信等需登录后使用。
+     */
+    private void handleMoGuestDashboardGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        if (wantsLegacyProfileTab(req)) {
+            resp.sendRedirect(req.getContextPath() + "/mo/auth?returnUrl="
+                    + URLEncoder.encode("/mo/profile", StandardCharsets.UTF_8));
+            return;
+        }
+        String tab = readMoDashboardTab(req);
+        if (!"positions".equals(tab)) {
+            String ret = "/mo/dashboard?tab=" + tab;
+            resp.sendRedirect(req.getContextPath() + "/mo/auth?returnUrl="
+                    + URLEncoder.encode(ret, StandardCharsets.UTF_8));
+            return;
+        }
+        req.setAttribute("moGuestMode", Boolean.TRUE);
+        req.setAttribute("myJobs", Collections.emptyList());
+        req.setAttribute("moDmTotalUnread", 0);
+        req.setAttribute("moDashboardTab", "positions");
         req.getRequestDispatcher("/mo/dashboard.jsp").forward(req, resp);
     }
 
@@ -272,7 +325,12 @@ public class MODashboardServlet extends HttpServlet {
         HttpSession session = req.getSession();
         ModuleOrganiser user = (ModuleOrganiser) session.getAttribute("moUser");
         if (user == null) {
-            resp.sendRedirect(req.getContextPath() + "/mo/auth");
+            String path = moAuthReturnPathForUnauthenticatedPost(req);
+            if (!path.startsWith("/mo/") || path.contains("..")) {
+                path = "/mo/dashboard?tab=positions";
+            }
+            resp.sendRedirect(req.getContextPath() + "/mo/auth?returnUrl="
+                    + URLEncoder.encode(path, StandardCharsets.UTF_8));
             return;
         }
         String action = req.getParameter("action");
@@ -282,6 +340,14 @@ public class MODashboardServlet extends HttpServlet {
             String type = req.getParameter("type");
             String skillsStr = req.getParameter("requiredSkills");
             if (title != null && !title.trim().isEmpty()) {
+                String descTrim = description != null ? description.trim() : "";
+                String skillsRaw = skillsStr != null ? skillsStr : "";
+                String combined = title.trim() + "\n" + descTrim + "\n" + skillsRaw;
+                if (TextLanguageUtil.looksNonEnglishJobText(combined)) {
+                    session.setAttribute("moError", I18n.msg(req, "mo.post.notEnglish"));
+                    resp.sendRedirect(moDashboardUrl(req, "post"));
+                    return;
+                }
                 List<String> skills = new ArrayList<>();
                 if (skillsStr != null) {
                     for (String s : skillsStr.split("[,，\\s]+")) {
@@ -289,9 +355,55 @@ public class MODashboardServlet extends HttpServlet {
                     }
                 }
                 try {
-                    jobService.create(title.trim(), user.getId(), description != null ? description.trim() : "",
+                    jobService.create(title.trim(), user.getId(), descTrim,
                             type != null ? type : "course_ta", skills);
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.post.published"));
                 } catch (Exception ignored) {}
+            }
+            resp.sendRedirect(moDashboardUrl(req, "positions"));
+            return;
+        }
+        if ("updateJob".equals(action)) {
+            String jobId = req.getParameter("jobId");
+            String title = req.getParameter("title");
+            String description = req.getParameter("description");
+            String type = req.getParameter("type");
+            String skillsStr = req.getParameter("requiredSkills");
+            if (jobId != null && title != null && !title.trim().isEmpty()) {
+                String descTrim = description != null ? description.trim() : "";
+                String skillsRaw = skillsStr != null ? skillsStr : "";
+                String combined = title.trim() + "\n" + descTrim + "\n" + skillsRaw;
+                if (TextLanguageUtil.looksNonEnglishJobText(combined)) {
+                    session.setAttribute("moError", I18n.msg(req, "mo.post.notEnglish"));
+                    resp.sendRedirect(req.getContextPath() + "/mo/dashboard?tab=edit&jobId="
+                            + URLEncoder.encode(jobId.trim(), StandardCharsets.UTF_8));
+                    return;
+                }
+                try {
+                    Optional<Job> opt = jobService.findById(jobId.trim());
+                    if (opt.isPresent() && user.getId().equals(opt.get().getModuleOrganiserId())
+                            && Job.STATUS_OPEN.equals(opt.get().getStatus())) {
+                        Job j = opt.get();
+                        j.setTitle(title.trim());
+                        j.setDescription(descTrim);
+                        j.setType(type != null ? type : "course_ta");
+                        List<String> skills = new ArrayList<>();
+                        if (skillsStr != null) {
+                            for (String s : skillsStr.split("[,，\\s]+")) {
+                                if (!s.trim().isEmpty()) skills.add(s.trim());
+                            }
+                        }
+                        j.setRequiredSkills(skills);
+                        jobService.update(j);
+                        session.setAttribute("moNotice", I18n.msg(req, "mo.edit.ok"));
+                    } else {
+                        session.setAttribute("moNotice", I18n.msg(req, "mo.edit.unavailable"));
+                    }
+                } catch (Exception ignored) {
+                    session.setAttribute("moNotice", I18n.msg(req, "mo.edit.fail"));
+                }
+            } else {
+                session.setAttribute("moNotice", I18n.msg(req, "mo.edit.fail"));
             }
             resp.sendRedirect(moDashboardUrl(req, "positions"));
             return;
@@ -355,5 +467,31 @@ public class MODashboardServlet extends HttpServlet {
             return;
         }
         doGet(req, resp);
+    }
+
+    private static String moAuthReturnPathForUnauthenticatedPost(HttpServletRequest req) {
+        String action = req.getParameter("action");
+        if ("createJob".equals(action)) {
+            return "/mo/dashboard?tab=post";
+        }
+        if ("updateJob".equals(action)) {
+            String jobId = req.getParameter("jobId");
+            if (jobId != null && !jobId.trim().isEmpty()) {
+                return "/mo/dashboard?tab=edit&jobId=" + URLEncoder.encode(jobId.trim(), StandardCharsets.UTF_8);
+            }
+            return "/mo/dashboard?tab=positions";
+        }
+        if ("sendDm".equals(action)) {
+            String applicantId = req.getParameter("applicantId");
+            if (applicantId != null && !applicantId.trim().isEmpty()) {
+                return "/mo/dashboard?tab=messages&withApplicant="
+                        + URLEncoder.encode(applicantId.trim(), StandardCharsets.UTF_8);
+            }
+            return "/mo/dashboard?tab=messages";
+        }
+        if ("acceptFriendRequest".equals(action) || "requestFriendApplicant".equals(action)) {
+            return "/mo/dashboard?tab=messages";
+        }
+        return "/mo/dashboard?tab=positions";
     }
 }

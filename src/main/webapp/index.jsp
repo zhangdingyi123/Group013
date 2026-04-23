@@ -119,12 +119,12 @@
                 <h2 id="home-identity" class="home-section-title"><%= I18n.msg(request, "home.section.identity") %></h2>
                 <p class="home-section-desc"><%= I18n.msg(request, "home.section.identity.desc") %></p>
                 <div class="cards cards--identity">
-                    <a href="${pageContext.request.contextPath}/ta/auth" class="card card--emphasis">
+                    <a href="${pageContext.request.contextPath}/ta/dashboard" class="card card--emphasis">
                         <div class="card-icon">👤</div>
                         <h2><%= I18n.msg(request, "home.card.ta") %></h2>
                         <p><%= I18n.msg(request, "home.card.ta.desc") %></p>
                     </a>
-                    <a href="${pageContext.request.contextPath}/mo/auth" class="card card--emphasis">
+                    <a href="${pageContext.request.contextPath}/mo/dashboard" class="card card--emphasis">
                         <div class="card-icon">📋</div>
                         <h2><%= I18n.msg(request, "home.card.mo") %></h2>
                         <p><%= I18n.msg(request, "home.card.mo.desc") %></p>

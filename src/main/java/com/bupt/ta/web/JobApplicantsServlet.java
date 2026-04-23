@@ -71,6 +71,7 @@ public class JobApplicantsServlet extends HttpServlet {
                 }
                 req.setAttribute("job", job);
                 List<ApplicantMatch> recommended = matchHelper.recommendApplicantsForJobBalanced(jobId.trim());
+                req.setAttribute("jobMatchStats", MatchHelper.computeJobMatchStats(job, recommended, 6));
                 List<Application> applicationsForJob = applicationService.findByJobId(jobId.trim());
                 Map<String, Application> appByApplicantId = new HashMap<>();
                 for (Application app : applicationsForJob) {

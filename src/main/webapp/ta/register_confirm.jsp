@@ -1,6 +1,14 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.net.URLEncoder" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
 <%@ page import="com.bupt.ta.util.I18n" %>
 <%
+    String ctx = request.getContextPath();
+    String regReturnUrl = (String) request.getAttribute("regReturnUrl");
+    String taRegJsp = ctx + "/ta/register.jsp";
+    if (regReturnUrl != null && !regReturnUrl.isEmpty() && regReturnUrl.startsWith("/ta/") && !regReturnUrl.contains("..")) {
+        taRegJsp += "?returnUrl=" + URLEncoder.encode(regReturnUrl, StandardCharsets.UTF_8);
+    }
     String regName = (String) request.getAttribute("regName");
     String regEmail = (String) request.getAttribute("regEmail");
     String regStudentId = (String) request.getAttribute("regStudentId");
@@ -24,7 +32,7 @@
         <div style="display:flex;justify-content:flex-end;margin-bottom:0.65rem;">
             <jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/>
         </div>
-        <a href="${pageContext.request.contextPath}/ta/register.jsp" class="auth-back"><%= I18n.msg(request, "reg.confirm.backStep") %></a>
+        <a href="<%= taRegJsp %>" class="auth-back"><%= I18n.msg(request, "reg.confirm.backStep") %></a>
         <div class="form-page">
         <h1><%= I18n.msg(request, "reg.confirm.h1") %></h1>
         <p class="confirm-tip"><%= I18n.msg(request, "reg.confirm.tip") %></p>
@@ -49,11 +57,13 @@
         <form method="post" action="${pageContext.request.contextPath}/ta/auth">
             <input type="hidden" name="action" value="register">
             <div class="form-actions">
-                <a href="${pageContext.request.contextPath}/ta/register.jsp" class="btn btn-secondary"><%= I18n.msg(request, "reg.confirm.edit") %></a>
+                <a href="<%= taRegJsp %>" class="btn btn-secondary"><%= I18n.msg(request, "reg.confirm.edit") %></a>
                 <button type="submit" class="btn btn-primary"><%= I18n.msg(request, "reg.confirm.submit") %></button>
             </div>
         </form>
-        <p class="links"><a href="${pageContext.request.contextPath}/ta/auth"><%= I18n.msg(request, "reg.confirm.login") %></a></p>
+        <p class="links"><a href="<%= regReturnUrl != null && !regReturnUrl.isEmpty() && regReturnUrl.startsWith("/ta/") && !regReturnUrl.contains("..")
+                ? ctx + "/ta/auth?returnUrl=" + URLEncoder.encode(regReturnUrl, StandardCharsets.UTF_8)
+                : ctx + "/ta/auth" %>"><%= I18n.msg(request, "reg.confirm.login") %></a></p>
         </div>
     </main>
     <script src="${pageContext.request.contextPath}/js/ui.js?v=1" defer></script>

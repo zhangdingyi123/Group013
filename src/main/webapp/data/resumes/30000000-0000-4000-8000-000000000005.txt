@@ -1,5 +1,0 @@
-Lin Zhou · Cybersecurity track
-zhoulin@bupt.edu.cn
-
-Skills: cybersecurity labs, Python scripting, Linux command line.
-CTF campus competition; can help maintain lab environments.

@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bupt.ta.util.I18n" %>
 <%@ page import="com.bupt.ta.model.Application" %>
 <%@ page import="com.bupt.ta.model.Job" %>
 <%@ page import="com.bupt.ta.web.TADashboardServlet.ApplicationWithJob" %>
@@ -26,42 +27,48 @@
     }
 %>
 <section id="pc-applications" class="section">
-    <h2>我的申请</h2>
-    <p class="section-desc">查看申请状态；待审核时可撤销申请。面试/试讲安排需选择：确认参加、拒绝或希望更换时间。</p>
+    <h2><%= I18n.msg(request, "apps.title") %></h2>
+    <p class="section-desc"><%= I18n.msg(request, "apps.desc") %></p>
     <% if (myApplications.isEmpty()) { %>
-    <p class="empty-hint">暂无申请记录。</p>
+    <p class="empty-hint"><%= I18n.msg(request, "apps.empty") %></p>
     <% } else { %>
     <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>岗位</th><th>状态</th><th>面试/试讲</th><th>申请时间</th><th>操作</th></tr>
+            <tr>
+                <th><%= I18n.msg(request, "apps.th.job") %></th>
+                <th><%= I18n.msg(request, "apps.th.status") %></th>
+                <th><%= I18n.msg(request, "apps.th.iv") %></th>
+                <th><%= I18n.msg(request, "apps.th.time") %></th>
+                <th><%= I18n.msg(request, "apps.th.ops") %></th>
+            </tr>
         </thead>
         <tbody>
         <% for (ApplicationWithJob aw : myApplications) {
             Application app = aw.application;
             Job job = aw.job;
-            String title = job != null && job.getTitle() != null ? job.getTitle() : "（岗位已删除）";
+            String title = job != null && job.getTitle() != null ? job.getTitle() : I18n.msg(request, "apps.job.deleted");
             String st = app.getStatus() != null ? app.getStatus() : "";
             String badgeClass = "badge-pending";
             if (Application.STATUS_ACCEPTED.equals(st)) badgeClass = "badge-accepted";
             else if (Application.STATUS_REJECTED.equals(st)) badgeClass = "badge-rejected";
             else if (Application.STATUS_CANCELLED.equals(st)) badgeClass = "badge-cancelled";
             String stLabel = st;
-            if (Application.STATUS_PENDING.equals(st)) stLabel = "待审核";
-            else if (Application.STATUS_INTERVIEW.equals(st)) stLabel = "待面试";
-            else if (Application.STATUS_ACCEPTED.equals(st)) stLabel = "已录用";
-            else if (Application.STATUS_REJECTED.equals(st)) stLabel = "已拒绝";
-            else if (Application.STATUS_CANCELLED.equals(st)) stLabel = "已撤销";
+            if (Application.STATUS_PENDING.equals(st)) stLabel = I18n.msg(request, "apps.status.pending");
+            else if (Application.STATUS_INTERVIEW.equals(st)) stLabel = I18n.msg(request, "apps.status.interview");
+            else if (Application.STATUS_ACCEPTED.equals(st)) stLabel = I18n.msg(request, "apps.status.accepted");
+            else if (Application.STATUS_REJECTED.equals(st)) stLabel = I18n.msg(request, "apps.status.rejected");
+            else if (Application.STATUS_CANCELLED.equals(st)) stLabel = I18n.msg(request, "apps.status.cancelled");
             if (Application.STATUS_INTERVIEW.equals(st)) badgeClass = "badge-interview";
             String ivTa = Application.STATUS_INTERVIEW.equals(st) ? app.getInterviewTaStatus() : "";
             boolean ivAwaitTa = Application.STATUS_INTERVIEW.equals(st)
                     && Application.TA_IV_PENDING.equals(ivTa);
             String ivTaLabel = "";
             if (Application.STATUS_INTERVIEW.equals(st)) {
-                if (Application.TA_IV_PENDING.equals(ivTa)) ivTaLabel = "待确认";
-                else if (Application.TA_IV_CONFIRMED.equals(ivTa)) ivTaLabel = "已确认";
-                else if (Application.TA_IV_DECLINED.equals(ivTa)) ivTaLabel = "拒绝";
-                else if (Application.TA_IV_RESCHEDULE.equals(ivTa)) ivTaLabel = "更换时间";
+                if (Application.TA_IV_PENDING.equals(ivTa)) ivTaLabel = I18n.msg(request, "apps.iv.ta.pending");
+                else if (Application.TA_IV_CONFIRMED.equals(ivTa)) ivTaLabel = I18n.msg(request, "apps.iv.ta.confirmed");
+                else if (Application.TA_IV_DECLINED.equals(ivTa)) ivTaLabel = I18n.msg(request, "apps.iv.ta.declined");
+                else if (Application.TA_IV_RESCHEDULE.equals(ivTa)) ivTaLabel = I18n.msg(request, "apps.iv.ta.reschedule");
             }
             String det = app.getInterviewDetail();
             String detEsc = det == null ? "" : det.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
@@ -77,10 +84,10 @@
                 <td>
                     <% if (Application.STATUS_INTERVIEW.equals(st)) { %>
                     <% if (app.getInterviewAt() > 0) { %>
-                    <div class="app-iv-note"><strong>时间：</strong><%= sdf.format(new Date(app.getInterviewAt())) %></div>
+                    <div class="app-iv-note"><strong><%= I18n.msg(request, "apps.iv.time") %></strong><%= sdf.format(new Date(app.getInterviewAt())) %></div>
                     <% } %>
-                    <div class="app-iv-note"><strong>地点/链接：</strong><%= detEsc.isEmpty() ? "—" : detEsc %></div>
-                    <% } else { %>—<% } %>
+                    <div class="app-iv-note"><strong><%= I18n.msg(request, "apps.iv.place") %></strong><%= detEsc.isEmpty() ? I18n.msg(request, "common.dash") : detEsc %></div>
+                    <% } else { %><%= I18n.msg(request, "common.dash") %><% } %>
                 </td>
                 <td><%= sdf.format(new Date(app.getAppliedAt())) %></td>
                 <td>
@@ -88,27 +95,27 @@
                     <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;">
                         <input type="hidden" name="action" value="cancelApplication">
                         <input type="hidden" name="applicationId" value="<%= app.getId() %>">
-                        <button type="submit" class="btn btn-secondary btn-small">撤销申请</button>
+                        <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.cancel") %></button>
                     </form>
                     <% } else if (ivAwaitTa) { %>
                     <div style="display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;">
                     <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;">
                         <input type="hidden" name="action" value="confirmInterview">
                         <input type="hidden" name="applicationId" value="<%= app.getId() %>">
-                        <button type="submit" class="btn btn-primary btn-small">确认参加</button>
+                        <button type="submit" class="btn btn-primary btn-small"><%= I18n.msg(request, "apps.confirmAttend") %></button>
                     </form>
-                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;" onsubmit="return confirm('确定拒绝本次面试/试讲安排吗？');">
+                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;" onsubmit="return confirm('<%= I18n.msg(request, "apps.confirm.decline").replace(\"\\\\\", \"\\\\\\\\\").replace(\"'\", \"\\\\'\").replace(\"\\r\", \"\").replace(\"\\n\", \"\\\\n\") %>');">
                         <input type="hidden" name="action" value="declineInterview">
                         <input type="hidden" name="applicationId" value="<%= app.getId() %>">
-                        <button type="submit" class="btn btn-secondary btn-small">拒绝</button>
+                        <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.decline") %></button>
                     </form>
-                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;" onsubmit="return confirm('将通知招聘方您希望更换时间，确定吗？');">
+                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;" onsubmit="return confirm('<%= I18n.msg(request, "apps.confirm.reschedule").replace(\"\\\\\", \"\\\\\\\\\").replace(\"'\", \"\\\\'\").replace(\"\\r\", \"\").replace(\"\\n\", \"\\\\n\") %>');">
                         <input type="hidden" name="action" value="requestRescheduleInterview">
                         <input type="hidden" name="applicationId" value="<%= app.getId() %>">
-                        <button type="submit" class="btn btn-secondary btn-small">更换时间</button>
+                        <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.reschedule") %></button>
                     </form>
                     </div>
-                    <% } else { %>—<% } %>
+                    <% } else { %><%= I18n.msg(request, "common.dash") %><% } %>
                 </td>
             </tr>
         <% } %>

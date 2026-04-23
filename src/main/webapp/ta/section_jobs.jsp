@@ -6,8 +6,10 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
 <%
-    if (request.getAttribute("applicant") == null) {
+    Boolean taGuestMode = (Boolean) request.getAttribute("taGuestMode");
+    if (request.getAttribute("applicant") == null && !Boolean.TRUE.equals(taGuestMode)) {
         String c = request.getContextPath();
         if (session.getAttribute("taUser") != null) {
             response.sendRedirect(c + "/ta/dashboard");
@@ -43,6 +45,13 @@
     java.util.List<String> jobSkillOptions = (java.util.List<String>) request.getAttribute("jobSkillOptions");
     if (jobSkillOptions == null) jobSkillOptions = java.util.Collections.emptyList();
     String ctx = request.getContextPath();
+    String guestJobsReturnPath = "/ta/dashboard";
+    if (request.getQueryString() != null && !request.getQueryString().trim().isEmpty()) {
+        guestJobsReturnPath += "?" + request.getQueryString();
+    } else {
+        guestJobsReturnPath += "?tab=jobs";
+    }
+    String guestJobsReturnEnc = java.net.URLEncoder.encode(guestJobsReturnPath, StandardCharsets.UTF_8);
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 %>
 <div class="section">
@@ -126,10 +135,12 @@
                 <option value="title_asc" <%= "title_asc".equals(jobFilterSort) ? "selected" : "" %>><%= I18n.msg(request, "jobs.sort.titleAsc") %></option>
             </select>
         </div>
+        <% if (!Boolean.TRUE.equals(taGuestMode)) { %>
         <div class="chk">
             <input type="checkbox" id="hide-applied" name="hideApplied" value="1" <%= hideApplied ? "checked" : "" %>>
             <label for="hide-applied"><%= I18n.msg(request, "jobs.hideApplied") %></label>
         </div>
+        <% } %>
         <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "common.apply") %></button>
         <a href="<%= ctx %>/ta/dashboard?tab=jobs" class="btn btn-secondary btn-small" style="text-decoration:none;display:inline-block;line-height:1.25"><%= I18n.msg(request, "jobs.reset") %></a>
     </form>
@@ -167,10 +178,21 @@
         <p class="section-desc"><%= I18n.msg(request, "jobs.required") %> <%= String.join("、", j.getRequiredSkills()) %></p>
         <% } %>
         <p style="margin:.5rem 0 0">
+            <% if (Boolean.TRUE.equals(taGuestMode)) {
+                String dmRet = "/ta/dashboard?tab=messages&dmJobId=" + j.getId();
+                String dmEsc = java.net.URLEncoder.encode(dmRet, java.nio.charset.StandardCharsets.UTF_8);
+            %>
+            <a href="<%= ctx %>/ta/auth?returnUrl=<%= dmEsc %>" class="btn btn-secondary btn-small"><%= I18n.msg(request, "jobs.dmRecruiter") %></a>
+            <% } else { %>
             <a href="<%= ctx %>/ta/dashboard?tab=messages&amp;dmJobId=<%= j.getId() %>" class="btn btn-secondary btn-small"><%= I18n.msg(request, "jobs.dmRecruiter") %></a>
+            <% } %>
         </p>
         <% if (already) { %>
         <p class="applied-tag"><%= I18n.msg(request, "jobs.appliedTag") %></p>
+        <% } else if (Boolean.TRUE.equals(taGuestMode)) { %>
+        <p style="margin:.5rem 0 0">
+            <a href="<%= ctx %>/ta/auth?returnUrl=<%= guestJobsReturnEnc %>" class="btn btn-primary"><%= I18n.msg(request, "dash.ta.guest.applyLogin") %></a>
+        </p>
         <% } else { %>
         <form method="post" action="<%= ctx %>/ta/dashboard">
             <input type="hidden" name="action" value="apply">

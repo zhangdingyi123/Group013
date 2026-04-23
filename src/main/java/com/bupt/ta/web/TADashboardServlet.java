@@ -42,6 +42,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeSet;
+
 @WebServlet("/ta/dashboard")
 public class TADashboardServlet extends HttpServlet {
     private static final Set<String> TA_DASHBOARD_TABS = new HashSet<>(Arrays.asList(
@@ -58,7 +59,7 @@ public class TADashboardServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Applicant user = (Applicant) req.getSession().getAttribute("taUser");
         if (user == null) {
-            resp.sendRedirect(req.getContextPath() + "/ta/auth");
+            handleTaGuestDashboardGet(req, resp);
             return;
         }
         if (wantsLegacyProfileTab(req)) {
@@ -70,14 +71,22 @@ public class TADashboardServlet extends HttpServlet {
         try {
             req.setAttribute("taDmTotalUnread", messageService.totalUnreadForApplicant(user.getId()));
         } catch (IOException ignored) {}
+        String resumePlainText = null;
         if (user.getResumePath() != null && !user.getResumePath().isEmpty()) {
             try {
-                boolean isText = applicantService.isResumeText(user.getResumePath());
+                String rp = user.getResumePath();
+                boolean isText = applicantService.isResumeText(rp);
                 req.setAttribute("resumeIsText", isText);
-                req.setAttribute("resumeFilename", user.getResumePath());
+                req.setAttribute("resumeFilename", rp);
+                // 用于匹配/提示：尽量抽取简历纯文本（.txt / .pdf / .doc / .docx）
+                try {
+                    resumePlainText = applicantService.extractResumePlainText(rp);
+                } catch (Exception ignored) {}
+                // 用于展示/编辑：仅 .txt 读原文
                 if (isText) {
-                    String content = applicantService.getResumeContent(user.getResumePath());
-                    req.setAttribute("resumeContent", content != null ? content : "");
+                    String content = applicantService.getResumeContent(rp);
+                    resumePlainText = content != null ? content : "";
+                    req.setAttribute("resumeContent", resumePlainText);
                 }
             } catch (Exception ignored) {}
         }
@@ -107,7 +116,7 @@ public class TADashboardServlet extends HttpServlet {
             }
             req.setAttribute("appliedJobIds", appliedJobIds);
             if ("jobs".equals(tab)) {
-                req.setAttribute("openJobs", filterTaJobsForDisplay(req, allOpenJobs, appliedJobIds, user));
+                req.setAttribute("openJobs", filterTaJobsForDisplay(req, allOpenJobs, appliedJobIds, user, resumePlainText));
             } else {
                 req.setAttribute("openJobs", allOpenJobs);
             }
@@ -122,16 +131,10 @@ public class TADashboardServlet extends HttpServlet {
                 skillsJoined = sb.toString();
             }
             req.setAttribute("applicantSkillsJoined", skillsJoined);
-            // 根据简历与开放岗位识别技能短板并给出提示
-            String resumeText = null;
-            if (Boolean.TRUE.equals(req.getAttribute("resumeIsText")) && user.getResumePath() != null) {
-                try {
-                    resumeText = applicantService.getResumeContent(user.getResumePath());
-                } catch (Exception ignored) {}
-            }
-            List<String> resumeSkillGaps = matchHelper.getResumeBasedSkillGaps(user, resumeText, allOpenJobs);
+            // 根据简历与开放岗位识别技能短板并给出提示（与 jobs 列表匹配分共用已读简历正文）
+            List<String> resumeSkillGaps = matchHelper.getResumeBasedSkillGaps(user, resumePlainText, allOpenJobs);
             req.setAttribute("resumeSkillGaps", resumeSkillGaps);
-            List<String> resumeStrengths = matchHelper.getResumeBasedStrengths(user, resumeText, allOpenJobs);
+            List<String> resumeStrengths = matchHelper.getResumeBasedStrengths(user, resumePlainText, allOpenJobs);
             req.setAttribute("resumeStrengths", resumeStrengths);
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
@@ -159,6 +162,40 @@ public class TADashboardServlet extends HttpServlet {
             req.setAttribute("assistantSavedResumeTxt", okResume);
         }
         req.setAttribute("taDashboardTab", tab);
+        req.getRequestDispatcher("/ta/dashboard.jsp").forward(req, resp);
+    }
+
+    /**
+     * 未登录访客：仅可浏览「开放岗位」；其余分区需登录后使用。
+     */
+    private void handleTaGuestDashboardGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        if (wantsLegacyProfileTab(req)) {
+            resp.sendRedirect(req.getContextPath() + "/ta/auth?returnUrl="
+                    + URLEncoder.encode("/ta/profile", StandardCharsets.UTF_8));
+            return;
+        }
+        String tab = readDashboardTab(req);
+        if (!"jobs".equals(tab)) {
+            resp.sendRedirect(req.getContextPath() + "/ta/dashboard?tab=jobs");
+            return;
+        }
+        req.setAttribute("taGuestMode", Boolean.TRUE);
+        Applicant guestProbe = new Applicant();
+        try {
+            List<Job> allOpenJobs = jobService.findOpen();
+            req.setAttribute("openJobsTotal", allOpenJobs.size());
+            req.setAttribute("dmAllowedJobIds", Collections.emptySet());
+            req.setAttribute("appliedJobIds", Collections.<String>emptySet());
+            req.setAttribute("myApplications", Collections.emptyList());
+            List<Job> filtered = filterTaJobsForDisplay(req, allOpenJobs,
+                    Collections.<String>emptySet(), guestProbe, null);
+            req.setAttribute("openJobs", filtered);
+        } catch (Exception e) {
+            req.setAttribute("error", e.getMessage());
+        }
+        req.setAttribute("taDmTotalUnread", 0);
+        req.setAttribute("taDashboardTab", "jobs");
         req.getRequestDispatcher("/ta/dashboard.jsp").forward(req, resp);
     }
 
@@ -304,7 +341,8 @@ public class TADashboardServlet extends HttpServlet {
     }
 
     /** 开放岗位列表：关键词、类型、技能、隐藏已投、排序；并写入 JSP 用的筛选条件属性。 */
-    private List<Job> filterTaJobsForDisplay(HttpServletRequest req, List<Job> all, Set<String> appliedIds, Applicant user) {
+    private List<Job> filterTaJobsForDisplay(HttpServletRequest req, List<Job> all, Set<String> appliedIds,
+                                           Applicant user, String resumePlainText) {
         String jobQ = req.getParameter("jobQ");
         jobQ = jobQ != null ? jobQ.trim() : "";
         String jobType = req.getParameter("jobType");
@@ -370,16 +408,16 @@ public class TADashboardServlet extends HttpServlet {
             }
             out.add(j);
         }
-        sortTaJobs(out, jobSort, user);
+        sortTaJobs(out, jobSort, user, resumePlainText);
         Map<String, Integer> matchScores = new LinkedHashMap<>();
         for (Job j : out) {
-            matchScores.put(j.getId(), matchHelper.matchScore(user, j));
+            matchScores.put(j.getId(), matchHelper.matchScore(user, j, resumePlainText));
         }
         req.setAttribute("jobMatchScores", matchScores);
         return out;
     }
 
-    private void sortTaJobs(List<Job> jobs, String sort, Applicant user) {
+    private void sortTaJobs(List<Job> jobs, String sort, Applicant user, String resumePlainText) {
         switch (sort) {
             case "oldest":
                 jobs.sort(Comparator.comparingLong(Job::getCreatedAt));
@@ -388,7 +426,7 @@ public class TADashboardServlet extends HttpServlet {
                 jobs.sort(Comparator.comparing(j -> j.getTitle() != null ? j.getTitle() : "", String.CASE_INSENSITIVE_ORDER));
                 break;
             case "match_desc":
-                jobs.sort((a, b) -> Integer.compare(matchHelper.matchScore(user, b), matchHelper.matchScore(user, a)));
+                jobs.sort(Comparator.comparingInt((Job j) -> matchHelper.matchScore(user, j, resumePlainText)).reversed());
                 break;
             default:
                 jobs.sort(Comparator.comparingLong(Job::getCreatedAt).reversed());
@@ -396,9 +434,14 @@ public class TADashboardServlet extends HttpServlet {
         }
     }
 
-    /** 投递后回到「开放岗位」并保留筛选条件。 */
+    /** 投递后回到「开放岗位」并保留筛选条件（含 context path，用于站内 redirect）。 */
     private static String jobsTabUrlWithFilters(HttpServletRequest req) {
-        StringBuilder sb = new StringBuilder(req.getContextPath()).append("/ta/dashboard?tab=jobs");
+        return req.getContextPath() + jobsTabRelativePathWithFilters(req);
+    }
+
+    /** 登录回跳用：相对应用根路径，不含 context path。 */
+    static String jobsTabRelativePathWithFilters(HttpServletRequest req) {
+        StringBuilder sb = new StringBuilder("/ta/dashboard?tab=jobs");
         String jobQ = req.getParameter("jobQ");
         if (jobQ != null && !jobQ.trim().isEmpty()) {
             sb.append("&jobQ=").append(URLEncoder.encode(jobQ.trim(), StandardCharsets.UTF_8));
@@ -421,12 +464,39 @@ public class TADashboardServlet extends HttpServlet {
         return sb.toString();
     }
 
+    private static String taAuthReturnPathForUnauthenticatedPost(HttpServletRequest req) {
+        String action = req.getParameter("action");
+        if ("apply".equals(action)) {
+            return jobsTabRelativePathWithFilters(req);
+        }
+        if ("resume".equals(action)) {
+            return "/ta/dashboard?tab=resume";
+        }
+        if ("confirmInterview".equals(action) || "declineInterview".equals(action)
+                || "requestRescheduleInterview".equals(action) || "cancelApplication".equals(action)) {
+            return "/ta/dashboard?tab=applications";
+        }
+        if ("requestFriendMo".equals(action) || "acceptFriendRequest".equals(action) || "sendDm".equals(action)) {
+            String withMo = req.getParameter("withMo");
+            if (withMo != null && !withMo.trim().isEmpty()) {
+                return "/ta/dashboard?tab=messages&withMo=" + URLEncoder.encode(withMo.trim(), StandardCharsets.UTF_8);
+            }
+            return "/ta/dashboard?tab=messages";
+        }
+        return "/ta/dashboard?tab=jobs";
+    }
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         Applicant user = (Applicant) req.getSession().getAttribute("taUser");
         if (user == null) {
-            resp.sendRedirect(req.getContextPath() + "/ta/auth");
+            String path = taAuthReturnPathForUnauthenticatedPost(req);
+            if (!path.startsWith("/ta/") || path.contains("..")) {
+                path = "/ta/dashboard?tab=jobs";
+            }
+            resp.sendRedirect(req.getContextPath() + "/ta/auth?returnUrl="
+                    + URLEncoder.encode(path, StandardCharsets.UTF_8));
             return;
         }
         String action = req.getParameter("action");

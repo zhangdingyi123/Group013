@@ -1,6 +1,0 @@
-Yang Liu · Beijing University of Posts and Telecommunications
-Email: liuyang@bupt.edu.cn
-
-Skills: Python, machine learning basics; available for exam proctoring and lab support.
-
-Experience: Completed ML course project (classification and regression); one semester as a Python TA volunteer.

@@ -14,7 +14,9 @@
         <div style="display:flex;justify-content:flex-end;margin-bottom:0.65rem;">
             <jsp:include page="/WEB-INF/jsp/lang_switch.jsp"/>
         </div>
-        <a href="${pageContext.request.contextPath}/" class="auth-back"><%= I18n.msg(request, "common.backHome") %></a>
+        <% request.setAttribute("authRegisterLoginPath", "/admin/auth");
+           request.setAttribute("authReturnPrefix", "/admin/"); %>
+        <jsp:include page="/WEB-INF/jsp/auth_back_register_to_login.jsp"/>
         <div class="form-page">
         <h1><%= I18n.msg(request, "reg.admin.title") %></h1>
         <% if (request.getAttribute("error") != null) { %>
