@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ta-recruitment
+    runtime: docker
+    autoDeploy: true
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: TZ
+        value: Asia/Shanghai
+      - key: JAVA_TOOL_OPTIONS
+        value: -Dfile.encoding=UTF-8
+      # Put sensitive values in Render Dashboard secrets.
+      # - key: OPENAI_API_KEY
+      #   sync: false
+      # - key: QWEN_API_KEY
+      #   sync: false
+      # - key: KIMI_API_KEY
+      #   sync: false

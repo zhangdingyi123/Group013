@@ -1,0 +1,9 @@
+target/
+*.class
+*.jar
+*.war
+data/*.json
+.idea/
+*.iml
+.DS_Store
+.venv/

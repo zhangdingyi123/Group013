@@ -1,0 +1,35 @@
+[
+  {
+    "id": "56e75de6-728b-58b8-bb09-463dc4c75db1",
+    "title": "Servlet 部署后 404，大家怎么排查？",
+    "body": "war 已部署但访问路径总 404，想确认 context path 与 web.xml 的 servlet-mapping。",
+    "authorId": "51fd69c5-e065-5534-9021-3e02501aea8f",
+    "authorRole": "ta",
+    "authorName": "刘晨",
+    "createdAt": 1775721600000,
+    "lastReplyAt": 1775739600000,
+    "replyCount": 2
+  },
+  {
+    "id": "f06c410d-9a70-51ae-a7ed-39b0b4f5e297",
+    "title": "监考排班是否可以申请调换？",
+    "body": "期中监考与另一门考试冲突，想问问调换流程。",
+    "authorId": "b05602da-b896-5fcb-938d-01c0ff26709e",
+    "authorRole": "ta",
+    "authorName": "周若曦",
+    "createdAt": 1775808000000,
+    "lastReplyAt": 1775808000000,
+    "replyCount": 0
+  },
+  {
+    "id": "bf477f1a-83de-5cce-8236-7abb99226084",
+    "title": "本学年助教评优时间节点提醒",
+    "body": "请各位课程组织者关注学院教务通知，材料提交截止 6 月 15 日。",
+    "authorId": "b19c8fa5-62f0-5328-8d6f-0de3460dc91c",
+    "authorRole": "mo",
+    "authorName": "王副教授",
+    "createdAt": 1775894400000,
+    "lastReplyAt": 1775901600000,
+    "replyCount": 1
+  }
+]
