@@ -47,7 +47,7 @@ public class TAAuthServlet extends HttpServlet {
             String email = req.getParameter("email");
             String password = req.getParameter("password");
             Optional<Applicant> opt = applicantService.findByEmail(email);
-            if (opt.isPresent() && PasswordUtil.check(password, opt.get().getPasswordHash())) {
+            if (opt.isPresent() && PasswordUtil.checkWithSalt(password, opt.get().getPasswordHash())) {
                 HttpSession session = req.getSession(true);
                 session.setAttribute("taUser", opt.get());
                 String returnUrl = req.getParameter("returnUrl");
@@ -142,7 +142,7 @@ public class TAAuthServlet extends HttpServlet {
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);
                 return;
             }
-            Applicant a = applicantService.create(name, email, PasswordUtil.hash(password), studentId, phone.trim());
+            Applicant a = applicantService.create(name, email, PasswordUtil.hashWithSalt(password), studentId, phone.trim());
             if (a == null) {
                 req.setAttribute("error", I18n.msg(req, "err.ta.sid.exists"));
                 req.getRequestDispatcher("/ta/register.jsp").forward(req, resp);

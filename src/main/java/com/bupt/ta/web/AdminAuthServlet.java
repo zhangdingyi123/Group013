@@ -43,7 +43,7 @@ public class AdminAuthServlet extends HttpServlet {
             }
             try {
                 Optional<Admin> opt = adminService.findByEmail(emailTrim);
-                if (opt.isPresent() && PasswordUtil.check(password, opt.get().getPasswordHash())) {
+                if (opt.isPresent() && PasswordUtil.checkWithSalt(password, opt.get().getPasswordHash())) {
                     HttpSession session = req.getSession(true);
                     session.setAttribute("adminUser", opt.get());
                     resp.sendRedirect(req.getContextPath() + "/admin/workload");
@@ -71,7 +71,7 @@ public class AdminAuthServlet extends HttpServlet {
                 Admin admin = adminService.create(
                         name != null ? name.trim() : "",
                         email.trim(),
-                        PasswordUtil.hash(password));
+                        PasswordUtil.hashWithSalt(password));
                 if (admin == null) {
                     req.setAttribute("error", I18n.msg(req, "err.admin.registered"));
                     req.getRequestDispatcher("/admin/register.jsp").forward(req, resp);

@@ -3,6 +3,7 @@ package com.bupt.ta.service;
 import com.bupt.ta.model.Applicant;
 import com.bupt.ta.model.Application;
 import com.bupt.ta.model.Job;
+import com.bupt.ta.service.SkillExtractor;
 
 import java.io.IOException;
 import java.util.*;
@@ -179,20 +180,14 @@ public class MatchHelper {
         return matchScore(applicant, job, null);
     }
 
-    /**
-     * 计算匹配度：档案技能 + 可选简历正文（与岗位所需技能做 {@link #extractSkillsFromResume} 关键词匹配后合并）。
-     */
-    public int matchScore(Applicant applicant, Job job, String resumeText) {
-        Integer semantic = semanticMatchService.semanticMatchScore(applicant, job, resumeText);
-        if (semantic != null) {
-            return semantic;
-        }
+    private int computeRuleMatchScore(Applicant applicant, Job job, String resumeText) {
         if (job.getRequiredSkills() == null || job.getRequiredSkills().isEmpty()) {
             return 100;
         }
         Set<String> required = job.getRequiredSkills().stream()
                 .map(String::toLowerCase).collect(Collectors.toSet());
         Set<String> has = new HashSet<>();
+        // 手动技能
         if (applicant.getSkills() != null) {
             for (String s : applicant.getSkills()) {
                 if (s != null && !s.trim().isEmpty()) {
@@ -200,13 +195,42 @@ public class MatchHelper {
                 }
             }
         }
+        // 简历规则提取（使用增强版）
         if (resumeText != null && !resumeText.isEmpty()) {
-            for (String s : extractSkillsFromResume(resumeText, job.getRequiredSkills())) {
+            Set<String> fromResume = SkillExtractor.extractSkills(resumeText, job.getRequiredSkills());
+            for (String s : fromResume) {
                 has.add(s.trim().toLowerCase());
             }
         }
         long match = required.stream().filter(has::contains).count();
         return (int) (match * 100 / required.size());
+    }
+
+    /**
+     * 计算匹配度：档案技能 + 可选简历正文（与岗位所需技能做 {@link #extractSkillsFromResume} 关键词匹配后合并）。
+     */
+    public int matchScore(Applicant applicant, Job job, String resumeText) {
+        // 1. 规则匹配分（手动技能 + 增强规则提取）
+        int ruleScore = computeRuleMatchScore(applicant, job, resumeText);
+
+        // 2. 尝试获取 AI 语义匹配分（可能为 null，如果未开启或失败）
+        Integer semanticScore = semanticMatchService.semanticMatchScore(applicant, job, resumeText);
+
+        // 3. 融合策略
+        if (semanticScore != null) {
+            // 动态权重：规则分数低而语义分数高，说明简历有隐含技能，提高语义权重
+            double semanticWeight = 0.5;  // 默认各占一半
+            if (ruleScore < 30 && semanticScore > 70) {
+                semanticWeight = 0.8;      // 更信任语义
+            } else if (ruleScore > 70 && semanticScore < 30) {
+                semanticWeight = 0.2;      // 更信任规则
+            }
+            double finalScore = ruleScore * (1 - semanticWeight) + semanticScore * semanticWeight;
+            return (int) Math.round(finalScore);
+        }
+
+        // 没有AI分数时，纯规则分数
+        return ruleScore;
     }
 
     /**
@@ -303,16 +327,7 @@ public class MatchHelper {
 
     /** 从简历文本中识别出现的技能（与已知技能集做关键词匹配，忽略大小写） */
     public Set<String> extractSkillsFromResume(String resumeText, Collection<String> knownSkills) {
-        Set<String> detected = new HashSet<>();
-        if (resumeText == null || resumeText.isEmpty() || knownSkills == null) return detected;
-        String lower = resumeText.toLowerCase();
-        for (String skill : knownSkills) {
-            if (skill == null || skill.trim().isEmpty()) continue;
-            if (lower.contains(skill.trim().toLowerCase())) {
-                detected.add(skill.trim());
-            }
-        }
-        return detected;
+        return SkillExtractor.extractSkills(resumeText, knownSkills);
     }
 
     /**

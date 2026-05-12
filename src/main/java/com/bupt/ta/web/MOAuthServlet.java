@@ -37,7 +37,7 @@ public class MOAuthServlet extends HttpServlet {
             String email = req.getParameter("email");
             String password = req.getParameter("password");
             Optional<ModuleOrganiser> opt = moService.findByEmail(email);
-            if (opt.isPresent() && PasswordUtil.check(password, opt.get().getPasswordHash())) {
+            if (opt.isPresent() && PasswordUtil.checkWithSalt(password, opt.get().getPasswordHash())) {
                 HttpSession session = req.getSession(true);
                 session.setAttribute("moUser", opt.get());
                 String returnUrl = req.getParameter("returnUrl");
@@ -63,7 +63,7 @@ public class MOAuthServlet extends HttpServlet {
                 req.getRequestDispatcher("/mo/register.jsp").forward(req, resp);
                 return;
             }
-            ModuleOrganiser mo = moService.create(name.trim(), email.trim(), PasswordUtil.hash(password),
+            ModuleOrganiser mo = moService.create(name.trim(), email.trim(), PasswordUtil.hashWithSalt(password),
                     department != null ? department.trim() : "");
             if (mo == null) {
                 req.setAttribute("error", I18n.msg(req, "err.mo.email.used"));
