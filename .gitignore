@@ -7,3 +7,11 @@ data/*.json
 *.iml
 .DS_Store
 .venv/
+.pip_packages/
+.pydeps/
+.tmp_pypdf/
+.mplconfig/
+__pycache__/
+*.pyc
+Software_group013.zip
+tools/

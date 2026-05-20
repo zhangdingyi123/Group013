@@ -51,6 +51,6 @@ def process_docx(path: str):
 
 if __name__ == "__main__":
     p = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-        os.path.dirname(__file__), "..", "Report_group013.docx"
+        os.path.dirname(__file__), "submission_docx", "Report_group013.docx"
     )
     process_docx(os.path.abspath(p))
