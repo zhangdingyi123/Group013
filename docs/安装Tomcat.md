@@ -73,4 +73,4 @@ cd /Users/dingyi.zhang/Desktop/软工
 mvn tomcat7:run
 ```
 
-然后访问：**http://localhost:8080/ta-recruitment/**
+然后访问：**http://localhost:8082/**（内嵌 Tomcat 根路径为 `/`，端口见 `pom.xml` 中 `maven.tomcat.port`，默认 8082）

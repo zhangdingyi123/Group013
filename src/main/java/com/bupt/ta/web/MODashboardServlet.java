@@ -205,6 +205,9 @@ public class MODashboardServlet extends HttpServlet {
             this.applicantId = applicantId;
             this.applicantName = applicantName;
         }
+        public String getRequestId() { return requestId; }
+        public String getApplicantId() { return applicantId; }
+        public String getApplicantName() { return applicantName; }
     }
 
     public static class MoApplicantThreadRow {
@@ -319,6 +322,14 @@ public class MODashboardServlet extends HttpServlet {
         return req.getContextPath() + "/mo/dashboard?tab=" + tab;
     }
 
+    private static String moMessagesUrl(HttpServletRequest req, String applicantId) {
+        StringBuilder url = new StringBuilder(moDashboardUrl(req, "messages"));
+        if (applicantId != null && !applicantId.trim().isEmpty()) {
+            url.append("&withApplicant=").append(URLEncoder.encode(applicantId.trim(), StandardCharsets.UTF_8));
+        }
+        return url.toString();
+    }
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
@@ -424,13 +435,14 @@ public class MODashboardServlet extends HttpServlet {
         }
         if ("acceptFriendRequest".equals(action)) {
             String requestId = req.getParameter("requestId");
+            String applicantId = req.getParameter("applicantId");
             try {
                 boolean ok = friendService.acceptRequestAsMo(requestId, user.getId());
                 session.setAttribute("moDmNotice", ok ? I18n.msg(req, "dm.mo.accept.ok") : I18n.msg(req, "dm.mo.accept.fail"));
             } catch (Exception e) {
                 session.setAttribute("moDmNotice", I18n.msg(req, "dm.ta.op.fail"));
             }
-            resp.sendRedirect(moDashboardUrl(req, "messages"));
+            resp.sendRedirect(moMessagesUrl(req, applicantId));
             return;
         }
         if ("requestFriendApplicant".equals(action)) {
@@ -441,7 +453,7 @@ public class MODashboardServlet extends HttpServlet {
             } catch (Exception e) {
                 session.setAttribute("moDmNotice", I18n.msg(req, "dm.ta.op.fail"));
             }
-            resp.sendRedirect(moDashboardUrl(req, "messages"));
+            resp.sendRedirect(moMessagesUrl(req, applicantId));
             return;
         }
         if ("sendDm".equals(action)) {

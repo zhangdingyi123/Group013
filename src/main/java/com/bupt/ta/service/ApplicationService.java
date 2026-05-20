@@ -159,4 +159,49 @@ public class ApplicationService {
     public Optional<Application> getApplication(String applicantId, String jobId) throws IOException {
         return findByApplicantAndJob(applicantId, jobId);
     }
+
+    /**
+     * 管理员将已录用记录转移至另一位助教：保持岗位仍为已录用，仅变更 applicantId。
+     */
+    public boolean transferAcceptedHire(String applicationId, String newApplicantId) throws IOException {
+        if (applicationId == null || newApplicantId == null) {
+            return false;
+        }
+        String targetId = newApplicantId.trim();
+        if (targetId.isEmpty()) {
+            return false;
+        }
+        Optional<Application> opt = findById(applicationId.trim());
+        if (opt.isEmpty()) {
+            return false;
+        }
+        Application app = opt.get();
+        if (!Application.STATUS_ACCEPTED.equals(app.getStatus())) {
+            return false;
+        }
+        if (targetId.equals(app.getApplicantId())) {
+            return false;
+        }
+        if (applicantService.findById(targetId).isEmpty()) {
+            return false;
+        }
+        for (Application other : findByJobId(app.getJobId())) {
+            if (other.getId().equals(app.getId())) {
+                continue;
+            }
+            if (!targetId.equals(other.getApplicantId())) {
+                continue;
+            }
+            if (Application.STATUS_ACCEPTED.equals(other.getStatus())) {
+                return false;
+            }
+            String st = other.getStatus();
+            if (!Application.STATUS_CANCELLED.equals(st) && !Application.STATUS_REJECTED.equals(st)) {
+                return false;
+            }
+        }
+        app.setApplicantId(targetId);
+        app.clearInterviewFields();
+        return update(app);
+    }
 }

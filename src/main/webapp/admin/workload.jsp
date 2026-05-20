@@ -13,6 +13,9 @@
     @SuppressWarnings("unchecked")
     java.util.List<AdminServlet.AcceptedAssignment> acceptedDetails = (java.util.List<AdminServlet.AcceptedAssignment>) request.getAttribute("acceptedDetails");
     if (acceptedDetails == null) acceptedDetails = java.util.Collections.emptyList();
+    @SuppressWarnings("unchecked")
+    java.util.List<AdminServlet.ApplicantOption> applicantOptions = (java.util.List<AdminServlet.ApplicantOption>) request.getAttribute("applicantOptions");
+    if (applicantOptions == null) applicantOptions = java.util.Collections.emptyList();
 %>
 <!DOCTYPE html>
 <html lang="<%= I18n.htmlLangAttr(request) %>">
@@ -145,6 +148,11 @@
       .tab-panel .panel-intro{color:#64748b;font-size:.88rem;margin:0 0 .85rem;line-height:1.55}
       .btn-danger{display:inline-block;padding:.4rem .75rem;border:none;border-radius:8px;font-size:.82rem;font-weight:500;cursor:pointer;font-family:inherit;background:#fee2e2;color:#991b1b}
       .btn-danger:hover{background:#fecaca}
+      .btn-transfer{display:inline-block;padding:.4rem .75rem;border:none;border-radius:8px;font-size:.82rem;font-weight:500;cursor:pointer;font-family:inherit;background:#dbeafe;color:#1d4ed8}
+      .btn-transfer:hover{background:#bfdbfe}
+      .ops-cell{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+      .transfer-form{display:inline-flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:0}
+      .transfer-form select{padding:.35rem .5rem;border:1px solid #cbd5e1;border-radius:8px;font-size:.82rem;max-width:11rem}
       .empty-hint{color:#64748b;font-size:.9rem;padding:1.25rem 0;text-align:center}
       .table-wrap{
         overflow-x:auto;
@@ -230,12 +238,30 @@
                         String jobDisp = row.jobTitle != null ? row.jobTitle : "";
                         String cfmRaw = I18n.msg(request, "admin.wl.cancel.confirm", dispName, jobDisp);
                         String jsCfm = cfmRaw.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", "\\n");
+                        String transferCfmRaw = I18n.msg(request, "admin.wl.transfer.confirm", dispName, jobDisp);
+                        String jsTransferCfm = transferCfmRaw.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\r", " ").replace("\n", "\\n");
                     %>
                         <tr>
                             <td><%= row.applicantName %></td>
                             <td><%= row.applicantEmail %></td>
                             <td><%= row.jobTitle %></td>
-                            <td>
+                            <td class="ops-cell">
+                                <% if (!applicantOptions.isEmpty()) { %>
+                                <form method="post" action="${pageContext.request.contextPath}/admin/workload" class="transfer-form"
+                                      onsubmit="var s=this.querySelector('select');if(!s||!s.value){alert('<%= I18n.msg(request, "admin.transfer.pick").replace("'", "\\'") %>');return false;}return confirm('<%= jsTransferCfm %>');">
+                                    <input type="hidden" name="action" value="transferApplication">
+                                    <input type="hidden" name="applicationId" value="<%= row.applicationId %>">
+                                    <select name="newApplicantId" aria-label="<%= I18n.msg(request, "admin.wl.transfer.to") %>">
+                                        <option value=""><%= I18n.msg(request, "admin.wl.transfer.pick") %></option>
+                                        <% for (AdminServlet.ApplicantOption opt : applicantOptions) {
+                                            if (opt.id.equals(row.applicantId)) continue;
+                                        %>
+                                        <option value="<%= opt.id %>"><%= opt.name %><% if (opt.email != null && !opt.email.isEmpty()) { %> (<%= opt.email %>)<% } %></option>
+                                        <% } %>
+                                    </select>
+                                    <button type="submit" class="btn-transfer"><%= I18n.msg(request, "admin.wl.transfer") %></button>
+                                </form>
+                                <% } %>
                                 <form method="post" action="${pageContext.request.contextPath}/admin/workload" style="display:inline;margin:0"
                                       onsubmit="return confirm('<%= jsCfm %>');">
                                     <input type="hidden" name="action" value="cancelApplication">

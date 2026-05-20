@@ -1,8 +1,18 @@
 package com.bupt.ta.util;
 
+/**
+ * 向量运算工具，供可选的语义匹配（embeddings）使用。
+ */
 public final class VectorUtil {
     private VectorUtil() {}
 
+    /**
+     * 计算两向量的余弦相似度。
+     *
+     * @param a 向量 a
+     * @param b 向量 b（长度须与 a 相同）
+     * @return 相似度 ∈ [-1, 1]；参数无效时返回 {@link Double#NaN}
+     */
     public static double cosineSimilarity(float[] a, float[] b) {
         if (a == null || b == null || a.length == 0 || b.length == 0 || a.length != b.length) {
             return Double.NaN;
@@ -23,7 +33,12 @@ public final class VectorUtil {
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
-    /** 将 cosine[-1,1] 映射为整数分数[0,100] */
+    /**
+     * 将余弦相似度 [-1, 1] 线性映射为 0–100 的整数匹配分。
+     *
+     * @param cosine 余弦值
+     * @return 0–100；非法输入返回 0
+     */
     public static int cosineToScore0to100(double cosine) {
         if (Double.isNaN(cosine) || Double.isInfinite(cosine)) {
             return 0;

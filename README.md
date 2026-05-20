@@ -1,6 +1,204 @@
 # 助教招聘系统 · 北京邮电大学国际学院
 
+**Group 013 · EBU6304 Software Engineering**
+
 基于 **Java Servlet / JSP** 的轻量级 Web 应用，用于助教申请、岗位发布与录用管理。数据以 **JSON 与文本文件** 持久化在应用目录下的 `data/`，**不依赖数据库**，便于课程演示与本地部署。
+
+| 交付物 | 位置 |
+|--------|------|
+| **自述文件**（软件搭建、配置、运行） | [`自述文件.md`](自述文件.md) |
+| 项目总览（本文件） | `README.md` |
+| 用户手册（含界面截图） | `docs/UserManual.md` |
+| 测试程序 | `test/java/`（JUnit）；说明见 `test/测试文档说明.md`、`test/测试用例说明.md` |
+| 代码文档（JavaDoc） | 源码注释；生成：`mvn javadoc:javadoc` → `target/site/apidocs/` |
+
+---
+
+## 一、软件搭建
+
+### 1.1 环境要求
+
+| 组件 | 版本建议 | 说明 |
+|------|----------|------|
+| **JDK** | **11** 或以上 | 与 `pom.xml` 中 `maven.compiler.source/target` 一致 |
+| **Apache Maven** | 3.6+ | 用于编译、打包、内嵌运行与单元测试 |
+| **浏览器** | Chrome / Edge / Firefox | 推荐 Chrome |
+| **Tomcat**（可选） | 9.x / 10.x | 独立部署 WAR 时使用，详见 [`docs/安装Tomcat.md`](docs/安装Tomcat.md) |
+
+验证环境：
+
+```bash
+java -version    # 应显示 11 或更高
+mvn -version
+```
+
+若 `java` 不可用，请安装 JDK 11 并配置 `JAVA_HOME`（macOS 可用 `brew install openjdk@11`）。
+
+### 1.2 获取源码
+
+```bash
+# 克隆仓库后进入项目根目录（目录名以实际为准，例如「软工」）
+cd /path/to/软工
+```
+
+项目为 Maven 标准结构：源码在 `src/main/java`、`src/main/webapp`，测试在 `test/java/`。
+
+### 1.3 编译与打包
+
+```bash
+# 编译并生成 WAR（跳过测试可加 -DskipTests）
+mvn clean package
+
+# 运行单元测试（可选）
+mvn test
+```
+
+| 产物 | 路径 |
+|------|------|
+| WAR 包 | `target/ta-recruitment.war` |
+| 编译后的 class | `target/classes/`、`target/ta-recruitment/WEB-INF/classes/` |
+
+**技术栈摘要**：Java 11、Servlet 4.0、JSP、JSTL、Gson（JSON）、Apache PDFBox / POI（简历 PDF/Word 正文抽取）。
+
+---
+
+## 二、配置说明
+
+### 2.1 数据目录（必选，自动初始化）
+
+应用启动时由 `AppListener` 将数据目录设为 **`{Web 应用根目录}/data`**：
+
+| 场景 | `data/` 实际路径 |
+|------|------------------|
+| Maven 内嵌 Tomcat 开发 | `src/main/webapp/data/`（运行时会读写该目录） |
+| 独立 Tomcat 部署 WAR | `webapps/ta-recruitment/data/` |
+
+主要数据文件：
+
+| 文件 / 目录 | 用途 |
+|-------------|------|
+| `applicants.json` | 应聘者 |
+| `module_organisers.json` | 课程组织者 |
+| `jobs.json` / `applications.json` | 岗位与申请 |
+| `admins.json` | 管理员 |
+| `messages.json`、`dm_read_states.json` | 站内信与已读状态 |
+| `forum_threads.json`、`forum_replies.json` | 论坛 |
+| `friend_links.json`、`friend_requests.json` | 好友 |
+| `data/resumes/` | 简历文本 |
+| `embeddings.json`（可选） | 语义匹配向量缓存 |
+
+密码经 **SHA-256** 哈希后存入 JSON。**请勿将含真实密钥或生产数据的 `data/` 提交到公开仓库。**
+
+### 2.2 智能小助手（可选）
+
+配置文件默认位于 **`src/main/resources/assistant.properties`**（打包后位于 `WEB-INF/classes/`）。
+
+| 配置方式 | 说明 |
+|----------|------|
+| 环境变量 | `KIMI_API_KEY`、`QWEN_API_KEY`、`OPENAI_API_KEY` 等（**优先于文件**） |
+| 外部文件 | `ASSISTANT_PROPERTIES_PATH` 或 JVM 参数 `-Dassistant.properties.path=/绝对路径/assistant.properties` |
+
+未配置任何 API Key 时，小助手页面会提示未就绪，**不影响**注册、岗位、申请等核心招聘功能。
+
+常用可选项（文件内键名或对应环境变量）：
+
+| 功能 | 配置要点 |
+|------|----------|
+| 默认模型提供方 | `assistant.default.provider=kimi\|qwen\|openai` |
+| 提问范围限制 | 默认开启；关闭：`ASSISTANT_STRICT_SCOPE=0` 或 `assistant.strict.scope=false` |
+| 每月免费次数 | `assistant.monthly.free.quota`（默认 30） |
+| 兑换码充值 | `assistant.topup.code` / `ASSISTANT_TOPUP_CODE` |
+| 微信 Native 扫码 | `assistant.pay.wechat.*` 系列（需公网 HTTPS 回调），详见 `assistant.properties` 内注释 |
+| **语义匹配** | `match.semantic.enabled=true`（默认 **关闭**）；开启后会将文本发往第三方 embeddings API |
+
+### 2.3 界面语言
+
+由 `LocaleFilter` 与 Cookie `ui_lang` 控制；页眉切换语言，或访问 `?lang=zh` / `?lang=en`。
+
+### 2.4 端口与上下文路径（部署相关）
+
+| 运行方式 | 默认访问地址 | 上下文路径 |
+|----------|--------------|------------|
+| **`mvn tomcat7:run`**（开发推荐） | `http://localhost:8082/` | `/`（根路径） |
+| **独立 Tomcat + WAR** | `http://localhost:8080/ta-recruitment/` | `/ta-recruitment/` |
+
+内嵌 Tomcat 默认端口在 `pom.xml` 的 `maven.tomcat.port`（当前 **8082**）。端口占用时可指定：
+
+```bash
+mvn tomcat7:run -Dmaven.tomcat.port=8083
+```
+
+---
+
+## 三、运行说明
+
+### 3.1 方式 A：Maven 内嵌 Tomcat（推荐，无需安装 Tomcat）
+
+```bash
+cd /path/to/软工
+
+# 若尚未打包，先执行一次
+mvn clean package
+
+# 启动 Web 应用（保持终端运行，Ctrl+C 停止）
+mvn tomcat7:run
+```
+
+浏览器打开：**http://localhost:8082/**
+
+### 3.2 方式 B：独立 Tomcat 部署 WAR
+
+1. 安装 Tomcat（见 [`docs/安装Tomcat.md`](docs/安装Tomcat.md)）。
+2. 将 `target/ta-recruitment.war` 复制到 Tomcat 的 `webapps/`。
+3. 启动 Tomcat（`bin/startup.sh` 或 Windows 的 `startup.bat`）。
+4. 访问：**http://localhost:8080/ta-recruitment/**（端口以 `server.xml` 为准）。
+
+**升级部署建议**：停止 Tomcat → 删除旧 `webapps/ta-recruitment*` 及 `work/Catalina/localhost/ta-recruitment/` 缓存 → 放入新 WAR → 再启动，避免 JSP/class 版本混用。
+
+### 3.3 演示账号
+
+| 角色 | 邮箱 | 密码 |
+|------|------|------|
+| 应聘者 (TA) | `liuchen@bupt-demo.edu.cn` | `demo123` |
+| 课程组织者 (MO) | `li.prof@bupt-demo.edu.cn` | `demo123` |
+| 管理员 | `admin@bupt-demo.edu.cn` | `admin123` |
+
+登录入口：首页 → **个人中心**（`/personal-center`），或各角色认证页 `/ta/auth`、`/mo/auth`、`/admin/auth`。
+
+### 3.4 主要 URL
+
+| 路径 | 说明 |
+|------|------|
+| `/` | 首页 |
+| `/personal-center` | 个人中心（按角色跳转） |
+| `/ta/dashboard`、`/mo/dashboard` | TA / MO 工作台 |
+| `/mo/job-applicants` | 岗位应聘者与匹配度 |
+| `/admin/workload` | 管理员工作负荷 |
+| `/forum` | 交流论坛 |
+| `/assistant` | 智能小助手 |
+
+### 3.5 常见问题
+
+| 现象 | 处理 |
+|------|------|
+| 端口 8082 被占用 | `mvn tomcat7:run -Dmaven.tomcat.port=8083` |
+| `mvn` 找不到 | 安装 Maven 并确保在 `PATH` 中 |
+| 独立 Tomcat 404 | 确认 WAR 已解压、URL 含 `/ta-recruitment/` |
+| JSP 500 / 行为异常 | 按上文清理 `work/` 后整包重新部署 |
+| 小助手无响应 | 检查 API Key 与网络；未配置时属预期，核心功能仍可用 |
+
+### 3.6 测试与用户手册截图（可选）
+
+```bash
+# 终端 1
+mvn tomcat7:run
+
+# 终端 2（需 Python 3）
+python3 docs/capture_ui_screenshots.py
+bash docs/prepare_user_manual_images.sh
+```
+
+自动化单元测试：`mvn test`（不依赖 Tomcat 与外部 AI）。手工用例见 `test/测试用例说明.md`。
 
 ---
 
@@ -9,146 +207,23 @@
 ### 应聘者（TA）
 
 - 注册、登录与个人资料（姓名、学号、技能标签等）
-- 简历：上传纯文本，或借助小助手从 PDF / Word 抽取正文后保存
-- 浏览岗位、提交申请、查看申请状态
-- 工作台：资料、申请、站内信等分栏入口
-- **交流论坛**：浏览、发帖、回复（需登录）
-- **站内信** 与 **好友**：与其他用户建立好友关系并私信（含已读状态）
+- 简历：上传纯文本，或从小助手 / 页面上传 PDF、Word 抽取正文
+- 浏览岗位、提交申请、查看状态；工作台分栏（资料、申请、站内信等）
+- **交流论坛**、**站内信**、**好友**与私信（含已读状态）
 
 ### 课程组织者（MO）
 
-- 注册、登录
-- 发布与管理岗位（课程助教 / 监考 / 活动支持等，可填写所需技能）
-- 按岗位查看应聘者列表：**技能匹配度**、**技能短板**、录用 / 拒绝、关闭岗位
-- 论坛与站内信、好友（与 TA 侧一致的数据模型）
+- 发布与管理岗位（课程助教 / 监考 / 活动支持等）
+- 按岗位查看应聘者：**技能匹配度**、**技能短板**、面试 / 录用 / 拒绝、关闭岗位
 
 ### 管理员
 
-- 通过 **`/admin/auth`** 登录（会话校验）
-- **`/admin/workload`**：查看助教整体工作负荷（录用数、人均与极值、相对偏高 / 偏低提示），展开每位助教的具体录用岗位，**转移录用**以均衡分工（业务上需事先沟通）
-- 未登录访问工作负荷页会重定向到管理员登录页
+- `/admin/auth` 登录后访问 `/admin/workload`：助教录用负荷统计、展开明细、**转移录用**以均衡分工
 
-### 跨角色与首页
+### 跨角色
 
-- **`/personal-center`**：个人中心入口；已登录则按角色跳转到 TA / MO / 管理员对应页面，否则进入身份选择页
-- **智能小助手**（`/assistant`）：可选接入大模型 API（见下文），支持对话与简历相关能力；REST：`/api/assistant/chat`、`/api/assistant/extract-resume`
-
-### 业务规则（内置逻辑，非外部 AI）
-
-
----
-
-## 技术栈
-
-| 类别 | 说明 |
-|------|------|
-| 运行环境 | Java 11、Maven |
-| Web | Servlet 4.0、JSP、JSTL |
-| JSON | Gson |
-| 简历正文 | Apache PDFBox、Apache POI（PDF / Word 文本抽取） |
-| 打包 | `war`，默认产物名 `ta-recruitment.war` |
-
----
-
-## 数据存储
-
-应用启动时通过 `AppListener` 将数据目录设为 **`{Web 应用根目录}/data`**（与部署上下文一致）。
-
-| 文件 / 目录 | 用途 |
-|-------------|------|
-| `applicants.json` | 应聘者 |
-| `module_organisers.json` | 课程组织者 |
-| `admins.json` | 管理员账号 |
-| `jobs.json` | 岗位 |
-| `applications.json` | 申请与录用状态 |
-| `messages.json` | 站内信 |
-| `dm_read_states.json` | 私信已读状态 |
-| `forum_threads.json` / `forum_replies.json` | 论坛帖子与回复 |
-| `friend_links.json` / `friend_requests.json` | 好友关系与好友请求 |
-| `data/resumes/` | 简历文本文件 |
-
-密码经 **SHA-256** 哈希后存入 JSON；请勿将含真实密钥或生产数据的 `data/` 提交到公开仓库。
-
----
-
-## 智能小助手（可选）
-
-小助手相关配置由 `AssistantConfig` 读取，支持 **classpath 内的 `assistant.properties`**，或通过环境变量 **`ASSISTANT_PROPERTIES_PATH`** / JVM 参数 **`-Dassistant.properties.path=`** 指向外部配置文件；**环境变量可覆盖** 文件中的密钥类配置。
-
-可对接 **Moonshot Kimi**、**阿里云通义（OpenAI 兼容）**、**OpenAI** 等（具体模型与 Base URL 以配置为准）。未配置任何 API Key 时，页面会提示未就绪，不影响其余招聘功能。
-
-为避免跑题，小助手默认开启“提问范围严格限制”：服务端会在调用上游大模型前先判定主题，若明显与助教招聘系统/应聘无关则直接返回固定拒绝话术。可通过环境变量 `ASSISTANT_STRICT_SCOPE=0` 或配置 `assistant.strict.scope=false` 关闭。
-
-### 额度（可选）
-
-小助手支持“按用户每月免费次数 + 付费点数”的简单额度机制：
-
-- 免费额度：环境变量 `ASSISTANT_MONTHLY_FREE_QUOTA` 或配置 `assistant.monthly.free.quota`（默认 30 次/月）
-- 付费点数：当免费额度用尽后，若该用户仍有付费点数则继续扣点；否则接口返回 **402**（Payment Required）
-- 查询额度：`GET /api/assistant/quota`（未登录时按 session 粗略统计）
-- **微信 Native 扫码充值（推荐）**：配置齐全时助手页展示「生成微信收款码」，无需兑换码。需在微信商户平台开通 Native，并配置公网 HTTPS 回调地址，与 `WECHAT_PAY_NOTIFY_URL` / `assistant.pay.wechat.notify.url` 一致；详见 `assistant.properties` 内注释。接口：`POST /api/assistant/pay/wechat/native`（下单）、`GET /api/assistant/pay/wechat/order?outTradeNo=`（轮询状态）、`POST /api/assistant/pay/wechat/notify`（微信服务器回调，勿浏览器访问）。
-- 充值点数（兑换码模式，需登录，在未配置微信时可用）：`POST /api/assistant/quota/topup`，并配置 `ASSISTANT_TOPUP_CODE` 或 `assistant.topup.code`
-- 可选提示：`ASSISTANT_PAY_HINT` 或 `assistant.pay.hint`（用于前端展示“付费/充值引导”文案）
-
-### 语义匹配（可选）
-
-默认的岗位/简历匹配是基于技能关键词的规则打分；也可开启 **embeddings 向量相似度** 作为匹配分来源：
-
-- 在 `assistant.properties` 设置 `match.semantic.enabled=true`（或环境变量 `MATCH_SEMANTIC_ENABLED=1`）
-- 可选指定 `match.semantic.provider=kimi|qwen|openai`（或 `MATCH_SEMANTIC_PROVIDER`），否则跟随 `assistant.default.provider`
-- embeddings 接口与模型可用 `*.embeddings.url` / `*.embedding.model` 配置（不填会尝试由 `*.chat.completions.url` 推断 `/embeddings`）
-- 首次计算会调用外部 embeddings API，并把向量缓存到 `data/embeddings.json`（避免每次请求都调用外部接口）
-
-注意：开启后会将简历/岗位文本发送给第三方大模型服务以生成向量，请按隐私合规要求使用。
-
----
-
-## 构建与运行
-
-### 1. 打包 WAR
-
-```bash
-mvn clean package
-```
-
-产物：`target/ta-recruitment.war`。将 WAR 放入 Tomcat 的 `webapps/`，默认访问路径为：
-
-- **`http://{主机}:{端口}/ta-recruitment/`**（端口以 Tomcat `server.xml` 为准，常见为 `8080`）
-
-### 2. Maven 内嵌 Tomcat（开发常用）
-
-```bash
-mvn tomcat7:run
-```
-
-当前 `pom.xml` 将插件上下文设为 **`/`**、默认端口 **`8082`**，因此本地根地址为：
-
-- **`http://localhost:8082/`**
-
-若端口被占用，可指定例如：
-
-```bash
-mvn tomcat7:run -Dmaven.tomcat.port=8083
-```
-
-**注意**：内嵌运行与独立 Tomcat 部署的 **上下文路径不同**（`/` 与 `/ta-recruitment/`），书签与说明中的链接需按实际环境替换。
-
-
-
-## 主要 URL 速查
-
-| 路径 | 说明 |
-|------|------|
-| `/` | 首页 |
-| `/personal-center` | 个人中心入口 |
-| `/ta/auth`、`/ta/dashboard`、`/ta/profile` | 应聘者认证与工作台 |
-| `/mo/auth`、`/mo/dashboard`、`/mo/profile` | 课程组织者认证与工作台 |
-| `/mo/job-applicants` | 岗位应聘者管理 |
-| `/admin/auth`、`/admin/workload` | 管理员登录与工作负荷 |
-| `/forum` | 交流论坛 |
-| `/assistant` | 智能小助手页面 |
-
-其余静态页面与分栏 JSP 由对应 Servlet 转发，以项目 `src/main/webapp` 为准。
+- **智能小助手**（`/assistant`）：对话、简历抽取；REST：`/api/assistant/chat`、`/api/assistant/extract-resume`
+- 岗位匹配默认基于 **技能关键词规则**；可选 **embeddings 语义相似度**（见配置 2.2）
 
 ---
 
@@ -157,32 +232,30 @@ mvn tomcat7:run -Dmaven.tomcat.port=8083
 ```
 src/main/java/com/bupt/ta/
   model/          # 领域模型
-  storage/        # Storage：JSON 读写与路径
-  service/        # 业务服务（含 assistant 子包）
-  util/           # 密码、会话等工具
-  web/            # Servlet、Listener、Filter
+  storage/        # JSON 读写
+  service/        # 业务逻辑（含 assistant 子包）
+  util/           # 密码、会话、向量等
+  web/            # Servlet、Filter、Listener
 src/main/webapp/
-  index.jsp, personal_center_gate.jsp, assistant.jsp, …
-  ta/, mo/, admin/, forum/, css/
-  data/           # 运行时数据（部署后位于应用根下）
+  index.jsp, ta/, mo/, admin/, forum/, css/
+  data/           # 运行时数据
   WEB-INF/web.xml
+test/java/com/bupt/ta/   # JUnit 5 单元测试
 ```
 
 ---
 
-## 独立 Tomcat 全量更新建议
+## 生成 JavaDoc
 
-升级或排查 JSP 500 时，建议 **整包替换** 并 **清理本应用在 `work/` 下的 JSP 编译缓存**，避免只拷贝单个 class 或单个 JSP 导致版本混用。步骤概要：
+```bash
+mvn javadoc:javadoc
+```
 
-1. `mvn clean package -DskipTests`
-2. 停止 Tomcat
-3. 删除 `webapps/ta-recruitment/`、`webapps/ta-recruitment.war`（按你实际部署方式）
-4. 删除 `work/Catalina/localhost/ta-recruitment/`（或实际上下文名对应目录）
-5. 拷贝新 WAR 到 `webapps/`，启动 Tomcat
+浏览器打开 `target/site/apidocs/index.html`。
 
 ---
 
 ## 说明与限制
 
-- 本系统面向教学与原型演示；生产环境需补充审计、HTTPS、备份与更细粒度权限等。
-- 管理员与各角色权限以会话与页面逻辑为准；数据文件为明文 JSON，请妥善保管部署目录。
+- 本系统面向教学与原型演示；生产环境需补充 HTTPS、审计、备份与细粒度权限等。
+- 管理员与各角色权限以会话与页面逻辑为准；数据为明文 JSON，请妥善保管部署目录。

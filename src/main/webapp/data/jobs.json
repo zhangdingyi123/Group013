@@ -119,5 +119,29 @@
     "type": "activity",
     "status": "open",
     "createdAt": 1775174400000
+  },
+  {
+    "id": "68d8c982-20d5-4b16-8775-424445033bfc",
+    "title": "æ°æ®ç»æå©æ",
+    "moduleOrganiserId": "4c61af3f-c065-549a-a953-23493a9ee311",
+    "description": "Help with labs",
+    "requiredSkills": [
+      "Java"
+    ],
+    "type": "course_ta",
+    "status": "open",
+    "createdAt": 1779176405289
+  },
+  {
+    "id": "f0e357d5-465e-447c-9cda-b1867e4633c7",
+    "title": "æ°æ®ç»æå©æ",
+    "moduleOrganiserId": "4c61af3f-c065-549a-a953-23493a9ee311",
+    "description": "Help with labs",
+    "requiredSkills": [
+      "Java"
+    ],
+    "type": "course_ta",
+    "status": "open",
+    "createdAt": 1779176497835
   }
 ]

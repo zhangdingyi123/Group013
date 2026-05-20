@@ -6,13 +6,23 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+/**
+ * 密码哈希与校验工具。
+ * <p>新注册用户采用 {@linkplain #hashWithSalt(String) 随机盐 + SHA-256}，存储格式为
+ * {@code Base64(盐):Base64(哈希)}；仍兼容早期无盐的 {@linkplain #hashLegacy(String) 旧格式}。</p>
+ */
 public final class PasswordUtil {
     private static final String ALG = "SHA-256";
     private static final int SALT_LEN = 16;               // 16 字节随机盐
     private static final String DELIMITER = ":";
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    // 新方法：生成随机盐，返回 "盐:哈希"
+    /**
+     * 对明文密码加盐哈希。
+     *
+     * @param plain 明文密码
+     * @return {@code 盐:哈希} 的 Base64 编码串
+     */
     public static String hashWithSalt(String plain) {
         byte[] salt = new byte[SALT_LEN];
         RANDOM.nextBytes(salt);
@@ -21,7 +31,13 @@ public final class PasswordUtil {
                 Base64.getEncoder().encodeToString(hash);
     }
 
-    // 新方法：验证，自动兼容旧数据（无盐）
+    /**
+     * 校验明文是否与存储值匹配（自动识别加盐或无盐旧格式）。
+     *
+     * @param plain  用户输入的明文
+     * @param stored 数据库/JSON 中的哈希字段
+     * @return 匹配为 {@code true}
+     */
     public static boolean checkWithSalt(String plain, String stored) {
         if (stored == null) return false;
         if (!stored.contains(DELIMITER)) {
@@ -36,7 +52,12 @@ public final class PasswordUtil {
         return MessageDigest.isEqual(actualHash, expectedHash);
     }
 
-    // 旧版无盐哈希（兼容）
+    /**
+     * 旧版无盐 SHA-256 哈希，仅用于兼容历史数据。
+     *
+     * @param plain 明文密码
+     * @return Base64 编码的摘要
+     */
     public static String hashLegacy(String plain) {
         try {
             MessageDigest md = MessageDigest.getInstance(ALG);

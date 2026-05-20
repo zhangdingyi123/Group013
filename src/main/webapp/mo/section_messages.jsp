@@ -24,6 +24,26 @@
         <p class="msg-ok"><c:out value="${moDmNotice}"/></p>
     </c:if>
 
+    <c:if test="${not empty moFriendRequestsPending}">
+        <div class="friend-requests-panel" role="region" aria-label="<%= I18n.msg(request, "dm.mo.friend.pending.title") %>">
+            <h3 class="friend-requests-title"><%= I18n.msg(request, "dm.mo.friend.pending.title") %></h3>
+            <p class="friend-requests-desc"><%= I18n.msg(request, "dm.mo.friend.pending.desc") %></p>
+            <ul class="friend-requests-list">
+                <c:forEach items="${moFriendRequestsPending}" var="fr">
+                    <li class="friend-request-item">
+                        <span class="friend-request-name"><c:out value="${fr.applicantName}"/></span>
+                        <form method="post" action="<%= ctx %>/mo/dashboard" class="friend-request-form">
+                            <input type="hidden" name="action" value="acceptFriendRequest">
+                            <input type="hidden" name="requestId" value="<c:out value='${fr.requestId}'/>">
+                            <input type="hidden" name="applicantId" value="<c:out value='${fr.applicantId}'/>">
+                            <button type="submit" class="btn btn-primary btn-sm"><%= I18n.msg(request, "dm.mo.friend.accept") %></button>
+                        </form>
+                    </li>
+                </c:forEach>
+            </ul>
+        </div>
+    </c:if>
+
     <c:choose>
         <c:when test="${empty moDmThreads}">
             <p class="empty-hint"><%= I18n.msg(request, "dm.mo.empty") %></p>
@@ -52,6 +72,16 @@
                 <div class="dm-pane">
                     <c:if test="${not empty moDmApplicant}">
                         <p class="dm-peer-title"><%= I18n.msg(request, "dm.ta.conv", moDmApplicantObj.getName()) %></p>
+                    </c:if>
+                    <c:if test="${moDmIsFriend}">
+                        <p class="friend-status-hint"><%= I18n.msg(request, "dm.mo.friend.isFriend") %></p>
+                    </c:if>
+                    <c:if test="${moDmCanRequestFriendApplicant}">
+                        <form method="post" action="<%= ctx %>/mo/dashboard" class="friend-request-action">
+                            <input type="hidden" name="action" value="requestFriendApplicant">
+                            <input type="hidden" name="applicantId" value="<c:out value='${moDmWithApplicant}'/>">
+                            <button type="submit" class="btn btn-secondary btn-sm"><%= I18n.msg(request, "dm.mo.friend.request") %></button>
+                        </form>
                     </c:if>
                     <div class="dm-bubble-list" aria-live="polite">
                         <c:choose>
@@ -108,6 +138,17 @@
               .dm-bubble.theirs .dm-body{background:#f1f5f9;color:#1e293b}
               .dm-compose .form-group{margin-bottom:.75rem}
               .dm-unread-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.1rem;margin-left:.4rem;padding:0 .3rem;font-size:.65rem;font-weight:800;line-height:1.2;border-radius:999px;background:#dc2626;color:#fff;vertical-align:middle}
+              .friend-requests-panel{margin-bottom:1rem;padding:1rem;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff}
+              .friend-requests-title{margin:0 0 .35rem;font-size:1rem;color:#1e40af}
+              .friend-requests-desc{margin:0 0 .65rem;font-size:.85rem;color:#475569}
+              .friend-requests-list{list-style:none;margin:0;padding:0}
+              .friend-request-item{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding:.5rem 0;border-top:1px solid #dbeafe}
+              .friend-request-item:first-child{border-top:none;padding-top:0}
+              .friend-request-name{font-weight:600;color:#1e293b}
+              .friend-request-form{margin:0}
+              .friend-status-hint{margin:0 0 .65rem;font-size:.85rem;color:#0f766e}
+              .friend-request-action{margin:0 0 .75rem}
+              .btn-sm{padding:.35rem .75rem;font-size:.85rem}
             </style>
         </c:otherwise>
     </c:choose>

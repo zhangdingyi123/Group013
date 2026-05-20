@@ -1,11 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.bupt.ta.util.I18n" %>
-<%@ page import="com.bupt.ta.model.Application" %>
-<%@ page import="com.bupt.ta.model.Job" %>
-<%@ page import="com.bupt.ta.web.TADashboardServlet.ApplicationWithJob" %>
-<%@ page import="java.text.SimpleDateFormat" %>
-<%@ page import="java.util.Date" %>
-<%@ page import="java.util.List" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%
     if (request.getAttribute("applicant") == null) {
         String c = request.getContextPath();
@@ -16,22 +12,21 @@
         }
         return;
     }
-    @SuppressWarnings("unchecked")
-    List<ApplicationWithJob> myApplications = (List<ApplicationWithJob>) request.getAttribute("myApplications");
-    if (myApplications == null) myApplications = java.util.Collections.emptyList();
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-    String ctx = request.getContextPath();
     String applicationsPostUrl = (String) request.getAttribute("applicationsPostUrl");
     if (applicationsPostUrl == null) {
-        applicationsPostUrl = ctx + "/ta/dashboard";
+        applicationsPostUrl = request.getContextPath() + "/ta/dashboard";
     }
+    request.setAttribute("applicationsPostUrl", applicationsPostUrl);
 %>
+<jsp:useBean id="tsDate" scope="page" class="java.util.Date"/>
 <section id="pc-applications" class="section">
     <h2><%= I18n.msg(request, "apps.title") %></h2>
     <p class="section-desc"><%= I18n.msg(request, "apps.desc") %></p>
-    <% if (myApplications.isEmpty()) { %>
-    <p class="empty-hint"><%= I18n.msg(request, "apps.empty") %></p>
-    <% } else { %>
+    <c:choose>
+        <c:when test="${empty myApplications}">
+            <p class="empty-hint"><%= I18n.msg(request, "apps.empty") %></p>
+        </c:when>
+        <c:otherwise>
     <div class="table-wrap">
     <table>
         <thead>
@@ -44,83 +39,101 @@
             </tr>
         </thead>
         <tbody>
-        <% for (ApplicationWithJob aw : myApplications) {
-            Application app = aw.application;
-            Job job = aw.job;
-            String title = job != null && job.getTitle() != null ? job.getTitle() : I18n.msg(request, "apps.job.deleted");
-            String st = app.getStatus() != null ? app.getStatus() : "";
-            String badgeClass = "badge-pending";
-            if (Application.STATUS_ACCEPTED.equals(st)) badgeClass = "badge-accepted";
-            else if (Application.STATUS_REJECTED.equals(st)) badgeClass = "badge-rejected";
-            else if (Application.STATUS_CANCELLED.equals(st)) badgeClass = "badge-cancelled";
-            String stLabel = st;
-            if (Application.STATUS_PENDING.equals(st)) stLabel = I18n.msg(request, "apps.status.pending");
-            else if (Application.STATUS_INTERVIEW.equals(st)) stLabel = I18n.msg(request, "apps.status.interview");
-            else if (Application.STATUS_ACCEPTED.equals(st)) stLabel = I18n.msg(request, "apps.status.accepted");
-            else if (Application.STATUS_REJECTED.equals(st)) stLabel = I18n.msg(request, "apps.status.rejected");
-            else if (Application.STATUS_CANCELLED.equals(st)) stLabel = I18n.msg(request, "apps.status.cancelled");
-            if (Application.STATUS_INTERVIEW.equals(st)) badgeClass = "badge-interview";
-            String ivTa = Application.STATUS_INTERVIEW.equals(st) ? app.getInterviewTaStatus() : "";
-            boolean ivAwaitTa = Application.STATUS_INTERVIEW.equals(st)
-                    && Application.TA_IV_PENDING.equals(ivTa);
-            String ivTaLabel = "";
-            if (Application.STATUS_INTERVIEW.equals(st)) {
-                if (Application.TA_IV_PENDING.equals(ivTa)) ivTaLabel = I18n.msg(request, "apps.iv.ta.pending");
-                else if (Application.TA_IV_CONFIRMED.equals(ivTa)) ivTaLabel = I18n.msg(request, "apps.iv.ta.confirmed");
-                else if (Application.TA_IV_DECLINED.equals(ivTa)) ivTaLabel = I18n.msg(request, "apps.iv.ta.declined");
-                else if (Application.TA_IV_RESCHEDULE.equals(ivTa)) ivTaLabel = I18n.msg(request, "apps.iv.ta.reschedule");
-            }
-            String det = app.getInterviewDetail();
-            String detEsc = det == null ? "" : det.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
-        %>
+        <c:forEach var="row" items="${myApplications}">
+            <c:set var="app" value="${row.app}"/>
+            <c:set var="job" value="${row.job}"/>
+            <c:set var="st" value="${app.status}"/>
             <tr>
-                <td><%= title %></td>
                 <td>
-                    <span class="badge <%= badgeClass %>"><%= stLabel %></span>
-                    <% if (Application.STATUS_INTERVIEW.equals(st) && !ivTaLabel.isEmpty()) { %>
-                    <div style="font-size:.78rem;margin-top:.2rem;color:#64748b;"><%= ivTaLabel %></div>
-                    <% } %>
+                    <c:choose>
+                        <c:when test="${not empty job.title}"><c:out value="${job.title}"/></c:when>
+                        <c:otherwise><%= I18n.msg(request, "apps.job.deleted") %></c:otherwise>
+                    </c:choose>
                 </td>
                 <td>
-                    <% if (Application.STATUS_INTERVIEW.equals(st)) { %>
-                    <% if (app.getInterviewAt() > 0) { %>
-                    <div class="app-iv-note"><strong><%= I18n.msg(request, "apps.iv.time") %></strong><%= sdf.format(new Date(app.getInterviewAt())) %></div>
-                    <% } %>
-                    <div class="app-iv-note"><strong><%= I18n.msg(request, "apps.iv.place") %></strong><%= detEsc.isEmpty() ? I18n.msg(request, "common.dash") : detEsc %></div>
-                    <% } else { %><%= I18n.msg(request, "common.dash") %><% } %>
+                    <c:choose>
+                        <c:when test="${st eq 'pending'}"><span class="badge badge-pending"><%= I18n.msg(request, "apps.status.pending") %></span></c:when>
+                        <c:when test="${st eq 'interview'}">
+                            <span class="badge badge-interview"><%= I18n.msg(request, "apps.status.interview") %></span>
+                            <c:choose>
+                                <c:when test="${app.interviewTaStatus eq 'pending'}"><div style="font-size:.78rem;margin-top:.2rem;color:#64748b;"><%= I18n.msg(request, "apps.iv.ta.pending") %></div></c:when>
+                                <c:when test="${app.interviewTaStatus eq 'confirmed'}"><div style="font-size:.78rem;margin-top:.2rem;color:#64748b;"><%= I18n.msg(request, "apps.iv.ta.confirmed") %></div></c:when>
+                                <c:when test="${app.interviewTaStatus eq 'declined'}"><div style="font-size:.78rem;margin-top:.2rem;color:#64748b;"><%= I18n.msg(request, "apps.iv.ta.declined") %></div></c:when>
+                                <c:when test="${app.interviewTaStatus eq 'reschedule'}"><div style="font-size:.78rem;margin-top:.2rem;color:#64748b;"><%= I18n.msg(request, "apps.iv.ta.reschedule") %></div></c:when>
+                            </c:choose>
+                        </c:when>
+                        <c:when test="${st eq 'accepted'}"><span class="badge badge-accepted"><%= I18n.msg(request, "apps.status.accepted") %></span></c:when>
+                        <c:when test="${st eq 'rejected'}"><span class="badge badge-rejected"><%= I18n.msg(request, "apps.status.rejected") %></span></c:when>
+                        <c:when test="${st eq 'cancelled'}"><span class="badge badge-cancelled"><%= I18n.msg(request, "apps.status.cancelled") %></span></c:when>
+                        <c:otherwise><span class="badge badge-pending"><c:out value="${st}"/></span></c:otherwise>
+                    </c:choose>
                 </td>
-                <td><%= sdf.format(new Date(app.getAppliedAt())) %></td>
                 <td>
-                    <% if (Application.STATUS_PENDING.equals(st)) { %>
-                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;">
-                        <input type="hidden" name="action" value="cancelApplication">
-                        <input type="hidden" name="applicationId" value="<%= app.getId() %>">
-                        <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.cancel") %></button>
-                    </form>
-                    <% } else if (ivAwaitTa) { %>
-                    <div style="display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;">
-                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;">
-                        <input type="hidden" name="action" value="confirmInterview">
-                        <input type="hidden" name="applicationId" value="<%= app.getId() %>">
-                        <button type="submit" class="btn btn-primary btn-small"><%= I18n.msg(request, "apps.confirmAttend") %></button>
-                    </form>
-                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;" onsubmit="return confirm('<%= I18n.msg(request, "apps.confirm.decline").replace(\"\\\\\", \"\\\\\\\\\").replace(\"'\", \"\\\\'\").replace(\"\\r\", \"\").replace(\"\\n\", \"\\\\n\") %>');">
-                        <input type="hidden" name="action" value="declineInterview">
-                        <input type="hidden" name="applicationId" value="<%= app.getId() %>">
-                        <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.decline") %></button>
-                    </form>
-                    <form method="post" action="<%= applicationsPostUrl %>" style="display:inline;" onsubmit="return confirm('<%= I18n.msg(request, "apps.confirm.reschedule").replace(\"\\\\\", \"\\\\\\\\\").replace(\"'\", \"\\\\'\").replace(\"\\r\", \"\").replace(\"\\n\", \"\\\\n\") %>');">
-                        <input type="hidden" name="action" value="requestRescheduleInterview">
-                        <input type="hidden" name="applicationId" value="<%= app.getId() %>">
-                        <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.reschedule") %></button>
-                    </form>
-                    </div>
-                    <% } else { %><%= I18n.msg(request, "common.dash") %><% } %>
+                    <c:choose>
+                        <c:when test="${st eq 'interview'}">
+                            <c:if test="${app.interviewAt > 0}">
+                            <div class="app-iv-note"><strong><%= I18n.msg(request, "apps.iv.time") %></strong>
+                                <c:set target="${tsDate}" property="time" value="${app.interviewAt}"/>
+                                <fmt:formatDate value="${tsDate}" pattern="yyyy-MM-dd HH:mm"/>
+                            </div>
+                            </c:if>
+                            <div class="app-iv-note"><strong><%= I18n.msg(request, "apps.iv.place") %></strong>
+                                <c:choose>
+                                    <c:when test="${not empty app.interviewDetail}"><c:out value="${app.interviewDetail}"/></c:when>
+                                    <c:otherwise><%= I18n.msg(request, "common.dash") %></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </c:when>
+                        <c:otherwise><%= I18n.msg(request, "common.dash") %></c:otherwise>
+                    </c:choose>
+                </td>
+                <td>
+                    <c:set target="${tsDate}" property="time" value="${app.appliedAt}"/>
+                    <fmt:formatDate value="${tsDate}" pattern="yyyy-MM-dd HH:mm"/>
+                </td>
+                <td>
+                    <c:choose>
+                        <c:when test="${st eq 'pending'}">
+                            <form method="post" action="${applicationsPostUrl}" style="display:inline;">
+                                <input type="hidden" name="action" value="cancelApplication">
+                                <input type="hidden" name="applicationId" value="${app.id}">
+                                <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.cancel") %></button>
+                            </form>
+                        </c:when>
+                        <c:when test="${st eq 'interview' and app.interviewTaStatus eq 'pending'}">
+                            <div style="display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;">
+                            <form method="post" action="${applicationsPostUrl}" style="display:inline;">
+                                <input type="hidden" name="action" value="confirmInterview">
+                                <input type="hidden" name="applicationId" value="${app.id}">
+                                <button type="submit" class="btn btn-primary btn-small"><%= I18n.msg(request, "apps.confirmAttend") %></button>
+                            </form>
+                            <form method="post" action="${applicationsPostUrl}" style="display:inline;" data-confirm="<%= I18n.msg(request, "apps.confirm.decline") %>">
+                                <input type="hidden" name="action" value="declineInterview">
+                                <input type="hidden" name="applicationId" value="${app.id}">
+                                <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.decline") %></button>
+                            </form>
+                            <form method="post" action="${applicationsPostUrl}" style="display:inline;" data-confirm="<%= I18n.msg(request, "apps.confirm.reschedule") %>">
+                                <input type="hidden" name="action" value="requestRescheduleInterview">
+                                <input type="hidden" name="applicationId" value="${app.id}">
+                                <button type="submit" class="btn btn-secondary btn-small"><%= I18n.msg(request, "apps.reschedule") %></button>
+                            </form>
+                            </div>
+                        </c:when>
+                        <c:otherwise><%= I18n.msg(request, "common.dash") %></c:otherwise>
+                    </c:choose>
                 </td>
             </tr>
-        <% } %>
+        </c:forEach>
         </tbody>
     </table>
     </div>
-    <% } %>
+        </c:otherwise>
+    </c:choose>
 </section>
+<script>
+document.querySelectorAll('#pc-applications form[data-confirm]').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+        if (!confirm(f.getAttribute('data-confirm'))) e.preventDefault();
+    });
+});
+</script>

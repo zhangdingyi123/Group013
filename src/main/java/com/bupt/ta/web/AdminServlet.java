@@ -71,12 +71,19 @@ public class AdminServlet extends HttpServlet {
                 Job job = jobService.findById(a.getJobId()).orElse(null);
                 details.add(new AcceptedAssignment(
                         a.getId(),
+                        a.getApplicantId(),
                         ap != null ? ap.getName() : a.getApplicantId(),
                         ap != null ? ap.getEmail() : "",
                         job != null ? job.getTitle() : a.getJobId()));
             }
             details.sort(Comparator.comparing((AcceptedAssignment x) -> x.applicantName).thenComparing(x -> x.jobTitle));
             req.setAttribute("acceptedDetails", details);
+            List<ApplicantOption> applicantOptions = new ArrayList<>();
+            for (Applicant a : applicantService.findAll()) {
+                applicantOptions.add(new ApplicantOption(a.getId(), a.getName(), a.getEmail()));
+            }
+            applicantOptions.sort(Comparator.comparing(o -> o.name));
+            req.setAttribute("applicantOptions", applicantOptions);
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
         }
@@ -91,12 +98,18 @@ public class AdminServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/admin/auth");
             return;
         }
-        if (!"cancelApplication".equals(req.getParameter("action"))) {
+        String action = req.getParameter("action");
+        HttpSession session = req.getSession();
+        if ("transferApplication".equals(action)) {
+            handleTransfer(req, session);
+            resp.sendRedirect(req.getContextPath() + "/admin/workload");
+            return;
+        }
+        if (!"cancelApplication".equals(action)) {
             resp.sendRedirect(req.getContextPath() + "/admin/workload");
             return;
         }
         String applicationId = req.getParameter("applicationId");
-        HttpSession session = req.getSession();
         if (applicationId == null || applicationId.trim().isEmpty()) {
             session.setAttribute("adminNotice", I18n.msg(req, "admin.missing.app"));
             resp.sendRedirect(req.getContextPath() + "/admin/workload");
@@ -125,6 +138,45 @@ public class AdminServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/admin/workload");
     }
 
+    private void handleTransfer(HttpServletRequest req, HttpSession session) throws IOException {
+        String applicationId = req.getParameter("applicationId");
+        String newApplicantId = req.getParameter("newApplicantId");
+        if (applicationId == null || applicationId.trim().isEmpty()
+                || newApplicantId == null || newApplicantId.trim().isEmpty()) {
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.transfer.missing"));
+            return;
+        }
+        Optional<Application> appOpt = applicationService.findById(applicationId.trim());
+        if (appOpt.isEmpty()) {
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.app.notfound"));
+            return;
+        }
+        Application app = appOpt.get();
+        if (!Application.STATUS_ACCEPTED.equals(app.getStatus())) {
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.cancel.rule"));
+            return;
+        }
+        if (newApplicantId.trim().equals(app.getApplicantId())) {
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.transfer.same"));
+            return;
+        }
+        Applicant from = applicantService.findById(app.getApplicantId()).orElse(null);
+        Applicant to = applicantService.findById(newApplicantId.trim()).orElse(null);
+        if (to == null) {
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.transfer.notfound"));
+            return;
+        }
+        boolean ok = applicationService.transferAcceptedHire(applicationId.trim(), newApplicantId.trim());
+        if (ok) {
+            String fromName = from != null ? from.getName() : app.getApplicantId();
+            Job job = jobService.findById(app.getJobId()).orElse(null);
+            String jobTitle = job != null ? job.getTitle() : app.getJobId();
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.transfer.ok", fromName, to.getName(), jobTitle));
+        } else {
+            session.setAttribute("adminNotice", I18n.msg(req, "admin.transfer.fail"));
+        }
+    }
+
     /** 当该岗位不再有任何已录用申请时，将已关闭的岗位重新开放。 */
     private void reopenJobIfNoAcceptedRemain(String jobId) throws IOException {
         List<Application> forJob = applicationService.findByJobId(jobId);
@@ -151,17 +203,32 @@ public class AdminServlet extends HttpServlet {
         }
     }
 
-    /** 一条已录用记录，供管理员强行取消。 */
+    /** 一条已录用记录，供管理员取消或转移。 */
     public static class AcceptedAssignment {
         public final String applicationId;
+        public final String applicantId;
         public final String applicantName;
         public final String applicantEmail;
         public final String jobTitle;
-        public AcceptedAssignment(String applicationId, String applicantName, String applicantEmail, String jobTitle) {
+        public AcceptedAssignment(String applicationId, String applicantId, String applicantName,
+                                  String applicantEmail, String jobTitle) {
             this.applicationId = applicationId;
+            this.applicantId = applicantId;
             this.applicantName = applicantName;
             this.applicantEmail = applicantEmail;
             this.jobTitle = jobTitle;
+        }
+    }
+
+    /** 转移录用时的目标助教选项。 */
+    public static class ApplicantOption {
+        public final String id;
+        public final String name;
+        public final String email;
+        public ApplicantOption(String id, String name, String email) {
+            this.id = id;
+            this.name = name;
+            this.email = email;
         }
     }
 }

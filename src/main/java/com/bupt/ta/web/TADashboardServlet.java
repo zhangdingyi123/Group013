@@ -102,16 +102,16 @@ public class TADashboardServlet extends HttpServlet {
             }
             req.setAttribute("dmAllowedJobIds", dmAllowedJobIds);
             List<Application> myApplications = applicationService.findByApplicantId(user.getId());
-            List<ApplicationWithJob> withJobs = new ArrayList<>();
+            List<TaApplicationEntry> withJobs = new ArrayList<>();
             for (Application app : myApplications) {
                 Optional<Job> j = jobService.findById(app.getJobId());
-                withJobs.add(new ApplicationWithJob(app, j.orElse(null)));
+                withJobs.add(new TaApplicationEntry(app, j.orElse(null)));
             }
             req.setAttribute("myApplications", withJobs);
             Set<String> appliedJobIds = new HashSet<>();
-            for (ApplicationWithJob aw : withJobs) {
-                if (aw.application != null && aw.application.getJobId() != null) {
-                    appliedJobIds.add(aw.application.getJobId());
+            for (TaApplicationEntry entry : withJobs) {
+                if (entry.getApp() != null && entry.getApp().getJobId() != null) {
+                    appliedJobIds.add(entry.getApp().getJobId());
                 }
             }
             req.setAttribute("appliedJobIds", appliedJobIds);
@@ -584,6 +584,7 @@ public class TADashboardServlet extends HttpServlet {
         }
         if ("acceptFriendRequest".equals(action)) {
             String requestId = req.getParameter("requestId");
+            String moId = req.getParameter("moId");
             try {
                 FriendService fs = new FriendService();
                 boolean ok = fs.acceptRequestAsTa(requestId, user.getId());
@@ -591,7 +592,11 @@ public class TADashboardServlet extends HttpServlet {
             } catch (Exception e) {
                 req.getSession().setAttribute("dmNotice", I18n.msg(req, "dm.ta.op.fail"));
             }
-            resp.sendRedirect(dashboardUrl(req, "messages"));
+            StringBuilder to = new StringBuilder(dashboardUrl(req, "messages"));
+            if (moId != null && !moId.trim().isEmpty()) {
+                to.append("&withMo=").append(URLEncoder.encode(moId.trim(), StandardCharsets.UTF_8));
+            }
+            resp.sendRedirect(to.toString());
             return;
         }
         if ("sendDm".equals(action)) {
@@ -719,6 +724,9 @@ public class TADashboardServlet extends HttpServlet {
             this.moId = moId;
             this.moName = moName;
         }
+        public String getRequestId() { return requestId; }
+        public String getMoId() { return moId; }
+        public String getMoName() { return moName; }
     }
 
     public static class TaMoThreadRow {
@@ -747,12 +755,4 @@ public class TADashboardServlet extends HttpServlet {
         }
     }
 
-    public static class ApplicationWithJob {
-        public final Application application;
-        public final Job job;
-        public ApplicationWithJob(Application application, Job job) {
-            this.application = application;
-            this.job = job;
-        }
-    }
 }
